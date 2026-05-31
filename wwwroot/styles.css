@@ -5,6 +5,7 @@
   color: #f6f1e7;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: radial-gradient(circle at top, #2b2334 0, #11131a 42%); min-height: 100vh; }
 button, input { font: inherit; }
 button { cursor: pointer; border: 0; border-radius: 12px; padding: 12px 15px; font-weight: 800; background: #d6923a; color: #21180e; }
