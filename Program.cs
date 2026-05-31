@@ -136,8 +136,16 @@ static void AddSocialLogin(
         options.TokenEndpoint = tokenEndpoint;
         options.UserInformationEndpoint = userInformationEndpoint;
         options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.BackchannelTimeout = TimeSpan.FromSeconds(15);
         options.Events = new OAuthEvents
         {
+            OnRemoteFailure = context =>
+            {
+                Console.Error.WriteLine($"Social login failed for {scheme}: {context.Failure?.Message}");
+                context.HandleResponse();
+                context.Response.Redirect("/?loginError=social");
+                return Task.CompletedTask;
+            },
             OnCreatingTicket = async context =>
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
