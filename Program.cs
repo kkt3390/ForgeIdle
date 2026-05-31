@@ -58,6 +58,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<GameDbContext>();
     db.Database.EnsureCreated();
+    db.EnsureEnhancementAttemptsTable();
 }
 
 app.UseDefaultFiles();

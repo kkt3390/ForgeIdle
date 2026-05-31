@@ -85,27 +85,35 @@ public sealed class GameService(PlayerRepository players, GameCatalog catalog)
         var before = player.WeaponLevel;
         var roll = RandomNumberGenerator.GetInt32(0, 1_000_000) / 1_000_000d;
         string message;
+        string result;
         if (roll < rule.SuccessRate)
         {
             player.WeaponLevel++;
             player.HighestWeaponLevel = Math.Max(player.HighestWeaponLevel, player.WeaponLevel);
             message = $"+{before} → +{player.WeaponLevel} 강화에 성공했습니다!";
+            result = "Success";
         }
         else if (roll < rule.SuccessRate + rule.KeepRate)
         {
             message = $"+{before} 강화에 실패했습니다. 무기는 유지됩니다.";
+            result = "Keep";
         }
         else if (useProtection)
         {
             player.ProtectionTickets--;
             message = $"파괴 위기를 보호권으로 막았습니다. +{before} 무기를 유지합니다.";
+            result = "Protected";
         }
         else
         {
             player.WeaponLevel = 12;
             message = "무기가 파괴되어 +12로 복구되었습니다.";
+            result = "Destroyed";
         }
 
+        players.AddEnhancementAttempt(
+            player, before, rule.Cost, rule.SuccessRate, rule.KeepRate, rule.DestroyRate,
+            roll, useProtection, result);
         PlayerRepository.AddMessage(player, message);
         return SaveSuccess(player, message);
     }

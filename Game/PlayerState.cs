@@ -117,10 +117,37 @@ public sealed class PlayerRepository(GameDbContext db)
         db.SaveChanges();
     }
 
+    public void AddEnhancementAttempt(
+        PlayerState player,
+        int beforeLevel,
+        long cost,
+        double successRate,
+        double keepRate,
+        double destroyRate,
+        double roll,
+        bool usedProtection,
+        string result)
+    {
+        db.EnhancementAttempts.Add(new EnhancementAttempt
+        {
+            AccountName = player.AccountName,
+            BeforeLevel = beforeLevel,
+            AfterLevel = player.WeaponLevel,
+            Cost = cost,
+            AppliedSuccessRate = successRate,
+            AppliedKeepRate = keepRate,
+            AppliedDestroyRate = destroyRate,
+            Roll = roll,
+            UsedProtection = usedProtection,
+            Result = result,
+            AttemptedAt = DateTimeOffset.UtcNow
+        });
+    }
+
     public static void AddMessage(PlayerState player, string message)
     {
         player.RecentMessages.Insert(0, message);
-        if (player.RecentMessages.Count > 12)
+        if (player.RecentMessages.Count > 100)
         {
             player.RecentMessages.RemoveAt(player.RecentMessages.Count - 1);
         }
