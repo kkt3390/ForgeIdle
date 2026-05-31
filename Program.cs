@@ -208,6 +208,10 @@ static bool IsConfigured(IConfiguration configuration, string scheme) =>
     !string.IsNullOrWhiteSpace(configuration[$"Authentication:{scheme}:ClientSecret"]);
 
 static bool IsTestLoginEnabled() =>
+    !string.Equals(
+        Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+        "Production",
+        StringComparison.OrdinalIgnoreCase) &&
     string.Equals(
         Environment.GetEnvironmentVariable("FORGEIDLE_TEST_LOGIN_ENABLED"),
         "true",
