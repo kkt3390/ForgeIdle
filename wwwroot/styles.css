@@ -21,11 +21,12 @@ h1, h2, p { margin-top: 0; } h1 { margin-bottom: 0; font-size: 26px; } h2 { marg
 .social-login { display: grid; gap: 8px; }
 .social { display: block; border-radius: 12px; padding: 13px 15px; text-align: center; text-decoration: none; font-weight: 900; }
 .social.kakao { color: #241c00; background: #fee500; }
-.social.naver { color: #fff; background: #03c75a; }
+.social.operator { color: #f6f1e7; background: #7655cf; }
 .social.disabled { opacity: .42; pointer-events: none; filter: grayscale(.4); }
 input { min-width: 0; border: 1px solid #ffffff26; border-radius: 11px; padding: 12px; background: #11131a; color: #fff; }
 .status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 20px; }
 .level-card { margin-top: 20px; border: 1px solid #ffffff16; border-radius: 14px; padding: 14px; background: #1b1e28; }
+.player-name { margin: 18px 0 -10px; color: #f6c56f; font-size: 14px; font-weight: 800; }
 .level-header { display: flex; justify-content: space-between; gap: 10px; color: #f6c56f; }
 .level-card small { display: block; color: #a99e92; margin-top: 8px; }
 .exp-track { height: 8px; margin-top: 10px; overflow: hidden; border-radius: 8px; background: #11131a; }
@@ -34,7 +35,7 @@ input { min-width: 0; border: 1px solid #ffffff26; border-radius: 11px; padding:
 .status-grid span, .section-title span { display: block; color: #a99e92; font-size: 12px; }
 .status-grid strong { display: block; color: #f6c56f; margin-top: 5px; font-size: 18px; }
 .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 18px; }
-.tabs.six { grid-template-columns: repeat(6, 1fr); }
+.tabs.game-tabs { grid-template-columns: repeat(7, 1fr); }
 .tab { color: #a99e92; background: #ffffff0b; }
 .tab.active { color: #25190a; background: #f0b85c; }
 .panel { display: none; } .panel.active { display: block; }
@@ -80,6 +81,6 @@ th:first-child, td:first-child { text-align: left; }
   .status-grid { grid-template-columns: repeat(2, 1fr); }
   .card-list { grid-template-columns: 1fr; }
   .tabs button { padding: 10px 5px; font-size: 13px; }
-  .tabs.six { grid-template-columns: repeat(3, 1fr); }
+  .tabs.game-tabs { grid-template-columns: repeat(3, 1fr); }
   .manual-hunt-card { align-items: stretch; flex-direction: column; }
 }

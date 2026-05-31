@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using ForgeIdle.Data;
 
 namespace ForgeIdle.Game;
@@ -6,6 +7,7 @@ namespace ForgeIdle.Game;
 public sealed class PlayerState
 {
     public required string AccountName { get; init; }
+    public string? Nickname { get; set; }
     public long Gold { get; set; } = 5_000;
     public int WeaponLevel { get; set; }
     public int HighestWeaponLevel { get; set; }
@@ -36,6 +38,7 @@ public sealed class PlayerStats
 public sealed class PlayerRepository(GameDbContext db)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly Regex NicknamePattern = new("^[가-힣A-Za-z0-9_]{2,12}$", RegexOptions.Compiled);
 
     public string GetOrCreateSocialAccount(string provider, string externalId)
     {
@@ -69,6 +72,43 @@ public sealed class PlayerRepository(GameDbContext db)
             ?? throw new InvalidOperationException("저장된 게임 상태를 읽을 수 없습니다.");
     }
 
+    public PlayerState SetNickname(string accountName, string nickname)
+    {
+        nickname = nickname.Trim();
+        if (!NicknamePattern.IsMatch(nickname))
+            throw new InvalidOperationException("닉네임은 한글, 영문, 숫자, 밑줄을 사용해 2~12자로 입력하세요.");
+
+        var isTaken = db.Accounts
+            .AsEnumerable()
+            .Select(Deserialize)
+            .Any(player => player.AccountName != accountName &&
+                string.Equals(player.Nickname, nickname, StringComparison.OrdinalIgnoreCase));
+        if (isTaken)
+            throw new InvalidOperationException("이미 사용 중인 닉네임입니다.");
+
+        var player = GetRequired(accountName);
+        player.Nickname = nickname;
+        Save(player);
+        return player;
+    }
+
+    public IReadOnlyList<RankingEntry> GetRankings() =>
+        db.Accounts
+            .AsEnumerable()
+            .Select(Deserialize)
+            .OrderByDescending(player => player.Level)
+            .ThenByDescending(player => player.WeaponLevel)
+            .ThenByDescending(player => player.HighestWeaponLevel)
+            .ThenBy(player => player.Nickname ?? player.AccountName)
+            .Take(100)
+            .Select((player, index) => new RankingEntry(
+                index + 1,
+                player.Nickname ?? "닉네임 미설정",
+                player.Level,
+                player.WeaponLevel,
+                player.HighestWeaponLevel))
+            .ToArray();
+
     public void Save(PlayerState player)
     {
         var account = db.Accounts.Single(x => x.AccountName == player.AccountName);
@@ -93,4 +133,9 @@ public sealed class PlayerRepository(GameDbContext db)
         return player;
     }
 
+    private static PlayerState Deserialize(Account account) =>
+        JsonSerializer.Deserialize<PlayerState>(account.StateJson, JsonOptions)
+        ?? throw new InvalidOperationException("저장된 게임 상태를 읽을 수 없습니다.");
 }
+
+public sealed record RankingEntry(int Rank, string Nickname, int Level, int WeaponLevel, int HighestWeaponLevel);

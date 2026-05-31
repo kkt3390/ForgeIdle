@@ -20,12 +20,16 @@ async function loadSession() {
   const response = await fetch("/api/auth/me");
   if (!response.ok) {
     $("#login-panel").hidden = false;
+    $("#nickname-panel").hidden = true;
     $("#game").hidden = true;
+    $("#change-account").hidden = true;
     return;
   }
   state = await response.json();
   $("#login-panel").hidden = true;
-  $("#game").hidden = false;
+  $("#change-account").hidden = false;
+  $("#nickname-panel").hidden = Boolean(state.nickname);
+  $("#game").hidden = !state.nickname;
   render();
 }
 
@@ -40,6 +44,7 @@ async function action(path, body) {
 }
 
 function render() {
+  $("#player-name").textContent = state.nickname ? `${state.nickname} 님의 대장간` : "";
   $("#gold").textContent = number(state.gold);
   $("#weapon").textContent = `+${state.weaponLevel} 검`;
   $("#attack").textContent = number(state.attackPower);
@@ -55,6 +60,15 @@ function render() {
   $("#stat-points").textContent = `사용 가능한 스탯 포인트 ${state.availableStatPoints}`;
   renderHunt(); renderEnhance(); renderBoss(); renderStats();
   $("#messages").innerHTML = state.recentMessages.map(x => `<li>${escapeHtml(x)}</li>`).join("");
+}
+
+async function loadRankings() {
+  const response = await fetch("/api/rankings");
+  const rankings = await response.json();
+  $("#ranking-body").innerHTML = rankings.map(row => `<tr>
+    <td>${row.rank}</td><td>${escapeHtml(row.nickname)}</td><td>Lv. ${row.level}</td>
+    <td>+${row.weaponLevel}</td><td>+${row.highestWeaponLevel}</td>
+  </tr>`).join("");
 }
 
 function renderHunt() {
@@ -147,19 +161,38 @@ function formatDuration(seconds) { return `${Math.floor(seconds / 3600)}시간 $
 function toast(message) { $("#toast").textContent = message; $("#toast").classList.add("show"); setTimeout(() => $("#toast").classList.remove("show"), 2600); }
 function escapeHtml(value) { const div = document.createElement("div"); div.textContent = value; return div.innerHTML; }
 
-$("#change-account").addEventListener("click", async () => { await api("/api/auth/logout"); state = undefined; $("#login-panel").hidden = false; $("#game").hidden = true; });
+$("#change-account").addEventListener("click", async () => { await api("/api/auth/logout"); state = undefined; $("#login-panel").hidden = false; $("#nickname-panel").hidden = true; $("#game").hidden = true; $("#change-account").hidden = true; });
+$("#nickname-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  try {
+    const response = await fetch("/api/auth/nickname", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname: $("#nickname-input").value })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message);
+    state = result;
+    $("#nickname-panel").hidden = true;
+    $("#game").hidden = false;
+    render();
+    toast("닉네임을 저장했습니다.");
+  } catch (error) { toast(error.message); }
+});
 $("#enhance-button").addEventListener("click", () => action("/enhance", { useProtection: $("#use-ticket").checked }));
 $("#manual-hunt-button").addEventListener("click", () => action("/hunt/manual"));
 $("#reset-stats").addEventListener("click", () => action("/stats/reset"));
 document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
   document.querySelectorAll(".tab, .panel").forEach(x => x.classList.remove("active"));
   tab.classList.add("active"); $(`#${tab.dataset.tab}-panel`).classList.add("active");
+  if (tab.dataset.tab === "ranking") loadRankings();
 }));
 setInterval(() => { updateTimer(); updateAutomaticHuntBudget(); updateManualHuntButton(); }, 250);
 fetch("/api/catalog").then(x => x.json()).then(value => { catalog = value; renderRates(); renderGuide(); loadSession(); });
 fetch("/api/auth/providers").then(x => x.json()).then(providers => {
   const unavailable = [];
-  for (const provider of ["kakao", "naver"]) if (!providers[provider]) { $(`#${provider}-login`).classList.add("disabled"); unavailable.push(provider === "kakao" ? "카카오" : "네이버"); }
+  if (!providers.kakao) { $("#kakao-login").classList.add("disabled"); unavailable.push("카카오"); }
+  $("#test-login").hidden = !providers.testLogin;
   $("#login-message").textContent = unavailable.length ? `${unavailable.join(", ")} 개발자 키를 설정하면 로그인을 사용할 수 있습니다.` : "원하는 로그인 방식을 선택하세요.";
 });
 const loginError = new URLSearchParams(location.search).get("loginError");

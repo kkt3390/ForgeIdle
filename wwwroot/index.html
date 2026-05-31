@@ -10,19 +10,29 @@
   <main class="shell">
     <header class="topbar">
       <div><p class="eyebrow">IDLE FORGE</p><h1>강화의 기록</h1></div>
-      <button class="ghost" id="change-account">로그아웃</button>
+      <button class="ghost" id="change-account" hidden>로그아웃</button>
     </header>
 
     <section class="account" id="login-panel">
       <p>사용 중인 계정으로 바로 시작하세요. 첫 로그인 시 게임 계정이 자동으로 생성됩니다.</p>
       <div class="social-login">
         <a class="social kakao" id="kakao-login" href="/api/auth/social/kakao">카카오로 시작하기</a>
-        <a class="social naver" id="naver-login" href="/api/auth/social/naver">네이버로 시작하기</a>
+        <a class="social operator" id="test-login" href="/api/auth/test-login" hidden>운영자 테스트 로그인</a>
       </div>
       <small id="login-message">소셜 로그인 키를 설정하면 버튼이 활성화됩니다.</small>
     </section>
 
+    <section class="account" id="nickname-panel" hidden>
+      <h2>닉네임 설정</h2>
+      <p>랭킹에 표시할 닉네임을 정해주세요. 한글, 영문, 숫자, 밑줄을 사용할 수 있습니다.</p>
+      <form id="nickname-form">
+        <input id="nickname-input" maxlength="12" autocomplete="off" placeholder="2~12자 닉네임" required>
+        <button type="submit">저장</button>
+      </form>
+    </section>
+
     <section id="game" hidden>
+      <p class="player-name" id="player-name"></p>
       <section class="level-card">
         <div class="level-header"><strong id="level">Lv. 1</strong><span id="exp-text">0 / 100 EXP</span></div>
         <div class="exp-track"><div class="exp-fill" id="exp-fill"></div></div>
@@ -36,12 +46,13 @@
         <article><span>보호권</span><strong id="tickets">0장</strong></article>
       </div>
 
-      <nav class="tabs six">
+      <nav class="tabs game-tabs">
         <button class="tab active" data-tab="hunt">사냥</button>
         <button class="tab" data-tab="enhance">강화</button>
         <button class="tab" data-tab="boss">보스</button>
         <button class="tab" data-tab="stats">스탯</button>
         <button class="tab" data-tab="rates">확률표</button>
+        <button class="tab" data-tab="ranking">랭킹</button>
         <button class="tab" data-tab="guide">게임 안내</button>
       </nav>
 
@@ -80,6 +91,14 @@
       <section class="panel" id="rates-panel">
         <div class="section-title"><h2>기본 강화 확률</h2><span>장인의 손길 적용 전</span></div>
         <div class="table-wrap"><table><thead><tr><th>시도</th><th>비용</th><th>성공</th><th>유지</th><th>파괴</th></tr></thead><tbody id="rates-body"></tbody></table></div>
+      </section>
+
+      <section class="panel" id="ranking-panel">
+        <div class="section-title"><h2>실시간 랭킹</h2><span>레벨 우선 · 현재 강화도 순</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>순위</th><th>닉네임</th><th>레벨</th><th>현재 강화</th><th>최고 강화</th></tr></thead>
+          <tbody id="ranking-body"></tbody>
+        </table></div>
       </section>
 
       <section class="panel guide" id="guide-panel">

@@ -47,12 +47,6 @@ AddSocialLogin(authentication, builder.Configuration, "Kakao", "카카오",
     "https://kauth.kakao.com/oauth/token",
     "https://kapi.kakao.com/v2/user/me",
     json => json.RootElement.GetProperty("id").ToString());
-AddSocialLogin(authentication, builder.Configuration, "Naver", "네이버",
-    "https://nid.naver.com/oauth2.0/authorize",
-    "https://nid.naver.com/oauth2.0/token",
-    "https://openapi.naver.com/v1/nid/me",
-    json => json.RootElement.GetProperty("response").GetProperty("id").GetString()!);
-
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<PlayerRepository>();
 builder.Services.AddScoped<GameService>();
@@ -74,7 +68,7 @@ app.UseAuthorization();
 app.MapGet("/api/auth/providers", () => Results.Ok(new
 {
     Kakao = IsConfigured(builder.Configuration, "Kakao"),
-    Naver = IsConfigured(builder.Configuration, "Naver")
+    TestLogin = IsTestLoginEnabled()
 }));
 
 app.MapGet("/api/auth/social/{provider}", (string provider) =>
@@ -82,12 +76,30 @@ app.MapGet("/api/auth/social/{provider}", (string provider) =>
     var scheme = provider.ToLowerInvariant() switch
     {
         "kakao" => "Kakao",
-        "naver" => "Naver",
         _ => null
     };
     return scheme is null
         ? Results.NotFound()
         : Results.Challenge(new AuthenticationProperties { RedirectUri = "/" }, [scheme]);
+});
+
+app.MapGet("/api/auth/test-login", async (HttpContext context, PlayerRepository players) =>
+{
+    if (!IsTestLoginEnabled())
+        return Results.NotFound();
+
+    var accountName = players.GetOrCreateSocialAccount("test", "operator");
+    var player = players.GetRequired(accountName);
+    if (string.IsNullOrWhiteSpace(player.Nickname))
+        players.SetNickname(accountName, "운영자");
+
+    var identity = new ClaimsIdentity(
+        [new Claim(ClaimTypes.Name, accountName)],
+        CookieAuthenticationDefaults.AuthenticationScheme);
+    await context.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        new ClaimsPrincipal(identity));
+    return Results.Redirect("/");
 });
 
 app.MapPost("/api/auth/logout", async (HttpContext context) =>
@@ -98,6 +110,22 @@ app.MapPost("/api/auth/logout", async (HttpContext context) =>
 
 app.MapGet("/api/auth/me", (ClaimsPrincipal user, GameService game) =>
     Results.Ok(game.GetPlayer(user.Identity!.Name!))).RequireAuthorization();
+
+app.MapPost("/api/auth/nickname", (NicknameRequest request, ClaimsPrincipal user, PlayerRepository players, GameService game) =>
+{
+    try
+    {
+        players.SetNickname(user.Identity!.Name!, request.Nickname);
+        return Results.Ok(game.GetPlayer(user.Identity.Name!));
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.BadRequest(new { message = exception.Message });
+    }
+}).RequireAuthorization();
+
+app.MapGet("/api/rankings", (PlayerRepository players) =>
+    Results.Ok(players.GetRankings()));
 
 app.MapGet("/api/catalog", (GameCatalog catalog) =>
     Results.Ok(new { catalog.Areas, catalog.Enhancements }));
@@ -178,3 +206,11 @@ static void AddSocialLogin(
 static bool IsConfigured(IConfiguration configuration, string scheme) =>
     !string.IsNullOrWhiteSpace(configuration[$"Authentication:{scheme}:ClientId"]) &&
     !string.IsNullOrWhiteSpace(configuration[$"Authentication:{scheme}:ClientSecret"]);
+
+static bool IsTestLoginEnabled() =>
+    string.Equals(
+        Environment.GetEnvironmentVariable("FORGEIDLE_TEST_LOGIN_ENABLED"),
+        "true",
+        StringComparison.OrdinalIgnoreCase);
+
+public sealed record NicknameRequest(string Nickname);

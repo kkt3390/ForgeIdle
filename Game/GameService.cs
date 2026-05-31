@@ -190,7 +190,7 @@ public sealed class GameService(PlayerRepository players, GameCatalog catalog)
         var bestArea = BestAvailableArea(player);
 
         return new GameSnapshot(
-            player.AccountName, player.Gold, player.WeaponLevel, player.HighestWeaponLevel,
+            player.AccountName, player.Nickname, player.Gold, player.WeaponLevel, player.HighestWeaponLevel,
             catalog.AttackPower(player.WeaponLevel), player.ProtectionTickets,
             player.Level, player.Experience, catalog.RequiredExperience(player.Level),
             AvailableStatPoints(player), player.Stats, StatResetCost(player),
@@ -311,7 +311,7 @@ public sealed record HuntSnapshot(int AreaId, string AreaName, DateTimeOffset St
 public sealed record ManualHuntSnapshot(string AreaName, long AutomaticGoldPerHour, long AutomaticExperiencePerHour, DateTimeOffset? AvailableAt);
 public sealed record BossSnapshot(string Name, int RequiredEnhancement, int Health, bool CanChallenge);
 public sealed record GameSnapshot(
-    string AccountName, long Gold, int WeaponLevel, int HighestWeaponLevel, int AttackPower, int ProtectionTickets,
+    string AccountName, string? Nickname, long Gold, int WeaponLevel, int HighestWeaponLevel, int AttackPower, int ProtectionTickets,
     int Level, long Experience, long RequiredExperience, int AvailableStatPoints, PlayerStats Stats, long StatResetCost,
     AutomaticHuntBudgetSnapshot AutomaticHuntBudget, HuntSnapshot? Hunt, ManualHuntSnapshot ManualHunt, EnhancementRule? CurrentEnhancement, BossSnapshot? NextBoss,
     IReadOnlyList<AreaSnapshot> AvailableAreas, IReadOnlyList<string> RecentMessages);
