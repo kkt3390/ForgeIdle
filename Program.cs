@@ -6,9 +6,19 @@ using ForgeIdle.Game;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var dataProtectionKeysPath = Path.Combine(
+    builder.Environment.ContentRootPath,
+    "App_Data",
+    "DataProtectionKeys");
+Directory.CreateDirectory(dataProtectionKeysPath);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath))
+    .SetApplicationName("ForgeIdle");
+
 var connectionString = Environment.GetEnvironmentVariable("FORGEIDLE_DB_CONNECTION")
     ?? builder.Configuration.GetConnectionString("ForgeIdle")
     ?? throw new InvalidOperationException(

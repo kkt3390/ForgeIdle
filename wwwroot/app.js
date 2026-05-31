@@ -162,3 +162,8 @@ fetch("/api/auth/providers").then(x => x.json()).then(providers => {
   for (const provider of ["kakao", "naver"]) if (!providers[provider]) { $(`#${provider}-login`).classList.add("disabled"); unavailable.push(provider === "kakao" ? "카카오" : "네이버"); }
   $("#login-message").textContent = unavailable.length ? `${unavailable.join(", ")} 개발자 키를 설정하면 로그인을 사용할 수 있습니다.` : "원하는 로그인 방식을 선택하세요.";
 });
+const loginError = new URLSearchParams(location.search).get("loginError");
+if (loginError) {
+  history.replaceState({}, "", "/");
+  setTimeout(() => toast("소셜 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요."), 0);
+}

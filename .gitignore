@@ -11,4 +11,4 @@ obj/
 
 appsettings.Local.json
 secrets.json
-
+App_Data/DataProtectionKeys/
