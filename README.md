@@ -45,6 +45,7 @@ D:\SqlData\enhance_addiction_log.ldf
 - 강화 시도는 `dbo.ea_enhancement_attempts` 테이블에 별도로 누적합니다.
 - 상태에 영향을 줄 수 있는 게임 요청은 성공과 실패 모두 `dbo.ea_game_action_logs` 테이블에 기록합니다.
 - 기존 ForgeIdle 운영 DB와 충돌하지 않도록 새 테이블에는 `ea_` 접두사를 사용합니다.
+- 서버 시작 시 기존 `dbo.accounts`가 발견되면 사용자 상태와 강화 이력을 `ea_` 테이블로 한 번만 자동 이전합니다.
 
 ## 이식된 게임 시스템
 
