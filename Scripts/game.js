@@ -56,6 +56,7 @@ async function action(name, body = {}) {
         // 쿨타임 문구가 올바르게 나오는지 확인
         updateManualHuntButton();
         render();
+        toast(result.Message || result.message);
     } catch (error) {
         toast(error.message);
         render();
