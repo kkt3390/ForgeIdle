@@ -1,14 +1,5 @@
+.vs/
 bin/
 obj/
-
-.vs/
-.vscode/
-.idea/
-
 *.user
 *.suo
-*.cache
-
-appsettings.Local.json
-secrets.json
-App_Data/DataProtectionKeys/

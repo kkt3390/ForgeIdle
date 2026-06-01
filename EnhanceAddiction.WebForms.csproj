@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{DE6D7AA9-5C11-4E38-A94F-46EA975F2259}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>EnhanceAddiction.WebForms</RootNamespace>
+    <AssemblyName>EnhanceAddiction.WebForms</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <UseIISExpress>true</UseIISExpress>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Api\GameApi.ashx" />
+    <Content Include="Auth\DevelopmentLogin.ashx" />
+    <Content Include="Auth\KakaoCallback.ashx" />
+    <Content Include="Auth\KakaoLogin.ashx" />
+    <Content Include="Auth\Logout.ashx" />
+    <Content Include="Content\site.css" />
+    <Content Include="database\setup.sql" />
+    <Content Include="Default.aspx" />
+    <Content Include="Global.asax" />
+    <Content Include="Scripts\game.js" />
+    <Content Include="Web.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Api\GameApi.ashx.cs" />
+    <Compile Include="Auth\AuthSession.cs" />
+    <Compile Include="Auth\DevelopmentLogin.ashx.cs" />
+    <Compile Include="Auth\KakaoCallback.ashx.cs" />
+    <Compile Include="Auth\KakaoLogin.ashx.cs" />
+    <Compile Include="Auth\KakaoSettings.cs" />
+    <Compile Include="Auth\Logout.ashx.cs" />
+    <Compile Include="Data\ConnectionSettings.cs" />
+    <Compile Include="Data\PlayerRepository.cs" />
+    <Compile Include="Data\SchemaInitializer.cs" />
+    <Compile Include="Default.aspx.cs">
+      <DependentUpon>Default.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Global.asax.cs">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
+    <Compile Include="Game\GameCatalog.cs" />
+    <Compile Include="Game\GameService.cs" />
+    <Compile Include="Game\PlayerState.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != '' And Exists('$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets')" />
+</Project>
