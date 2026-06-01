@@ -32,6 +32,7 @@ async function load() {
 }
 
 async function action(name, body = {}) {
+    /*
     try {
         const result = await api(name, body);
         state = result.State || result.state;
@@ -39,6 +40,25 @@ async function action(name, body = {}) {
         toast(result.Message || result.message);
         render();
     } catch (error) { toast(error.message); }
+    */
+    try {
+        // 직접 사냥일 경우 서버 응답 전 버튼을 즉시 비활성화하고 연출 시작
+        if (name === 'hunt-manual') {
+            $("#manual-hunt-button").disabled = true;
+            $("#manual-hunt-button").textContent = "처치 중...";
+        }
+
+        const result = await api(name, body);
+        state = result.State || result.state;
+        manualHuntAvailableAt = state.manualHunt.availableAt;
+
+        // 서버 응답이 오면 실제 데이터로 동기화
+        render();
+        toast(result.Message || result.message);
+    } catch (error) {
+        toast(error.message);
+        render(); // 실패 시 원래 상태로 복구
+    }
 }
 
 function showPlayerOrNickname() {
@@ -114,13 +134,19 @@ function updateTimer() {
 
     const startedAt = new Date(state.hunt.startedAt).getTime();
     const rewardCapAt = new Date(state.hunt.rewardCapAt).getTime();
+
+    // 서버 위치(유럽)로 인한 지연을 고려하여 현재 시간을 가져옴
     const now = Date.now();
 
-    // 음수 시간 방지 및 최대 보상 시간 제한
-    const elapsedMs = Math.min(Math.max(0, now - startedAt), rewardCapAt - startedAt);
+    // [보정 로직] 
+    // 만약 서버에서 온 시작 시간이 네트워크 지연으로 인해 현재 시간보다 아주 약간 미래라면
+    // 사용자에게는 즉시 시간이 흐르는 것처럼 보이도록 0이 아닌 최소값을 보장할 수 있습니다.
+    let elapsedMs = now - startedAt;
+
+    // 음수 방지 및 최대 제한
+    elapsedMs = Math.min(Math.max(0, elapsedMs), rewardCapAt - startedAt);
     const remainingMs = Math.max(0, rewardCapAt - now);
 
-    // 실시간 보상 계산 로직
     const elapsedHours = elapsedMs / (1000 * 60 * 60);
     const area = catalog.areas.find(a => a.id === state.hunt.areaId);
     const goldMultiplier = 1 + (state.stats.goldGain * 0.01);
@@ -129,7 +155,6 @@ function updateTimer() {
     const currentGold = Math.floor(area.goldPerHour * elapsedHours * goldMultiplier);
     const currentExp = Math.floor(area.experiencePerHour * elapsedHours * expMultiplier);
 
-    // 화면 업데이트
     $("#hunt-timer").textContent = `${formatDuration(Math.floor(elapsedMs / 1000))} 누적`;
     $("#hunt-rewards").textContent = `획득 중: ${number(currentGold)} 골드 / ${number(currentExp)} EXP`;
     $("#hunt-remaining").textContent = remainingMs > 0
@@ -146,7 +171,8 @@ function updateManualHuntButton() {
     $("#manual-hunt-button").textContent = remaining > 0 ? `${Math.ceil(remaining / 1000)}초 후 가능` : "몬스터 처치";
     $("#manual-hunt-cooldown").textContent = remaining > 0
         ? "다음 몬스터를 찾고 있습니다."
-        : "1초마다 직접 처치할 수 있습니다."; }
+        : "1초마다 직접 처치할 수 있습니다.";
+}
 function formatDuration(seconds) { return `${Math.floor(seconds / 3600)}시간 ${Math.floor(seconds % 3600 / 60)}분 ${Math.max(0, seconds % 60)}초`; }
 function toast(message) { $("#toast").textContent = message; $("#toast").classList.add("show"); setTimeout(() => $("#toast").classList.remove("show"), 2600); }
 function escapeHtml(value) { const div = document.createElement("div"); div.textContent = value; return div.innerHTML; }
