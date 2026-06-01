@@ -7,7 +7,7 @@ namespace EnhanceAddiction.WebForms.Game
 {
     public sealed class GameService
     {
-        private static readonly TimeSpan ManualHuntCooldown = TimeSpan.FromSeconds(3);
+        private static readonly TimeSpan ManualHuntCooldown = TimeSpan.FromSeconds(1);
         private static readonly TimeSpan BaseAutomaticHuntDuration = TimeSpan.FromHours(6);
         private static readonly TimeSpan AutomaticHuntDurationPerBoss = TimeSpan.FromMinutes(30);
         private static readonly TimeZoneInfo KoreaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
@@ -384,7 +384,7 @@ namespace EnhanceAddiction.WebForms.Game
 
         private static DateTime NextAutomaticHuntCycleStart(DateTime now) { return CurrentAutomaticHuntCycleStart(now).AddDays(1); }
         private static DateTime Min(DateTime left, DateTime right) { return left <= right ? left : right; }
-        private static string Iso(DateTime value) { return DateTime.SpecifyKind(value, DateTimeKind.Utc).ToString("o"); }
+        private static string Iso(DateTime value) { return value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ"); }
         private static bool Roll(double chance) { return RandomInt(0, 1000000) < chance * 1000000; }
         private static double RandomDouble() { return RandomInt(0, 1000000) / 1000000d; }
 

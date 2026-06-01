@@ -101,7 +101,7 @@
         <div class="section-title"><h2>게임 안내</h2><span>모든 핵심 수치 공개</span></div>
         <article class="guide-block"><h3>목표</h3><p>사냥으로 골드와 경험치를 모으고 하나뿐인 검을 강화하세요. 관문 보스를 처치하면 다음 사냥터가 영구 해금됩니다. 최고 강화 단계는 <strong>+30</strong>입니다.</p></article>
         <article class="guide-block"><h3>자동 사냥</h3><ul><li>브라우저를 닫아도 DB에 시작 시간이 기록됩니다.</li><li>한국 시간 매일 오전 0시에 일일 시간이 초기화됩니다.</li><li>기본 일일 자동 사냥 시간은 6시간입니다.</li><li>관문 보스를 1마리 처치할 때마다 일일 시간이 30분 증가합니다.</li></ul></article>
-        <article class="guide-block"><h3>직접 사냥</h3><p>3초마다 1회 토벌할 수 있습니다. 골드는 자동 사냥의 평균 <strong>150%</strong>, 경험치는 평균 <strong>125%</strong> 효율입니다. 직접 사냥을 누르면 진행 중인 자동 사냥은 먼저 정산됩니다.</p></article>
+        <article class="guide-block"><h3>직접 사냥</h3><p>1초마다 1회 토벌할 수 있습니다. 골드는 자동 사냥의 평균 <strong>450%</strong>, 경험치는 평균 <strong>375%</strong> 효율입니다. 직접 사냥을 누르면 진행 중인 자동 사냥은 먼저 정산됩니다.</p></article>
         <article class="guide-block"><h3>강화</h3><ul><li>실패 시 무기는 유지됩니다.</li><li>+15부터 파괴 확률이 생깁니다.</li><li>파괴된 무기는 +12로 복구됩니다.</li><li>보호권은 파괴 판정이 발생할 때만 소모됩니다.</li></ul></article>
         <article class="guide-block"><h3>사냥터와 보스</h3><p>사냥터는 총 <strong>12개</strong>, 관문 보스는 총 <strong>11마리</strong>입니다.</p><div class="table-wrap"><table><thead><tr><th>사냥터</th><th>입장</th><th>시간당 골드</th><th>시간당 경험치</th><th>다음 보스</th></tr></thead><tbody id="guide-areas"></tbody></table></div></article>
       </section>
