@@ -7,7 +7,7 @@ namespace EnhanceAddiction.WebForms.Game
 {
     public sealed class GameService
     {
-        private static readonly TimeSpan ManualHuntCooldown = TimeSpan.FromSeconds(1);
+        private static readonly TimeSpan ManualHuntCooldown = TimeSpan.FromSeconds(1); 
         private static readonly TimeSpan BaseAutomaticHuntDuration = TimeSpan.FromHours(6);
         private static readonly TimeSpan AutomaticHuntDurationPerBoss = TimeSpan.FromMinutes(30);
         private static readonly TimeZoneInfo KoreaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");

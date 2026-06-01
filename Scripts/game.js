@@ -42,22 +42,23 @@ async function action(name, body = {}) {
     } catch (error) { toast(error.message); }
     */
     try {
-        // 직접 사냥일 경우 서버 응답 전 버튼을 즉시 비활성화하고 연출 시작
+        // [중요] 서버에 요청을 보내기 '직전'에 UI를 먼저 변경합니다.
         if (name === 'hunt-manual') {
             $("#manual-hunt-button").disabled = true;
             $("#manual-hunt-button").textContent = "처치 중...";
         }
 
-        const result = await api(name, body);
+        const result = await api(name, body); // 여기서 245ms 대기가 발생합니다.
+
         state = result.State || result.state;
         manualHuntAvailableAt = state.manualHunt.availableAt;
 
-        // 서버 응답이 오면 실제 데이터로 동기화
+        // 쿨타임 문구가 올바르게 나오는지 확인
+        updateManualHuntButton();
         render();
-        toast(result.Message || result.message);
     } catch (error) {
         toast(error.message);
-        render(); // 실패 시 원래 상태로 복구
+        render();
     }
 }
 
