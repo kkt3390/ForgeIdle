@@ -102,23 +102,35 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
 .collection-area-tab { flex: 0 0 auto; padding: 8px 10px; color: #a99e92; background: #ffffff0b; font-size: 12px; }
 .collection-area-tab.active { color: #25190a; background: #f0b85c; }
 .collection-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
-.collection-card { overflow: hidden; border: 1px solid #ffffff12; border-radius: 12px; background: #11131a; }
+.collection-card { overflow: hidden; padding: 6px; border: 1px solid #ffffff12; border-radius: 12px; background: #11131a; }
 .collection-image {
   display: grid;
   aspect-ratio: 1 / 1;
   place-items: center;
-  color: #ffffff45;
-  background: linear-gradient(145deg, #292d3a, #171922);
+  overflow: hidden;
+  border: 3px double #927043;
+  border-radius: 7px;
+  color: #5d4934;
+  background:
+    radial-gradient(circle at 50% 42%, #fffdf5 0, #f8efd9 72%, #e2cfaa 100%);
+  box-shadow:
+    inset 0 0 14px #6a4b2138,
+    0 2px 5px #00000050;
   font-size: 11px;
 }
 .collection-image img { width: 100%; height: 100%; object-fit: contain; }
-.collection-card-info { padding: 8px; }
+.collection-card-info { padding: 8px 2px 2px; }
 .collection-card-info strong, .collection-card-info span { display: block; }
 .collection-card-info strong { overflow: hidden; color: #c4b8aa; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .collection-card-info span { margin-top: 4px; font-size: 10px; }
-.collection-card.locked { opacity: .45; filter: grayscale(1); }
+.collection-card.locked { opacity: .5; filter: grayscale(1); }
 .collection-card.collected { border-color: #e3a84e88; }
-.collection-card.collected .collection-image { color: #f6c56f; box-shadow: inset 0 0 28px #d2853430; }
+.collection-card.collected .collection-image {
+  color: #7c551b;
+  box-shadow:
+    inset 0 0 18px #b37a2535,
+    0 2px 7px #00000070;
+}
 .collection-grade-normal { color: #c4b8aa; }
 .collection-grade-elite { color: #c59cff; }
 .collection-grade-golden { color: #f6c56f; }
