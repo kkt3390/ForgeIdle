@@ -1,19 +1,19 @@
 -- 이전 ASP.NET Core 테이블과 새 ea_ 테이블의 행 수를 비교합니다.
 -- 조회만 수행하므로 운영 DB에서 실행해도 데이터가 변경되지 않습니다.
 IF OBJECT_ID(N'dbo.accounts', N'U') IS NOT NULL
-    SELECT N'dbo.accounts' AS TableName, COUNT_BIG(*) AS RowCount FROM dbo.accounts;
+    SELECT N'dbo.accounts' AS TableName, COUNT_BIG(*) AS TotalRows FROM dbo.accounts;
 ELSE
-    SELECT N'dbo.accounts' AS TableName, CAST(NULL AS bigint) AS RowCount;
+    SELECT N'dbo.accounts' AS TableName, CAST(NULL AS bigint) AS TotalRows;
 
-SELECT N'dbo.ea_players' AS TableName, COUNT_BIG(*) AS RowCount FROM dbo.ea_players;
-SELECT N'dbo.ea_social_accounts' AS TableName, COUNT_BIG(*) AS RowCount FROM dbo.ea_social_accounts;
+SELECT N'dbo.ea_players' AS TableName, COUNT_BIG(*) AS TotalRows FROM dbo.ea_players;
+SELECT N'dbo.ea_social_accounts' AS TableName, COUNT_BIG(*) AS TotalRows FROM dbo.ea_social_accounts;
 
 IF OBJECT_ID(N'dbo.enhancement_attempts', N'U') IS NOT NULL
-    SELECT N'dbo.enhancement_attempts' AS TableName, COUNT_BIG(*) AS RowCount FROM dbo.enhancement_attempts;
+    SELECT N'dbo.enhancement_attempts' AS TableName, COUNT_BIG(*) AS TotalRows FROM dbo.enhancement_attempts;
 ELSE
-    SELECT N'dbo.enhancement_attempts' AS TableName, CAST(NULL AS bigint) AS RowCount;
+    SELECT N'dbo.enhancement_attempts' AS TableName, CAST(NULL AS bigint) AS TotalRows;
 
-SELECT N'dbo.ea_enhancement_attempts' AS TableName, COUNT_BIG(*) AS RowCount FROM dbo.ea_enhancement_attempts;
+SELECT N'dbo.ea_enhancement_attempts' AS TableName, COUNT_BIG(*) AS TotalRows FROM dbo.ea_enhancement_attempts;
 
 IF OBJECT_ID(N'dbo.accounts', N'U') IS NOT NULL
 BEGIN
