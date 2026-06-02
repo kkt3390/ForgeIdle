@@ -79,23 +79,6 @@ IF COL_LENGTH(N'dbo.ea_players', N'LastManualHuntAtUtc') IS NULL
 IF COL_LENGTH(N'dbo.ea_players', N'StateSchemaVersion') IS NULL
     ALTER TABLE dbo.ea_players ADD StateSchemaVersion int NOT NULL CONSTRAINT DF_ea_players_StateSchemaVersion DEFAULT (0) WITH VALUES;
 
--- 기존 사용자도 로그인 전부터 랭킹과 운영 조회에 핵심 수치가 보이도록 JSON 값을 채웁니다.
--- 자동 사냥 시간처럼 복합적인 상태는 사용자 조회 시 C# 코드가 완전히 동기화합니다.
-UPDATE dbo.ea_players
-SET Nickname = JSON_VALUE(StateJson, N'$.Nickname'),
-    Gold = COALESCE(TRY_CONVERT(bigint, JSON_VALUE(StateJson, N'$.Gold')), Gold),
-    WeaponLevel = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.WeaponLevel')), WeaponLevel),
-    HighestWeaponLevel = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.HighestWeaponLevel')), HighestWeaponLevel),
-    HighestBossDefeated = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.HighestBossDefeated')), HighestBossDefeated),
-    ProtectionTickets = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.ProtectionTickets')), ProtectionTickets),
-    Level = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Level')), Level),
-    Experience = COALESCE(TRY_CONVERT(bigint, JSON_VALUE(StateJson, N'$.Experience')), Experience),
-    DualWield = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.DualWield')), DualWield),
-    GoldGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.GoldGain')), GoldGain),
-    ExperienceGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ExperienceGain')), ExperienceGain),
-    ArtisanTouch = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ArtisanTouch')), ArtisanTouch)
-WHERE StateSchemaVersion = 0;
-
 IF OBJECT_ID(N'dbo.ea_social_accounts', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.ea_social_accounts (
@@ -175,9 +158,10 @@ BEGIN
 
     INSERT INTO dbo.ea_legacy_migrations (MigrationKey, MigratedAt)
     VALUES (N'aspnet-core-accounts-v1', SYSDATETIMEOFFSET());
-END;
+END;";
 
--- 위 단계에서 옮긴 이전 계정도 일반 컬럼에 핵심 수치를 채웁니다.
+            // ALTER TABLE이 끝난 다음 별도 명령으로 실행해 SQL Server의 사전 컴파일 충돌을 피합니다.
+            const string backfillSql = @"
 UPDATE dbo.ea_players
 SET Nickname = JSON_VALUE(StateJson, N'$.Nickname'),
     Gold = COALESCE(TRY_CONVERT(bigint, JSON_VALUE(StateJson, N'$.Gold')), Gold),
@@ -193,10 +177,16 @@ SET Nickname = JSON_VALUE(StateJson, N'$.Nickname'),
     ArtisanTouch = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ArtisanTouch')), ArtisanTouch)
 WHERE StateSchemaVersion = 0;";
             using (var connection = new SqlConnection(ConnectionSettings.Value))
-            using (var command = new SqlCommand(sql, connection))
             {
                 connection.Open();
-                command.ExecuteNonQuery();
+                using (var schemaCommand = new SqlCommand(sql, connection))
+                {
+                    schemaCommand.ExecuteNonQuery();
+                }
+                using (var backfillCommand = new SqlCommand(backfillSql, connection))
+                {
+                    backfillCommand.ExecuteNonQuery();
+                }
             }
         }
     }
