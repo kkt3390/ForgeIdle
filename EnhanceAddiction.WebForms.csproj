@@ -36,6 +36,7 @@
     <Content Include="Auth\KakaoLogin.ashx" />
     <Content Include="Auth\Logout.ashx" />
     <Content Include="Content\site.css" />
+    <Content Include="Content\monsters\README.md" />
     <Content Include="database\cleanup_legacy_tables.sql" />
     <Content Include="database\setup.sql" />
     <Content Include="database\verify_legacy_migration.sql" />
@@ -63,6 +64,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Game\GameCatalog.cs" />
+    <Compile Include="Game\GameFeatureSettings.cs" />
     <Compile Include="Game\GameService.cs" />
     <Compile Include="Game\PlayerState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

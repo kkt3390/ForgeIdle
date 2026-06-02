@@ -16,6 +16,7 @@ namespace EnhanceAddiction.WebForms.Game
             ProtectionTickets = 3;
             Level = 1;
             Stats = new PlayerStats();
+            CollectedMonsterKeys = new List<string>();
             RecentMessages = new List<string> { "새로운 검을 받았습니다. 사냥을 시작해 골드를 모으세요." };
         }
 
@@ -26,8 +27,10 @@ namespace EnhanceAddiction.WebForms.Game
         public int HighestBossDefeated { get; set; }
         public int ProtectionTickets { get; set; }
         public int Level { get; set; }
-        public long Experience { get; set; }
+        public double Experience { get; set; }
         public PlayerStats Stats { get; set; }
+        public int ManualHuntAreaId { get; set; }
+        public List<string> CollectedMonsterKeys { get; set; }
         public DateTime? AutomaticHuntCycleStartedAtUtc { get; set; }
         public double AutomaticHuntUsedSeconds { get; set; }
         public HuntSession Hunt { get; set; }
@@ -80,5 +83,14 @@ namespace EnhanceAddiction.WebForms.Game
         public double Roll { get; set; }
         public bool UsedProtection { get; set; }
         public string Result { get; set; }
+    }
+
+    public sealed class CollectionRegistration
+    {
+        // 직접 사냥 도감 판정 결과를 화면 알림과 감사 로그에 전달합니다.
+        public bool Registered { get; set; }
+        public bool Duplicate { get; set; }
+        public string MonsterKey { get; set; }
+        public string MonsterName { get; set; }
     }
 }

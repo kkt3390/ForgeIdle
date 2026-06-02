@@ -11,6 +11,10 @@ namespace EnhanceAddiction.WebForms.Game
         private static readonly TimeSpan BaseAutomaticHuntDuration = TimeSpan.FromHours(6);
         private static readonly TimeSpan AutomaticHuntDurationPerBoss = TimeSpan.FromMinutes(30);
         private static readonly TimeZoneInfo KoreaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
+        private const int MonstersPerCollectionGrade = 10;
+        private const double NormalCollectionRate = .0001;
+        private const double EliteCollectionRate = .001;
+        private const double GoldenCollectionRate = .10;
         private readonly GameCatalog _catalog;
 
         // 게임 규칙 카탈로그를 받아 서비스에서 재사용합니다.
@@ -40,7 +44,7 @@ namespace EnhanceAddiction.WebForms.Game
                 ? AdjustEnhancement(_catalog.Enhancements[player.WeaponLevel], player.Stats.ArtisanTouch)
                 : null;
             var nextBossArea = _catalog.Areas.ElementAtOrDefault(player.HighestBossDefeated + 1);
-            var bestArea = BestAvailableArea(player);
+            var manualHuntArea = ManualHuntArea(player);
             return new
             {
                 nickname = player.Nickname,
@@ -76,13 +80,17 @@ namespace EnhanceAddiction.WebForms.Game
                 },
                 manualHunt = new
                 {
-                    areaName = bestArea.Name,
-                    automaticGoldPerHour = bestArea.GoldPerHour,
-                    automaticExperiencePerHour = bestArea.ExperiencePerHour,
+                    areaId = manualHuntArea.Id,
+                    areaName = manualHuntArea.Name,
+                    automaticGoldPerHour = manualHuntArea.GoldPerHour,
+                    automaticExperiencePerHour = manualHuntArea.ExperiencePerHour,
+                    availableAreas = availableAreas,
                     availableAt = player.LastManualHuntAtUtc.HasValue
                         ? Iso(player.LastManualHuntAtUtc.Value.Add(ManualHuntCooldown))
                         : null
                 },
+                collectionEnabled = GameFeatureSettings.CollectionEnabled,
+                collection = GameFeatureSettings.CollectionEnabled ? CollectionSnapshot(player) : null,
                 currentEnhancement = adjustedRule == null ? null : RuleSnapshot(adjustedRule),
                 nextBoss = nextBossArea == null || !nextBossArea.BossRequiredEnhancement.HasValue ? null : new
                 {
@@ -111,6 +119,21 @@ namespace EnhanceAddiction.WebForms.Game
                     bossRequiredEnhancement = area.BossRequiredEnhancement,
                     bossHealth = area.BossHealth
                 }).ToArray(),
+                monsters = GameFeatureSettings.CollectionEnabled
+                    ? new
+                    {
+                        normalRate = .979,
+                        eliteRate = .02,
+                        goldenRate = .001,
+                        collectionRates = new
+                        {
+                            normal = NormalCollectionRate,
+                            elite = EliteCollectionRate,
+                            golden = GoldenCollectionRate
+                        },
+                        monstersPerGrade = MonstersPerCollectionGrade
+                    }
+                    : null,
                 enhancements = _catalog.Enhancements.Select(RuleSnapshot).ToArray()
             };
         }
@@ -141,20 +164,22 @@ namespace EnhanceAddiction.WebForms.Game
         {
             if (player.Hunt == null) return Failure(player, "진행 중인 자동 사냥이 없습니다.");
             var reward = ClaimAutomaticHuntReward(player, DateTime.UtcNow);
-            var message = string.Format("자동 사냥 정산: {0:N0} 골드, 경험치 {1:N0}", reward.Gold, reward.Experience);
+            var message = string.Format("자동 사냥 정산: {0:N0} 골드, 경험치 {1:N2}", reward.Gold, reward.Experience);
             AddMessage(player, message);
             return Success(player, message, reward);
         }
 
         // 직접 사냥 1회를 처리하고 자동 사냥 중이었다면 먼저 정산합니다.
-        public GameResult ManualHunt(PlayerState player)
+        public GameResult ManualHunt(PlayerState player, int areaId)
         {
             var now = DateTime.UtcNow;
             if (player.LastManualHuntAtUtc.HasValue && now - player.LastManualHuntAtUtc.Value < ManualHuntCooldown)
                 return Failure(player, "아직 다음 몬스터를 찾는 중입니다.");
 
             var claimed = player.Hunt == null ? new HuntReward(0, 0) : ClaimAutomaticHuntReward(player, now);
-            var area = BestAvailableArea(player);
+            var area = _catalog.Areas.ElementAtOrDefault(areaId);
+            if (area == null || !CanEnter(player, area)) return Failure(player, "직접 사냥할 수 없는 사냥터입니다.");
+            player.ManualHuntAreaId = area.Id;
             var first = RollManualHunt(player, area);
             var dualWield = Roll(player.Stats.DualWield * .005);
             var second = dualWield ? RollManualHunt(player, area) : new ManualHuntReward("", 0, 0);
@@ -165,13 +190,28 @@ namespace EnhanceAddiction.WebForms.Game
             player.LastManualHuntAtUtc = now;
 
             var prefix = claimed.Gold > 0 || claimed.Experience > 0
-                ? string.Format("자동 사냥 {0:N0} 골드, 경험치 {1:N0}를 먼저 정산했습니다. ", claimed.Gold, claimed.Experience)
+                ? string.Format("자동 사냥 {0:N0} 골드, 경험치 {1:N2}를 먼저 정산했습니다. ", claimed.Gold, claimed.Experience)
                 : "";
             var dualMessage = dualWield ? " 이도류 발동! " + second.MonsterName + "도 처치했습니다." : "";
-            var message = string.Format("{0}{1} 처치! {2:N0} 골드, 경험치 {3:N0} 획득.{4}",
-                prefix, first.MonsterName, totalGold, totalExperience, dualMessage);
+            var registrations = GameFeatureSettings.CollectionEnabled
+                ? new[]
+                {
+                    RollCollectionRegistration(player, area, first.Grade),
+                    dualWield ? RollCollectionRegistration(player, area, second.Grade) : null
+                }.Where(registration => registration != null).ToArray()
+                : new CollectionRegistration[0];
+            var collectionMessage = CollectionRegistrationMessage(registrations);
+            var message = string.Format("{0}{1} 처치! {2:N0} 골드, 경험치 {3:N2} 획득.{4}{5}",
+                prefix, first.MonsterName, totalGold, totalExperience, dualMessage, collectionMessage);
             AddMessage(player, message);
-            return Success(player, message, new { claimed = claimed, first = first, second = second, dualWield = dualWield });
+            return Success(player, message, new
+            {
+                claimed = claimed,
+                first = first,
+                second = second,
+                dualWield = dualWield,
+                registrations = registrations
+            });
         }
 
         // 골드를 소모해 강화를 시도하고 성공·유지·보호·파괴 결과를 처리합니다.
@@ -301,7 +341,7 @@ namespace EnhanceAddiction.WebForms.Game
             var duration = Min(now, hunt.RewardCapAtUtc) - hunt.StartedAtUtc;
             if (duration < TimeSpan.Zero) duration = TimeSpan.Zero;
             var gold = (long)Math.Floor(area.GoldPerHour * duration.TotalHours * GoldMultiplier(player));
-            var experience = (long)Math.Floor(area.ExperiencePerHour * duration.TotalHours * ExperienceMultiplier(player));
+            var experience = area.ExperiencePerHour * duration.TotalHours * ExperienceMultiplier(player);
             player.AutomaticHuntUsedSeconds += duration.TotalSeconds;
             player.Gold += gold;
             GrantExperience(player, experience);
@@ -316,18 +356,19 @@ namespace EnhanceAddiction.WebForms.Game
             var variance = .8 + RandomInt(0, 400001) / 1000000d;
             var roll = RandomInt(0, 1000);
             var multiplier = roll == 0 ? 30 : roll < 21 ? 5 : 1;
-            var name = multiplier == 30 ? "황금 몬스터" : multiplier == 5 ? "정예 몬스터" : "몬스터";
+            var grade = multiplier == 30 ? "golden" : multiplier == 5 ? "elite" : "normal";
+            var name = grade == "golden" ? "황금 몬스터" : grade == "elite" ? "정예 몬스터" : "몬스터";
             var gold = Math.Max(
                 1,
                 (long)Math.Round(area.GoldPerHour * 1.5 / actionsPerHour * variance * multiplier * GoldMultiplier(player)));
             var experience = Math.Max(
-                1,
-                (long)Math.Round(area.ExperiencePerHour * 1.25 / actionsPerHour * variance * multiplier * ExperienceMultiplier(player)));
-            return new ManualHuntReward(name, gold, experience);
+                .01,
+                area.ExperiencePerHour * 1.25 / actionsPerHour * variance * multiplier * ExperienceMultiplier(player));
+            return new ManualHuntReward(name, gold, experience, grade);
         }
 
         // 경험치를 지급하고 필요한 만큼 연속 레벨업을 처리합니다.
-        private void GrantExperience(PlayerState player, long amount)
+        private void GrantExperience(PlayerState player, double amount)
         {
             player.Experience += amount;
             while (player.Level < GameCatalog.MaxPlayerLevel)
@@ -364,8 +405,10 @@ namespace EnhanceAddiction.WebForms.Game
         private static void NormalizePlayer(PlayerState player)
         {
             if (player.Stats == null) player.Stats = new PlayerStats();
+            if (player.CollectedMonsterKeys == null) player.CollectedMonsterKeys = new List<string>();
             if (player.RecentMessages == null) player.RecentMessages = new List<string>();
             if (player.Level <= 0) player.Level = 1;
+            if (player.ManualHuntAreaId < 0 || player.ManualHuntAreaId >= 12) player.ManualHuntAreaId = 0;
         }
 
         // 사용자 최근 기록 맨 앞에 메시지를 넣고 최대 100줄만 유지합니다.
@@ -382,10 +425,86 @@ namespace EnhanceAddiction.WebForms.Game
             return area.Id <= player.HighestBossDefeated + 1 && player.WeaponLevel >= area.RequiredEnhancement;
         }
 
-        // 현재 사용자가 입장할 수 있는 가장 높은 사냥터를 찾습니다.
-        private HuntingArea BestAvailableArea(PlayerState player)
+        // 사용자가 선택한 직접 사냥터가 유효하지 않으면 입장 가능한 가장 높은 사냥터를 선택합니다.
+        private HuntingArea ManualHuntArea(PlayerState player)
         {
-            return _catalog.Areas.Last(area => CanEnter(player, area));
+            var selected = _catalog.Areas.ElementAtOrDefault(player.ManualHuntAreaId);
+            return selected != null && CanEnter(player, selected)
+                ? selected
+                : _catalog.Areas.Last(area => CanEnter(player, area));
+        }
+
+        // 처치한 등급의 등록 확률에 따라 도감 항목 하나를 뽑고 중복 여부를 기록합니다.
+        private static CollectionRegistration RollCollectionRegistration(PlayerState player, HuntingArea area, string grade)
+        {
+            var rate = grade == "golden"
+                ? GoldenCollectionRate
+                : grade == "elite"
+                    ? EliteCollectionRate
+                    : NormalCollectionRate;
+            if (!Roll(rate)) return new CollectionRegistration();
+
+            var number = RandomInt(1, MonstersPerCollectionGrade + 1);
+            var key = CollectionKey(area.Id, grade, number);
+            var duplicate = player.CollectedMonsterKeys.Contains(key);
+            if (!duplicate) player.CollectedMonsterKeys.Add(key);
+            return new CollectionRegistration
+            {
+                Registered = true,
+                Duplicate = duplicate,
+                MonsterKey = key,
+                MonsterName = CollectionMonsterName(area.Name, grade, number)
+            };
+        }
+
+        // 도감 등록 결과가 있으면 신규 또는 중복 등록 안내 문구를 만듭니다.
+        private static string CollectionRegistrationMessage(IEnumerable<CollectionRegistration> registrations)
+        {
+            var messages = registrations
+                .Where(registration => registration.Registered)
+                .Select(registration => registration.Duplicate
+                    ? " 도감 중복: " + registration.MonsterName
+                    : " 도감 등록: " + registration.MonsterName + "!")
+                .ToArray();
+            return string.Join("", messages);
+        }
+
+        // 도감 화면에 필요한 전체 항목과 사용자 등록 여부를 반환합니다.
+        private object CollectionSnapshot(PlayerState player)
+        {
+            return new
+            {
+                collectedCount = player.CollectedMonsterKeys.Count,
+                totalCount = _catalog.Areas.Count * 3 * MonstersPerCollectionGrade,
+                areas = _catalog.Areas.Select(area => new
+                {
+                    id = area.Id,
+                    name = area.Name,
+                    unlocked = area.Id <= player.HighestBossDefeated + 1,
+                    monsters = new[] { "normal", "elite", "golden" }
+                        .SelectMany(grade => Enumerable.Range(1, MonstersPerCollectionGrade)
+                            .Select(number => new
+                            {
+                                key = CollectionKey(area.Id, grade, number),
+                                grade = grade,
+                                name = CollectionMonsterName(area.Name, grade, number),
+                                collected = player.CollectedMonsterKeys.Contains(CollectionKey(area.Id, grade, number))
+                            })).ToArray()
+                }).ToArray()
+            };
+        }
+
+        // 지역, 등급, 번호를 DB에 저장할 안정적인 도감 키로 만듭니다.
+        private static string CollectionKey(int areaId, string grade, int number)
+        {
+            return string.Format("area-{0:D2}-{1}-{2:D2}", areaId, grade, number);
+        }
+
+        // 이미지가 준비되기 전에도 구분 가능한 임시 도감 이름을 만듭니다.
+        private static string CollectionMonsterName(string areaName, string grade, int number)
+        {
+            var gradeName = grade == "golden" ? "황금" : grade == "elite" ? "정예" : "일반";
+            return string.Format("{0} {1} 몬스터 {2:D2}", areaName, gradeName, number);
         }
 
         // 레벨로 획득한 포인트에서 이미 사용한 포인트를 빼 반환합니다.
@@ -493,26 +612,28 @@ namespace EnhanceAddiction.WebForms.Game
     public sealed class HuntReward
     {
         // 자동 사냥 정산 결과를 골드와 경험치 묶음으로 보관합니다.
-        public HuntReward(long gold, long experience)
+        public HuntReward(long gold, double experience)
         {
             Gold = gold;
             Experience = experience;
         }
         public long Gold { get; private set; }
-        public long Experience { get; private set; }
+        public double Experience { get; private set; }
     }
 
     public sealed class ManualHuntReward
     {
         // 직접 사냥 결과를 몬스터 이름, 골드, 경험치 묶음으로 보관합니다.
-        public ManualHuntReward(string monsterName, long gold, long experience)
+        public ManualHuntReward(string monsterName, long gold, double experience, string grade = null)
         {
             MonsterName = monsterName;
             Gold = gold;
             Experience = experience;
+            Grade = grade;
         }
         public string MonsterName { get; private set; }
         public long Gold { get; private set; }
-        public long Experience { get; private set; }
+        public double Experience { get; private set; }
+        public string Grade { get; private set; }
     }
 }

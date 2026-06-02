@@ -43,7 +43,8 @@ namespace EnhanceAddiction.WebForms.Api
                         result = Execute(context, "AutomaticHuntClaim", player => Game.ClaimAutomaticHunt(player));
                         break;
                     case "hunt-manual":
-                        result = Execute(context, "ManualHunt", player => Game.ManualHunt(player));
+                        result = Execute(context, "ManualHunt",
+                            player => Game.ManualHunt(player, IntBody(context, "areaId")));
                         break;
                     case "enhance":
                         result = Execute(context, "Enhance",

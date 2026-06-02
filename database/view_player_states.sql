@@ -16,6 +16,8 @@ SELECT
     ArtisanTouch,
     AutomaticHuntUsedSeconds,
     HuntAreaId,
+    ManualHuntAreaId,
+    CollectedMonsterKeysJson,
     StateSchemaVersion,
     UpdatedAt
 FROM dbo.ea_players

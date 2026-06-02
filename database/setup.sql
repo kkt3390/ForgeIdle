@@ -30,7 +30,7 @@ BEGIN
         HighestBossDefeated int NOT NULL CONSTRAINT DF_ea_players_HighestBossDefeated DEFAULT (-1),
         ProtectionTickets int NOT NULL CONSTRAINT DF_ea_players_ProtectionTickets DEFAULT (3),
         Level int NOT NULL CONSTRAINT DF_ea_players_Level DEFAULT (1),
-        Experience bigint NOT NULL CONSTRAINT DF_ea_players_Experience DEFAULT (0),
+        Experience float NOT NULL CONSTRAINT DF_ea_players_Experience DEFAULT (0),
         DualWield int NOT NULL CONSTRAINT DF_ea_players_DualWield DEFAULT (0),
         GoldGain int NOT NULL CONSTRAINT DF_ea_players_GoldGain DEFAULT (0),
         ExperienceGain int NOT NULL CONSTRAINT DF_ea_players_ExperienceGain DEFAULT (0),
@@ -41,6 +41,8 @@ BEGIN
         HuntStartedAtUtc datetimeoffset NULL,
         HuntRewardCapAtUtc datetimeoffset NULL,
         LastManualHuntAtUtc datetimeoffset NULL,
+        ManualHuntAreaId int NOT NULL CONSTRAINT DF_ea_players_ManualHuntAreaId DEFAULT (0),
+        CollectedMonsterKeysJson nvarchar(max) NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterKeysJson DEFAULT (N'[]'),
         StateJson nvarchar(max) NOT NULL,
         StateSchemaVersion int NOT NULL CONSTRAINT DF_ea_players_StateSchemaVersion DEFAULT (1),
         CreatedAt datetimeoffset NOT NULL,
@@ -66,7 +68,22 @@ IF COL_LENGTH(N'dbo.ea_players', N'ProtectionTickets') IS NULL
 IF COL_LENGTH(N'dbo.ea_players', N'Level') IS NULL
     ALTER TABLE dbo.ea_players ADD Level int NOT NULL CONSTRAINT DF_ea_players_Level DEFAULT (1) WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'Experience') IS NULL
-    ALTER TABLE dbo.ea_players ADD Experience bigint NOT NULL CONSTRAINT DF_ea_players_Experience DEFAULT (0) WITH VALUES;
+    ALTER TABLE dbo.ea_players ADD Experience float NOT NULL CONSTRAINT DF_ea_players_Experience DEFAULT (0) WITH VALUES;
+ELSE IF EXISTS (
+    SELECT 1
+    FROM sys.columns c
+    INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+    WHERE c.object_id = OBJECT_ID(N'dbo.ea_players')
+      AND c.name = N'Experience'
+      AND t.name <> N'float'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.DF_ea_players_Experience', N'D') IS NOT NULL
+        ALTER TABLE dbo.ea_players DROP CONSTRAINT DF_ea_players_Experience;
+    ALTER TABLE dbo.ea_players ALTER COLUMN Experience float NOT NULL;
+    IF OBJECT_ID(N'dbo.DF_ea_players_Experience', N'D') IS NULL
+        ALTER TABLE dbo.ea_players ADD CONSTRAINT DF_ea_players_Experience DEFAULT (0) FOR Experience;
+END;
 IF COL_LENGTH(N'dbo.ea_players', N'DualWield') IS NULL
     ALTER TABLE dbo.ea_players ADD DualWield int NOT NULL CONSTRAINT DF_ea_players_DualWield DEFAULT (0) WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'GoldGain') IS NULL
@@ -87,6 +104,10 @@ IF COL_LENGTH(N'dbo.ea_players', N'HuntRewardCapAtUtc') IS NULL
     ALTER TABLE dbo.ea_players ADD HuntRewardCapAtUtc datetimeoffset NULL;
 IF COL_LENGTH(N'dbo.ea_players', N'LastManualHuntAtUtc') IS NULL
     ALTER TABLE dbo.ea_players ADD LastManualHuntAtUtc datetimeoffset NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'ManualHuntAreaId') IS NULL
+    ALTER TABLE dbo.ea_players ADD ManualHuntAreaId int NOT NULL CONSTRAINT DF_ea_players_ManualHuntAreaId DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'CollectedMonsterKeysJson') IS NULL
+    ALTER TABLE dbo.ea_players ADD CollectedMonsterKeysJson nvarchar(max) NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterKeysJson DEFAULT (N'[]') WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'StateSchemaVersion') IS NULL
     ALTER TABLE dbo.ea_players ADD StateSchemaVersion int NOT NULL CONSTRAINT DF_ea_players_StateSchemaVersion DEFAULT (0) WITH VALUES;
 GO
@@ -115,7 +136,7 @@ SET Nickname = JSON_VALUE(StateJson, N'$.Nickname'),
     HighestBossDefeated = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.HighestBossDefeated')), HighestBossDefeated),
     ProtectionTickets = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.ProtectionTickets')), ProtectionTickets),
     Level = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Level')), Level),
-    Experience = COALESCE(TRY_CONVERT(bigint, JSON_VALUE(StateJson, N'$.Experience')), Experience),
+    Experience = COALESCE(TRY_CONVERT(float, JSON_VALUE(StateJson, N'$.Experience')), Experience),
     DualWield = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.DualWield')), DualWield),
     GoldGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.GoldGain')), GoldGain),
     ExperienceGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ExperienceGain')), ExperienceGain),
@@ -222,7 +243,7 @@ SET Nickname = JSON_VALUE(StateJson, N'$.Nickname'),
     HighestBossDefeated = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.HighestBossDefeated')), HighestBossDefeated),
     ProtectionTickets = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.ProtectionTickets')), ProtectionTickets),
     Level = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Level')), Level),
-    Experience = COALESCE(TRY_CONVERT(bigint, JSON_VALUE(StateJson, N'$.Experience')), Experience),
+    Experience = COALESCE(TRY_CONVERT(float, JSON_VALUE(StateJson, N'$.Experience')), Experience),
     DualWield = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.DualWield')), DualWield),
     GoldGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.GoldGain')), GoldGain),
     ExperienceGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ExperienceGain')), ExperienceGain),

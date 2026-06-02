@@ -3,9 +3,11 @@ let catalog;
 let manualHuntAvailableAt;
 let manualHuntUnlockTimer;
 let manualHuntRequestPending = false;
+let selectedCollectionAreaId = 0;
 let authentication;
 const $ = selector => document.querySelector(selector);
 const number = value => Number(value).toLocaleString("ko-KR");
+const experience = value => Number(value).toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const percent = value => `${(value * 100).toLocaleString("ko-KR", { maximumFractionDigits: 2 })}%`;
 
 // 서버 기능을 추가할 때는 Api/GameApi.ashx.cs의 action과 이 함수를 함께 확인하세요.
@@ -29,6 +31,8 @@ async function load() {
     if (!authentication.authenticated) return;
     catalog = await api("catalog");
     state = await api("state");
+    $("#collection-tab").hidden = !state.collectionEnabled;
+    $("#collection-guide").hidden = !state.collectionEnabled;
     renderRates();
     renderGuide();
     showPlayerOrNickname();
@@ -87,7 +91,7 @@ function render() {
     $("#weapon-orb").textContent = `+${state.weaponLevel}`;
     $("#level").textContent = `Lv. ${state.level}`;
     $("#exp-text").textContent = state.requiredExperience
-        ? `${number(state.experience)} / ${number(state.requiredExperience)} EXP`
+        ? `${experience(state.experience)} / ${experience(state.requiredExperience)} EXP`
         : "MAX LEVEL";
     $("#exp-fill").style.width = state.requiredExperience
         ? `${Math.min(100, state.experience / state.requiredExperience * 100)}%`
@@ -97,6 +101,7 @@ function render() {
     renderEnhance();
     renderBoss();
     renderStats();
+    renderCollection();
     $("#messages").innerHTML = state.recentMessages
         .map(message => `<li>${escapeHtml(message)}</li>`)
         .join("");
@@ -118,10 +123,12 @@ function renderHunt() {
         : "";
     updateAutomaticHuntBudget();
     updateTimer();
-    $("#manual-hunt-details").textContent =
-        `${state.manualHunt.areaName} 기준 · 평균 시간당 `
-        + `${number(state.manualHunt.automaticGoldPerHour * 1.5)} 골드 · 경험치 `
-        + `${number(state.manualHunt.automaticExperiencePerHour * 1.25)}`;
+    const selectedAreaId = Number($("#manual-hunt-area").value || state.manualHunt.areaId);
+    $("#manual-hunt-area").innerHTML = state.manualHunt.availableAreas
+        .filter(area => area.canEnter)
+        .map(area => `<option value="${area.id}" ${area.id === selectedAreaId ? "selected" : ""}>${area.name}</option>`)
+        .join("");
+    updateManualHuntDetails();
     updateManualHuntButton();
     $("#areas").innerHTML = state.availableAreas
         .map(area => `
@@ -139,6 +146,18 @@ function renderHunt() {
                 </button>
             </article>`)
         .join("");
+}
+
+// 직접 사냥터 선택에 맞춰 시간당 기대 보상을 갱신합니다.
+function updateManualHuntDetails() {
+    const areaId = Number($("#manual-hunt-area").value || state.manualHunt.areaId);
+    const area = catalog.areas.find(candidate => candidate.id === areaId);
+    if (!area) return;
+
+    $("#manual-hunt-details").textContent =
+        `${area.name} 기준 · 평균 시간당 `
+        + `${number(area.goldPerHour * 1.5)} 골드 · 경험치 `
+        + `${experience(area.experiencePerHour * 1.25)}`;
 }
 
 // 현재 강화 비용과 성공·유지·파괴 확률을 표시합니다.
@@ -249,6 +268,62 @@ function renderGuide() {
                 <td>${area.bossRequiredEnhancement === null ? "최종 지역" : `+${area.bossRequiredEnhancement}`}</td>
             </tr>`)
         .join("");
+    if (!state.collectionEnabled) return;
+    const monsters = catalog.monsters;
+    $("#guide-monster-rates").innerHTML = [
+        ["일반", monsters.normalRate, monsters.collectionRates.normal],
+        ["정예", monsters.eliteRate, monsters.collectionRates.elite],
+        ["황금", monsters.goldenRate, monsters.collectionRates.golden]
+    ].map(([grade, appearanceRate, collectionRate]) => `
+        <tr>
+            <td>${grade}</td>
+            <td>${percent(appearanceRate)}</td>
+            <td>${percent(collectionRate)}</td>
+        </tr>`)
+        .join("");
+}
+
+// 사냥터별 하위 탭과 등록 여부를 포함한 도감 카드를 표시합니다.
+function renderCollection() {
+    if (!state.collection) return;
+    const areas = state.collection.areas;
+    const selectedArea = areas.find(area => area.id === selectedCollectionAreaId) || areas[0];
+    selectedCollectionAreaId = selectedArea.id;
+    $("#collection-progress").textContent = `${state.collection.collectedCount} / ${state.collection.totalCount}`;
+    $("#collection-area-tabs").innerHTML = areas
+        .map(area => `
+            <button
+                class="collection-area-tab ${area.id === selectedArea.id ? "active" : ""}"
+                onclick="selectCollectionArea(${area.id})">
+                ${area.name}
+            </button>`)
+        .join("");
+    $("#collection-grid").innerHTML = selectedArea.monsters
+        .map(monster => {
+            const gradeName = monster.grade === "golden" ? "황금" : monster.grade === "elite" ? "정예" : "일반";
+            const cardClasses = [
+                "collection-card",
+                monster.collected ? "collected" : "locked"
+            ].join(" ");
+            return `
+                <article class="${cardClasses}">
+                    <div class="collection-image">
+                        <img src="Content/monsters/${monster.key}.webp" alt="" onerror="this.hidden=true" />
+                        <span>${monster.collected ? "등록 완료" : "미등록"}</span>
+                    </div>
+                    <div class="collection-card-info">
+                        <strong>${monster.collected ? escapeHtml(monster.name) : "???"}</strong>
+                        <span class="collection-grade-${monster.grade}">${gradeName}</span>
+                    </div>
+                </article>`;
+        })
+        .join("");
+}
+
+// 도감에서 선택한 사냥터의 30개 카드만 표시합니다.
+function selectCollectionArea(areaId) {
+    selectedCollectionAreaId = areaId;
+    renderCollection();
 }
 
 // 진행 중인 자동 사냥의 경과 시간과 예상 누적 보상을 갱신합니다.
@@ -356,7 +431,10 @@ $("#nickname-form").addEventListener("submit", async event => {
     }
 });
 $("#enhance-button").addEventListener("click", () => action("enhance", { useProtection: $("#use-ticket").checked }));
-$("#manual-hunt-button").addEventListener("click", () => action("hunt-manual"));
+$("#manual-hunt-area").addEventListener("change", updateManualHuntDetails);
+$("#manual-hunt-button").addEventListener("click", () => action("hunt-manual", {
+    areaId: Number($("#manual-hunt-area").value)
+}));
 $("#reset-stats").addEventListener("click", () => action("stats-reset"));
 document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => {

@@ -24,6 +24,7 @@
 | `database/verify_legacy_migration.sql` | 이전 데이터가 빠짐없이 옮겨졌는지 조회 |
 | `database/cleanup_legacy_tables.sql` | 검증을 통과한 이전 테이블을 수동 삭제 |
 | `database/view_player_states.sql` | 운영 플레이어의 핵심 상태를 일반 컬럼으로 조회 |
+| `Content/monsters` | 도감용 512x512 WebP 몬스터 이미지 |
 
 ## 로컬 MSSQL 생성
 
@@ -52,6 +53,14 @@ D:\SqlData\enhance_addiction_log.ldf
 - 서버 시작 시 기존 `dbo.accounts`가 발견되면 사용자 상태와 강화 이력을 `ea_` 테이블로 한 번만 자동 이전합니다.
 - 기존 JSON 중심 플레이어는 첫 조회 때 일반 컬럼 구조로 자동 동기화합니다.
 
+## 도감 공개
+
+도감 이미지와 운영 준비가 끝난 뒤 아래 환경 변수를 `true`로 변경하면 재배포 없이 도감 탭, 안내 확률표와 등록 판정이 함께 활성화됩니다.
+
+```text
+ENHANCE_ADDICTION_COLLECTION_ENABLED=true
+```
+
 ## 이식된 게임 시스템
 
 - 사냥터 12개와 관문 보스 11마리
@@ -61,6 +70,7 @@ D:\SqlData\enhance_addiction_log.ldf
 - 보스 처치마다 일일 자동 사냥 30분 증가
 - 1초 간격 직접 사냥과 정예·황금 몬스터
 - 레벨, 경험치, 4종 스탯
+- 직접 사냥터 선택과 지역별 몬스터 도감
 - 닉네임과 실시간 랭킹
 - 개인 최근 기록 최대 100줄
 

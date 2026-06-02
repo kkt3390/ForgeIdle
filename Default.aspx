@@ -14,7 +14,6 @@
         <p class="eyebrow">ENHANCE ADDICTION</p>
         <h1>강화중독</h1>
       </div>
-      <span class="badge">Web Forms SPA</span>
     </header>
 
     <section class="login-card" id="login-panel" hidden>
@@ -75,6 +74,7 @@
         <button class="tab" data-tab="stats">스탯</button>
         <button class="tab" data-tab="rates">확률표</button>
         <button class="tab" data-tab="ranking">랭킹</button>
+        <button class="tab" data-tab="collection" id="collection-tab" hidden>도감</button>
         <button class="tab" data-tab="guide">게임 안내</button>
       </nav>
 
@@ -88,6 +88,10 @@
         <article class="manual-hunt-card">
           <div>
             <h3>직접 사냥</h3>
+            <label class="manual-area-label">
+              사냥터
+              <select id="manual-hunt-area"></select>
+            </label>
             <p id="manual-hunt-details"></p>
             <span id="manual-hunt-cooldown"></span>
           </div>
@@ -156,6 +160,18 @@
         </div>
       </section>
 
+      <section class="panel" id="collection-panel">
+        <div class="section-title">
+          <h2>몬스터 도감</h2>
+          <span id="collection-progress">0 / 360</span>
+        </div>
+        <p class="collection-description">
+          직접 사냥에서 매우 낮은 확률로 등록됩니다. 같은 몬스터가 중복 등록될 수 있습니다.
+        </p>
+        <div class="collection-area-tabs" id="collection-area-tabs"></div>
+        <div class="collection-grid" id="collection-grid"></div>
+      </section>
+
       <section class="panel guide" id="guide-panel">
         <div class="section-title">
           <h2>게임 안내</h2>
@@ -181,6 +197,18 @@
             경험치는 평균 <strong>375%</strong> 효율입니다.
             직접 사냥을 누르면 진행 중인 자동 사냥은 먼저 정산됩니다.
           </p>
+        </article>
+        <article class="guide-block" id="collection-guide" hidden>
+          <h3>몬스터 등장과 도감 등록 확률</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>등급</th><th>등장 확률</th><th>처치 시 도감 등록 확률</th></tr>
+              </thead>
+              <tbody id="guide-monster-rates"></tbody>
+            </table>
+          </div>
+          <p class="guide-note">등록 판정에 성공하면 해당 사냥터와 등급의 10종 중 하나가 무작위로 선택됩니다. 이미 등록된 몬스터도 다시 나올 수 있습니다.</p>
         </article>
         <article class="guide-block">
           <h3>강화</h3>
@@ -212,6 +240,6 @@
     </section>
   </main>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260602-1"></script>
+  <script src="Scripts/game.js?v=20260603-1"></script>
 </body>
 </html>

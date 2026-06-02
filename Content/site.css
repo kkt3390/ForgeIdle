@@ -44,6 +44,7 @@ h1, h2, p { margin-top: 0; } h1 { margin-bottom: 0; } h2 { font-size: 18px; }
 .logout { color: #c4b8aa; font-size: 12px; }
 .account form { display: flex; gap: 8px; }
 input { min-width: 0; border: 1px solid #ffffff26; border-radius: 11px; padding: 12px; color: #fff; background: #11131a; }
+select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; color: #fff; background: #11131a; }
 .level-card > div:first-child { color: #f6c56f; }
 .player-name { color: #f6c56f; font-size: 14px; font-weight: 800; }
 .exp-track { height: 8px; margin-top: 10px; overflow: hidden; border-radius: 8px; background: #11131a; }
@@ -53,7 +54,7 @@ input { min-width: 0; border: 1px solid #ffffff26; border-radius: 11px; padding:
 .status-grid article, .card { border: 1px solid #ffffff10; border-radius: 14px; padding: 14px 12px; background: #11131a; }
 .status-grid span, .section-title span { display: block; color: #a99e92; font-size: 12px; }
 .status-grid strong { display: block; margin-top: 5px; color: #f6c56f; font-size: 18px; }
-.tabs { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 18px; }
+.tabs { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-top: 18px; }
 .tab { color: #a99e92; background: #ffffff0b; }
 .tab.active { color: #25190a; background: #f0b85c; }
 .panel { display: none; } .panel.active { display: block; }
@@ -84,6 +85,7 @@ input { min-width: 0; border: 1px solid #ffffff26; border-radius: 11px; padding:
 .manual-hunt-card h3 { margin: 0 0 7px; font-size: 16px; }
 .manual-hunt-card p { margin: 0 0 5px; color: #d9c8ff; font-size: 13px; }
 .manual-hunt-card span { color: #a99e92; font-size: 12px; }
+.manual-area-label { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; color: #c9b99f; font-size: 12px; }
 .manual-hunt-button { min-width: 105px; color: #fff; background: #7655cf; }
 .forge-card, .boss-card { padding: 18px; text-align: center; border-radius: 16px; background: linear-gradient(145deg, #26232b, #141720); }
 .ticket-option { display: block; margin: 14px 0; color: #c9b99f; font-size: 14px; }
@@ -94,6 +96,32 @@ input { min-width: 0; border: 1px solid #ffffff26; border-radius: 11px; padding:
 .guide-block { margin-top: 10px; border: 1px solid #ffffff10; border-radius: 14px; padding: 14px; background: #11131a; }
 .guide-block h3 { margin: 0 0 8px; color: #f6c56f; font-size: 16px; }
 .guide-block p, .guide-block ul { margin: 0; color: #c4b8aa; font-size: 14px; line-height: 1.65; }
+.guide-block .guide-note { margin-top: 10px; font-size: 12px; }
+.collection-description { color: #c4b8aa; font-size: 13px; line-height: 1.6; }
+.collection-area-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; }
+.collection-area-tab { flex: 0 0 auto; padding: 8px 10px; color: #a99e92; background: #ffffff0b; font-size: 12px; }
+.collection-area-tab.active { color: #25190a; background: #f0b85c; }
+.collection-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+.collection-card { overflow: hidden; border: 1px solid #ffffff12; border-radius: 12px; background: #11131a; }
+.collection-image {
+  display: grid;
+  aspect-ratio: 1 / 1;
+  place-items: center;
+  color: #ffffff45;
+  background: linear-gradient(145deg, #292d3a, #171922);
+  font-size: 11px;
+}
+.collection-image img { width: 100%; height: 100%; object-fit: contain; }
+.collection-card-info { padding: 8px; }
+.collection-card-info strong, .collection-card-info span { display: block; }
+.collection-card-info strong { overflow: hidden; color: #c4b8aa; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.collection-card-info span { margin-top: 4px; font-size: 10px; }
+.collection-card.locked { opacity: .45; filter: grayscale(1); }
+.collection-card.collected { border-color: #e3a84e88; }
+.collection-card.collected .collection-image { color: #f6c56f; box-shadow: inset 0 0 28px #d2853430; }
+.collection-grade-normal { color: #c4b8aa; }
+.collection-grade-elite { color: #c59cff; }
+.collection-grade-golden { color: #f6c56f; }
 .weapon-orb {
   display: grid;
   width: 100px;
@@ -130,4 +158,5 @@ th:first-child, td:first-child { text-align: left; }
   .tabs { grid-template-columns: repeat(3, 1fr); }
   .card-list { grid-template-columns: 1fr; }
   .manual-hunt-card { align-items: stretch; flex-direction: column; }
+  .collection-grid { grid-template-columns: repeat(3, 1fr); }
 }
