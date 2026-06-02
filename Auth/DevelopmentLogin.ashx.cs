@@ -8,6 +8,7 @@ namespace EnhanceAddiction.WebForms.Auth
     {
         public bool IsReusable { get { return false; } }
 
+        // 로컬 개발 환경에서만 사용할 임시 테스트 계정을 만듭니다.
         public void ProcessRequest(HttpContext context)
         {
             if (!AuthSession.IsLocalRequest(context))

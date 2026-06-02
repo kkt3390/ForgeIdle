@@ -18,6 +18,7 @@ namespace EnhanceAddiction.WebForms.Data
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer();
         private static readonly Regex NicknamePattern = new Regex("^[가-힣A-Za-z0-9_]{2,12}$", RegexOptions.Compiled);
 
+        // 플레이어 상태를 조회하고, 처음 접속한 계정이면 기본 상태를 생성합니다.
         public PlayerState GetOrCreate(string playerKey)
         {
             using (var connection = OpenConnection())
@@ -43,6 +44,7 @@ namespace EnhanceAddiction.WebForms.Data
             return player;
         }
 
+        // 플레이어의 최신 진행 상태를 JSON으로 저장합니다.
         public void Save(string playerKey, PlayerState player)
         {
             using (var connection = OpenConnection())
@@ -57,6 +59,7 @@ namespace EnhanceAddiction.WebForms.Data
             }
         }
 
+        // 닉네임 형식과 중복 여부를 확인합니다.
         public void ValidateNickname(string playerKey, string nickname)
         {
             if (string.IsNullOrWhiteSpace(nickname) || !NicknamePattern.IsMatch(nickname.Trim()))
@@ -78,6 +81,7 @@ namespace EnhanceAddiction.WebForms.Data
             }
         }
 
+        // 레벨과 강화도를 기준으로 상위 100명의 랭킹을 반환합니다.
         public IList<object> GetRankings()
         {
             var players = new List<PlayerState>();
@@ -103,6 +107,7 @@ namespace EnhanceAddiction.WebForms.Data
                 }).ToList();
         }
 
+        // 강화 확률 검증에 사용할 개별 강화 시도 이력을 저장합니다.
         public void AddEnhancementAttempt(string playerKey, EnhancementAttemptLog attempt)
         {
             using (var connection = OpenConnection())
@@ -126,6 +131,7 @@ namespace EnhanceAddiction.WebForms.Data
             }
         }
 
+        // 게임 데이터에 영향을 주는 행동의 전후 상태와 결과를 저장합니다.
         public void AddGameActionLog(
             string playerKey,
             string actionType,
@@ -154,6 +160,7 @@ namespace EnhanceAddiction.WebForms.Data
             }
         }
 
+        // 소셜 로그인 계정을 내부 플레이어 키와 연결하고 처음이면 새 연결을 만듭니다.
         public string GetOrCreateSocialPlayerKey(string provider, string externalId)
         {
             using (var connection = OpenConnection())
@@ -184,6 +191,7 @@ namespace EnhanceAddiction.WebForms.Data
             }
         }
 
+        // 현재 환경에 맞는 MSSQL 연결을 열어 반환합니다.
         private static SqlConnection OpenConnection()
         {
             var connection = new SqlConnection(ConnectionString);

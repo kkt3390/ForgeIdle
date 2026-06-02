@@ -2,16 +2,41 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { min-height: 100vh; margin: 0; background: radial-gradient(circle at top, #38223e 0, #11131a 44%); }
-button { cursor: pointer; border: 0; border-radius: 12px; padding: 12px 15px; font: inherit; font-weight: 800; color: #21180e; background: #e3a84e; }
+button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 15px;
+  color: #21180e;
+  background: #e3a84e;
+  font: inherit;
+  font-weight: 800;
+}
 button:disabled { cursor: not-allowed; opacity: .45; filter: grayscale(1); }
 .shell { width: min(880px, 100%); margin: auto; padding: 22px 16px 48px; }
 .topbar, .section-title, .level-card > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .eyebrow { margin: 0 0 4px; color: #e3a84e; font-size: 11px; font-weight: 900; letter-spacing: 3px; }
 h1, h2, p { margin-top: 0; } h1 { margin-bottom: 0; } h2 { font-size: 18px; }
 .badge { border: 1px solid #ffffff1c; border-radius: 99px; padding: 6px 10px; color: #cbb9dc; font-size: 12px; }
-.login-card, .account, .level-card, .panel, .log { margin-top: 18px; border: 1px solid #ffffff16; border-radius: 18px; padding: 18px; background: #1b1e28e8; box-shadow: 0 18px 36px #00000030; }
+.login-card, .account, .level-card, .panel, .log {
+  margin-top: 18px;
+  border: 1px solid #ffffff16;
+  border-radius: 18px;
+  padding: 18px;
+  background: #1b1e28e8;
+  box-shadow: 0 18px 36px #00000030;
+}
 .login-card p { color: #c4b8aa; line-height: 1.6; }
-.login-button { display: block; margin-top: 9px; border-radius: 12px; padding: 13px 15px; text-align: center; color: #201b10; font-weight: 900; text-decoration: none; }
+.login-button {
+  display: block;
+  margin-top: 9px;
+  border-radius: 12px;
+  padding: 13px 15px;
+  color: #201b10;
+  font-weight: 900;
+  text-align: center;
+  text-decoration: none;
+}
 .login-button.kakao { background: #fee500; }
 .login-button.development { color: #d9c8ff; background: #7655cf; }
 .player-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 -10px; }
@@ -40,9 +65,21 @@ input { min-width: 0; border: 1px solid #ffffff26; border-radius: 11px; padding:
 .area-card button { width: 100%; padding: 9px; font-size: 13px; }
 .budget-line { margin: 0 0 10px; color: #d9c8ff; font-size: 13px; }
 .hunt-running { margin-bottom: 10px; }
-.running-card, .manual-hunt-card, .stat-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #ffffff16; border-radius: 14px; padding: 14px; background: #11131a; }
+.running-card, .manual-hunt-card, .stat-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #ffffff16;
+  border-radius: 14px;
+  padding: 14px;
+  background: #11131a;
+}
 .running-card { margin-bottom: 10px; background: #332615; }
 .running-card strong, .running-card span { display: block; } .running-card span { margin-top: 4px; color: #c9b99f; font-size: 12px; }
+.hunt-timer { color: #f6c56f; font-size: 1.1em; font-weight: 800; }
+.hunt-rewards { margin: 4px 0; color: #d9c8ff; font-size: .9em; }
+.hunt-remaining { opacity: .8; font-size: .85em; }
 .manual-hunt-card { margin-bottom: 12px; border-color: #8e6cff42; background: linear-gradient(145deg, #28233a, #171724); }
 .manual-hunt-card h3 { margin: 0 0 7px; font-size: 16px; }
 .manual-hunt-card p { margin: 0 0 5px; color: #d9c8ff; font-size: 13px; }
@@ -57,11 +94,40 @@ input { min-width: 0; border: 1px solid #ffffff26; border-radius: 11px; padding:
 .guide-block { margin-top: 10px; border: 1px solid #ffffff10; border-radius: 14px; padding: 14px; background: #11131a; }
 .guide-block h3 { margin: 0 0 8px; color: #f6c56f; font-size: 16px; }
 .guide-block p, .guide-block ul { margin: 0; color: #c4b8aa; font-size: 14px; line-height: 1.65; }
-.weapon-orb { display: grid; width: 100px; height: 100px; margin: 0 auto 14px; place-items: center; border: 3px solid #e3a84e; border-radius: 50%; color: #ffd27c; font-size: 28px; font-weight: 900; box-shadow: 0 0 36px #d285343e; }
+.weapon-orb {
+  display: grid;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 14px;
+  place-items: center;
+  border: 3px solid #e3a84e;
+  border-radius: 50%;
+  color: #ffd27c;
+  font-size: 28px;
+  font-weight: 900;
+  box-shadow: 0 0 36px #d285343e;
+}
 .table-wrap { overflow-x: auto; } table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { border-bottom: 1px solid #ffffff10; padding: 9px 6px; text-align: right; white-space: nowrap; }
 th:first-child, td:first-child { text-align: left; }
 .log ul { margin-bottom: 0; padding-left: 19px; color: #c4b8aa; font-size: 13px; }
-.toast { position: fixed; bottom: 24px; left: 50%; opacity: 0; transform: translateX(-50%) translateY(80px); border-radius: 12px; padding: 11px 16px; color: #281b0c; background: #f0b85c; font-weight: 800; transition: .25s; }
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  opacity: 0;
+  transform: translateX(-50%) translateY(80px);
+  border-radius: 12px;
+  padding: 11px 16px;
+  color: #281b0c;
+  background: #f0b85c;
+  font-weight: 800;
+  transition: .25s;
+}
 .toast.show { opacity: 1; transform: translateX(-50%); }
-@media (max-width: 560px) { .status-grid { grid-template-columns: repeat(2, 1fr); } .tabs { grid-template-columns: repeat(3, 1fr); } .card-list { grid-template-columns: 1fr; } .manual-hunt-card { align-items: stretch; flex-direction: column; } }
+@media (max-width: 560px) {
+  .status-grid { grid-template-columns: repeat(2, 1fr); }
+  .tabs { grid-template-columns: repeat(3, 1fr); }
+  .card-list { grid-template-columns: 1fr; }
+  .manual-hunt-card { align-items: stretch; flex-direction: column; }
+}

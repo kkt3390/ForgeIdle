@@ -6,8 +6,9 @@ namespace EnhanceAddiction.WebForms.Game
     [Serializable]
     public sealed class PlayerState
     {
-        // 사용자별 상태는 MSSQL의 players.StateJson 컬럼에 JSON으로 저장합니다.
+        // 사용자별 상태는 MSSQL의 ea_players.StateJson 컬럼에 JSON으로 저장합니다.
         // 새 필드는 기본값을 지정해 기존 사용자 JSON과 호환되도록 유지하세요.
+        // 신규 플레이어가 처음 로그인했을 때 적용할 기본 상태를 만듭니다.
         public PlayerState()
         {
             Gold = 5000;
@@ -37,6 +38,7 @@ namespace EnhanceAddiction.WebForms.Game
     [Serializable]
     public sealed class HuntSession
     {
+        // 자동 사냥 중인 사냥터와 보상 누적 시간을 저장합니다.
         public int AreaId { get; set; }
         public DateTime StartedAtUtc { get; set; }
         public DateTime RewardCapAtUtc { get; set; }
@@ -45,15 +47,20 @@ namespace EnhanceAddiction.WebForms.Game
     [Serializable]
     public sealed class PlayerStats
     {
+        // 레벨업으로 투자한 스탯과 사용한 총 포인트를 저장합니다.
         public int DualWield { get; set; }
         public int GoldGain { get; set; }
         public int ExperienceGain { get; set; }
         public int ArtisanTouch { get; set; }
-        public int SpentPoints { get { return DualWield + GoldGain + ExperienceGain + ArtisanTouch; } }
+        public int SpentPoints
+        {
+            get { return DualWield + GoldGain + ExperienceGain + ArtisanTouch; }
+        }
     }
 
     public sealed class GameResult
     {
+        // API가 브라우저에 반환할 처리 결과와 변경된 상태를 저장합니다.
         public bool Ok { get; set; }
         public string Message { get; set; }
         public object State { get; set; }
@@ -63,6 +70,7 @@ namespace EnhanceAddiction.WebForms.Game
 
     public sealed class EnhancementAttemptLog
     {
+        // 강화 확률 검증에 필요한 시도 당시의 수치와 결과를 저장합니다.
         public int BeforeLevel { get; set; }
         public int AfterLevel { get; set; }
         public long Cost { get; set; }

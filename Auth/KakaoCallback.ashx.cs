@@ -14,6 +14,7 @@ namespace EnhanceAddiction.WebForms.Auth
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer();
         public bool IsReusable { get { return false; } }
 
+        // 카카오 인증 콜백을 검증하고 소셜 계정을 게임 계정과 연결합니다.
         public void ProcessRequest(HttpContext context)
         {
             var expectedState = context.Session["KakaoOAuthState"] as string;
@@ -34,6 +35,7 @@ namespace EnhanceAddiction.WebForms.Auth
             context.Response.Redirect(VirtualPathUtility.ToAbsolute("~/"));
         }
 
+        // 카카오 승인 코드를 액세스 토큰으로 교환합니다.
         private static string RequestAccessToken(HttpContext context, string code)
         {
             using (var client = new WebClient())
@@ -53,6 +55,7 @@ namespace EnhanceAddiction.WebForms.Auth
             }
         }
 
+        // 액세스 토큰으로 카카오 사용자 고유 ID를 조회합니다.
         private static string RequestKakaoUserId(string accessToken)
         {
             using (var client = new WebClient())

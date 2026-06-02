@@ -8,6 +8,7 @@ namespace EnhanceAddiction.WebForms.Auth
     {
         public bool IsReusable { get { return false; } }
 
+        // 카카오 로그인 검증값을 만들고 카카오 인증 화면으로 이동합니다.
         public void ProcessRequest(HttpContext context)
         {
             if (!KakaoSettings.IsConfigured)
@@ -23,6 +24,7 @@ namespace EnhanceAddiction.WebForms.Auth
             context.Response.Redirect(authorizeUrl);
         }
 
+        // 현재 호스트 기준으로 카카오가 돌아올 콜백 주소를 만듭니다.
         internal static string CallbackUrl(HttpContext context)
         {
             return context.Request.Url.GetLeftPart(UriPartial.Authority)

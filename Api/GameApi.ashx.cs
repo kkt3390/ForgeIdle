@@ -20,6 +20,7 @@ namespace EnhanceAddiction.WebForms.Api
 
         public bool IsReusable { get { return false; } }
 
+        // 요청 action을 해석해 대응하는 게임 기능을 실행하고 JSON으로 응답합니다.
         public void ProcessRequest(HttpContext context)
         {
             context.Response.ContentType = "application/json; charset=utf-8";
@@ -34,13 +35,30 @@ namespace EnhanceAddiction.WebForms.Api
                     case "state": result = State(context); break;
                     case "rankings": result = new PlayerRepository().GetRankings(); break;
                     case "nickname": result = Nickname(context); break;
-                    case "hunt-start": result = Execute(context, "AutomaticHuntStart", player => Game.StartAutomaticHunt(player, IntBody(context, "areaId"))); break;
-                    case "hunt-claim": result = Execute(context, "AutomaticHuntClaim", player => Game.ClaimAutomaticHunt(player)); break;
-                    case "hunt-manual": result = Execute(context, "ManualHunt", player => Game.ManualHunt(player)); break;
-                    case "enhance": result = Execute(context, "Enhance", player => Game.Enhance(player, BoolBody(context, "useProtection"))); break;
-                    case "boss": result = Execute(context, "BossChallenge", player => Game.ChallengeBoss(player)); break;
-                    case "stats-invest": result = Execute(context, "StatInvest", player => Game.InvestStat(player, StringBody(context, "stat"))); break;
-                    case "stats-reset": result = Execute(context, "StatReset", player => Game.ResetStats(player)); break;
+                    case "hunt-start":
+                        result = Execute(context, "AutomaticHuntStart",
+                            player => Game.StartAutomaticHunt(player, IntBody(context, "areaId")));
+                        break;
+                    case "hunt-claim":
+                        result = Execute(context, "AutomaticHuntClaim", player => Game.ClaimAutomaticHunt(player));
+                        break;
+                    case "hunt-manual":
+                        result = Execute(context, "ManualHunt", player => Game.ManualHunt(player));
+                        break;
+                    case "enhance":
+                        result = Execute(context, "Enhance",
+                            player => Game.Enhance(player, BoolBody(context, "useProtection")));
+                        break;
+                    case "boss":
+                        result = Execute(context, "BossChallenge", player => Game.ChallengeBoss(player));
+                        break;
+                    case "stats-invest":
+                        result = Execute(context, "StatInvest",
+                            player => Game.InvestStat(player, StringBody(context, "stat")));
+                        break;
+                    case "stats-reset":
+                        result = Execute(context, "StatReset", player => Game.ResetStats(player));
+                        break;
                     default:
                         context.Response.StatusCode = 404;
                         result = new { message = "알 수 없는 요청입니다." };
@@ -65,6 +83,7 @@ namespace EnhanceAddiction.WebForms.Api
             }
         }
 
+        // 현재 세션의 로그인 여부와 로컬 테스트 로그인 허용 여부를 반환합니다.
         private static object Auth(HttpContext context)
         {
             return new
@@ -76,6 +95,7 @@ namespace EnhanceAddiction.WebForms.Api
             };
         }
 
+        // 로그인한 사용자의 최신 게임 상태를 읽고 정규화된 값을 저장합니다.
         private static object State(HttpContext context)
         {
             string playerKey;
@@ -86,6 +106,7 @@ namespace EnhanceAddiction.WebForms.Api
             return snapshot;
         }
 
+        // 닉네임 형식을 검사한 뒤 사용자 상태와 감사 로그에 저장합니다.
         private static object Nickname(HttpContext context)
         {
             var nickname = StringBody(context, "nickname").Trim();
@@ -96,10 +117,17 @@ namespace EnhanceAddiction.WebForms.Api
             return Execute(context, "NicknameChange", current =>
             {
                 current.Nickname = nickname;
-                return new GameResult { Ok = true, Message = "닉네임을 저장했습니다.", State = Game.Snapshot(current), Details = new { nickname = nickname } };
+                return new GameResult
+                {
+                    Ok = true,
+                    Message = "닉네임을 저장했습니다.",
+                    State = Game.Snapshot(current),
+                    Details = new { nickname = nickname }
+                };
             });
         }
 
+        // 게임 상태를 바꾸는 행동을 실행하고 전후 상태와 결과를 감사 로그에 기록합니다.
         private static GameResult Execute(HttpContext context, string actionType, Func<PlayerState, GameResult> execute)
         {
             string playerKey;
@@ -121,6 +149,7 @@ namespace EnhanceAddiction.WebForms.Api
             return result;
         }
 
+        // 로그인 세션의 플레이어 키로 DB 상태를 조회하거나 새 상태를 만듭니다.
         private static PlayerState GetPlayer(HttpContext context, PlayerRepository repository, out string playerKey)
         {
             playerKey = context.Session["PlayerKey"] as string;
@@ -129,6 +158,7 @@ namespace EnhanceAddiction.WebForms.Api
             return repository.GetOrCreate(playerKey);
         }
 
+        // JSON 요청 본문을 키와 값 형태로 읽습니다.
         private static Dictionary<string, object> Body(HttpContext context)
         {
             context.Request.InputStream.Position = 0;
@@ -141,12 +171,14 @@ namespace EnhanceAddiction.WebForms.Api
             }
         }
 
+        // JSON 요청 본문에서 문자열 값을 읽습니다.
         private static string StringBody(HttpContext context, string key)
         {
             var body = Body(context);
             return body.ContainsKey(key) && body[key] != null ? body[key].ToString() : "";
         }
 
+        // JSON 요청 본문에서 정수 값을 읽고 잘못된 값은 거부합니다.
         private static int IntBody(HttpContext context, string key)
         {
             int value;
@@ -154,6 +186,7 @@ namespace EnhanceAddiction.WebForms.Api
             return value;
         }
 
+        // JSON 요청 본문에서 참·거짓 값을 읽습니다.
         private static bool BoolBody(HttpContext context, string key)
         {
             bool value;

@@ -21,6 +21,8 @@
 | `Game/PlayerState.cs` | 사용자 상태 |
 | `Data/PlayerRepository.cs` | MSSQL 조회와 저장 |
 | `database/setup.sql` | 로컬 DB와 전용 테이블 생성 |
+| `database/verify_legacy_migration.sql` | 이전 데이터가 빠짐없이 옮겨졌는지 조회 |
+| `database/cleanup_legacy_tables.sql` | 검증을 통과한 이전 테이블을 수동 삭제 |
 
 ## 로컬 MSSQL 생성
 
@@ -54,7 +56,7 @@ D:\SqlData\enhance_addiction_log.ldf
 - 파괴 시 +12 복구와 보호권
 - 한국 시간 자정 기준 일일 자동 사냥
 - 보스 처치마다 일일 자동 사냥 30분 증가
-- 3초 간격 직접 사냥과 정예·황금 몬스터
+- 1초 간격 직접 사냥과 정예·황금 몬스터
 - 레벨, 경험치, 4종 스탯
 - 닉네임과 실시간 랭킹
 - 개인 최근 기록 최대 100줄
@@ -93,6 +95,14 @@ SELECT TOP (100)
 FROM dbo.ea_game_action_logs
 ORDER BY Id DESC;
 ```
+
+## 유지보수 규칙
+
+- C# 메소드와 JavaScript 함수 위에는 담당 기능을 설명하는 한글 주석을 둡니다.
+- 여러 동작을 한 줄에 압축하지 않고 수정하기 쉬운 형태로 줄을 나눕니다.
+- 운영 DB 테이블 삭제는 서버 시작 시 자동으로 처리하지 않습니다.
+- 이전 데이터 정리 전에는 `database/verify_legacy_migration.sql`을 실행하고 누락 건수가 0인지 확인합니다.
+- 확인 후에만 `database/cleanup_legacy_tables.sql`을 수동 실행합니다.
 
 강화 단계별 실제 확률을 확인하는 SQL:
 

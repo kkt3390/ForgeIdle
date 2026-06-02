@@ -16,6 +16,7 @@ namespace EnhanceAddiction.WebForms.Game
         // 세 확률의 합은 반드시 1이어야 합니다.
         public IList<EnhancementRule> Enhancements { get; private set; }
 
+        // 사냥터, 보스, 강화 확률처럼 운영 중 조정할 밸런스 표를 초기화합니다.
         public GameCatalog()
         {
             Areas = new List<HuntingArea>
@@ -68,11 +69,13 @@ namespace EnhanceAddiction.WebForms.Game
             };
         }
 
+        // 현재 강화 단계에 해당하는 공격력을 계산합니다.
         public int AttackPower(int level)
         {
             return (int)Math.Round(10 * Math.Pow(1.32, level));
         }
 
+        // 현재 레벨에서 다음 레벨까지 필요한 경험치를 반환합니다.
         public long RequiredExperience(int level)
         {
             return level >= MaxPlayerLevel ? 0 : (long)Math.Round(100 * Math.Pow(1.12, level - 1));
@@ -81,7 +84,15 @@ namespace EnhanceAddiction.WebForms.Game
 
     public sealed class HuntingArea
     {
-        public HuntingArea(int id, string name, int requiredEnhancement, long goldPerHour, long experiencePerHour, int? bossRequiredEnhancement, int? bossHealth)
+        // 사냥터 한 곳의 입장 조건, 시간당 보상, 관문 보스 정보를 묶습니다.
+        public HuntingArea(
+            int id,
+            string name,
+            int requiredEnhancement,
+            long goldPerHour,
+            long experiencePerHour,
+            int? bossRequiredEnhancement,
+            int? bossHealth)
         {
             Id = id;
             Name = name;
@@ -103,7 +114,13 @@ namespace EnhanceAddiction.WebForms.Game
 
     public sealed class EnhancementRule
     {
-        public EnhancementRule(int currentLevel, long cost, double successRate, double keepRate, double destroyRate)
+        // 강화 단계 한 곳의 비용과 성공·유지·파괴 확률을 묶습니다.
+        public EnhancementRule(
+            int currentLevel,
+            long cost,
+            double successRate,
+            double keepRate,
+            double destroyRate)
         {
             CurrentLevel = currentLevel;
             Cost = cost;

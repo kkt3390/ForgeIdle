@@ -4,6 +4,7 @@ namespace EnhanceAddiction.WebForms.Data
 {
     public static class SchemaInitializer
     {
+        // 서버 시작 시 필요한 테이블을 만들고 이전 버전 데이터를 안전하게 이전합니다.
         public static void EnsureCreated()
         {
             const string sql = @"

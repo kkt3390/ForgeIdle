@@ -36,7 +36,9 @@
     <Content Include="Auth\KakaoLogin.ashx" />
     <Content Include="Auth\Logout.ashx" />
     <Content Include="Content\site.css" />
+    <Content Include="database\cleanup_legacy_tables.sql" />
     <Content Include="database\setup.sql" />
+    <Content Include="database\verify_legacy_migration.sql" />
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Scripts\game.js" />
