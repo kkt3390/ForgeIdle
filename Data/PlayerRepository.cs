@@ -4,7 +4,6 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Web.Script.Serialization;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using EnhanceAddiction.WebForms.Game;
 
@@ -18,43 +17,87 @@ namespace EnhanceAddiction.WebForms.Data
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer();
         private static readonly Regex NicknamePattern = new Regex("^[가-힣A-Za-z0-9_]{2,12}$", RegexOptions.Compiled);
 
-        // 플레이어 상태를 조회하고, 처음 접속한 계정이면 기본 상태를 생성합니다.
+        // 플레이어 상태를 일반 컬럼에서 조회하고, 처음 접속한 계정이면 기본 상태를 생성합니다.
         public PlayerState GetOrCreate(string playerKey)
         {
+            PlayerState existingPlayer = null;
+            var requiresColumnSync = false;
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                "SELECT StateJson FROM dbo.ea_players WHERE PlayerKey = @PlayerKey", connection))
+                @"SELECT Nickname, Gold, WeaponLevel, HighestWeaponLevel, HighestBossDefeated,
+                         ProtectionTickets, Level, Experience, DualWield, GoldGain, ExperienceGain,
+                         ArtisanTouch, AutomaticHuntCycleStartedAtUtc, AutomaticHuntUsedSeconds,
+                         HuntAreaId, HuntStartedAtUtc, HuntRewardCapAtUtc, LastManualHuntAtUtc,
+                         StateSchemaVersion, StateJson
+                  FROM dbo.ea_players
+                  WHERE PlayerKey = @PlayerKey", connection))
             {
                 command.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = playerKey;
-                var stateJson = command.ExecuteScalar() as string;
-                if (!string.IsNullOrWhiteSpace(stateJson))
-                    return Json.Deserialize<PlayerState>(stateJson);
+                using (var reader = command.ExecuteReader())
+                {
+                    if (reader.Read()) existingPlayer = ReadPlayer(reader, out requiresColumnSync);
+                }
+            }
+            if (existingPlayer != null)
+            {
+                if (requiresColumnSync) Save(playerKey, existingPlayer);
+                return existingPlayer;
             }
 
             var player = new PlayerState();
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                @"INSERT INTO dbo.ea_players (PlayerKey, StateJson, CreatedAt, UpdatedAt)
-                  VALUES (@PlayerKey, @StateJson, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET())", connection))
+                @"INSERT INTO dbo.ea_players
+                  (PlayerKey, Nickname, Gold, WeaponLevel, HighestWeaponLevel, HighestBossDefeated,
+                   ProtectionTickets, Level, Experience, DualWield, GoldGain, ExperienceGain,
+                   ArtisanTouch, AutomaticHuntCycleStartedAtUtc, AutomaticHuntUsedSeconds,
+                   HuntAreaId, HuntStartedAtUtc, HuntRewardCapAtUtc, LastManualHuntAtUtc,
+                   StateJson, StateSchemaVersion, CreatedAt, UpdatedAt)
+                  VALUES
+                  (@PlayerKey, @Nickname, @Gold, @WeaponLevel, @HighestWeaponLevel, @HighestBossDefeated,
+                   @ProtectionTickets, @Level, @Experience, @DualWield, @GoldGain, @ExperienceGain,
+                   @ArtisanTouch, @AutomaticHuntCycleStartedAtUtc, @AutomaticHuntUsedSeconds,
+                   @HuntAreaId, @HuntStartedAtUtc, @HuntRewardCapAtUtc, @LastManualHuntAtUtc,
+                   @StateJson, 1, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET())", connection))
             {
                 command.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = playerKey;
-                command.Parameters.Add("@StateJson", SqlDbType.NVarChar, -1).Value = Json.Serialize(player);
+                AddPlayerParameters(command, player);
                 command.ExecuteNonQuery();
             }
             return player;
         }
 
-        // 플레이어의 최신 진행 상태를 JSON으로 저장합니다.
+        // 플레이어의 최신 진행 상태를 일반 컬럼과 호환용 JSON에 함께 저장합니다.
         public void Save(string playerKey, PlayerState player)
         {
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
                 @"UPDATE dbo.ea_players
-                  SET StateJson = @StateJson, UpdatedAt = SYSDATETIMEOFFSET()
+                  SET Nickname = @Nickname,
+                      Gold = @Gold,
+                      WeaponLevel = @WeaponLevel,
+                      HighestWeaponLevel = @HighestWeaponLevel,
+                      HighestBossDefeated = @HighestBossDefeated,
+                      ProtectionTickets = @ProtectionTickets,
+                      Level = @Level,
+                      Experience = @Experience,
+                      DualWield = @DualWield,
+                      GoldGain = @GoldGain,
+                      ExperienceGain = @ExperienceGain,
+                      ArtisanTouch = @ArtisanTouch,
+                      AutomaticHuntCycleStartedAtUtc = @AutomaticHuntCycleStartedAtUtc,
+                      AutomaticHuntUsedSeconds = @AutomaticHuntUsedSeconds,
+                      HuntAreaId = @HuntAreaId,
+                      HuntStartedAtUtc = @HuntStartedAtUtc,
+                      HuntRewardCapAtUtc = @HuntRewardCapAtUtc,
+                      LastManualHuntAtUtc = @LastManualHuntAtUtc,
+                      StateJson = @StateJson,
+                      StateSchemaVersion = 1,
+                      UpdatedAt = SYSDATETIMEOFFSET()
                   WHERE PlayerKey = @PlayerKey", connection))
             {
                 command.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = playerKey;
-                command.Parameters.Add("@StateJson", SqlDbType.NVarChar, -1).Value = Json.Serialize(player);
+                AddPlayerParameters(command, player);
                 command.ExecuteNonQuery();
             }
         }
@@ -66,45 +109,45 @@ namespace EnhanceAddiction.WebForms.Data
                 throw new InvalidOperationException("닉네임은 한글, 영문, 숫자, 밑줄을 사용해 2~12자로 입력하세요.");
 
             using (var connection = OpenConnection())
-            using (var command = new SqlCommand("SELECT PlayerKey, StateJson FROM dbo.ea_players WHERE PlayerKey <> @PlayerKey", connection))
+            using (var command = new SqlCommand(
+                @"SELECT COUNT(*)
+                  FROM dbo.ea_players
+                  WHERE PlayerKey <> @PlayerKey AND Nickname = @Nickname", connection))
             {
                 command.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = playerKey;
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var player = Json.Deserialize<PlayerState>(reader.GetString(1));
-                        if (string.Equals(player.Nickname, nickname.Trim(), StringComparison.OrdinalIgnoreCase))
-                            throw new InvalidOperationException("이미 사용 중인 닉네임입니다.");
-                    }
-                }
+                command.Parameters.Add("@Nickname", SqlDbType.NVarChar, 12).Value = nickname.Trim();
+                if ((int)command.ExecuteScalar() > 0)
+                    throw new InvalidOperationException("이미 사용 중인 닉네임입니다.");
             }
         }
 
-        // 레벨과 강화도를 기준으로 상위 100명의 랭킹을 반환합니다.
+        // 레벨과 강화도를 기준으로 DB에서 정렬한 상위 100명의 랭킹을 반환합니다.
         public IList<object> GetRankings()
         {
-            var players = new List<PlayerState>();
+            var rankings = new List<object>();
             using (var connection = OpenConnection())
-            using (var command = new SqlCommand("SELECT StateJson FROM dbo.ea_players", connection))
+            using (var command = new SqlCommand(
+                @"SELECT TOP (100)
+                         Nickname, Level, WeaponLevel, HighestWeaponLevel
+                  FROM dbo.ea_players
+                  ORDER BY Level DESC, WeaponLevel DESC, HighestWeaponLevel DESC,
+                           ISNULL(Nickname, N'닉네임 미설정') ASC", connection))
             using (var reader = command.ExecuteReader())
             {
-                while (reader.Read()) players.Add(Json.Deserialize<PlayerState>(reader.GetString(0)));
-            }
-            return players
-                .OrderByDescending(player => player.Level)
-                .ThenByDescending(player => player.WeaponLevel)
-                .ThenByDescending(player => player.HighestWeaponLevel)
-                .ThenBy(player => player.Nickname ?? "닉네임 미설정")
-                .Take(100)
-                .Select((player, index) => (object)new
+                var rank = 1;
+                while (reader.Read())
                 {
-                    rank = index + 1,
-                    nickname = string.IsNullOrWhiteSpace(player.Nickname) ? "닉네임 미설정" : player.Nickname,
-                    level = player.Level,
-                    weaponLevel = player.WeaponLevel,
-                    highestWeaponLevel = player.HighestWeaponLevel
-                }).ToList();
+                    rankings.Add(new
+                    {
+                        rank = rank++,
+                        nickname = reader.IsDBNull(0) ? "닉네임 미설정" : reader.GetString(0),
+                        level = reader.GetInt32(1),
+                        weaponLevel = reader.GetInt32(2),
+                        highestWeaponLevel = reader.GetInt32(3)
+                    });
+                }
+            }
+            return rankings;
         }
 
         // 강화 확률 검증에 사용할 개별 강화 시도 이력을 저장합니다.
@@ -189,6 +232,97 @@ namespace EnhanceAddiction.WebForms.Data
                 command.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = playerKey;
                 return command.ExecuteScalar().ToString();
             }
+        }
+
+        // DB에서 읽은 일반 컬럼을 게임에서 사용하는 플레이어 상태 객체로 조립합니다.
+        private static PlayerState ReadPlayer(SqlDataReader reader, out bool requiresColumnSync)
+        {
+            var stateSchemaVersion = reader.GetInt32(18);
+            var stateJson = reader.IsDBNull(19) ? null : reader.GetString(19);
+            var player = string.IsNullOrWhiteSpace(stateJson)
+                ? new PlayerState()
+                : Json.Deserialize<PlayerState>(stateJson);
+            requiresColumnSync = stateSchemaVersion < 1;
+            if (requiresColumnSync) return player;
+
+            player.Nickname = reader.IsDBNull(0) ? null : reader.GetString(0);
+            player.Gold = reader.GetInt64(1);
+            player.WeaponLevel = reader.GetInt32(2);
+            player.HighestWeaponLevel = reader.GetInt32(3);
+            player.HighestBossDefeated = reader.GetInt32(4);
+            player.ProtectionTickets = reader.GetInt32(5);
+            player.Level = reader.GetInt32(6);
+            player.Experience = reader.GetInt64(7);
+            player.Stats = new PlayerStats
+            {
+                DualWield = reader.GetInt32(8),
+                GoldGain = reader.GetInt32(9),
+                ExperienceGain = reader.GetInt32(10),
+                ArtisanTouch = reader.GetInt32(11)
+            };
+            player.AutomaticHuntCycleStartedAtUtc = ReadNullableDateTime(reader, 12);
+            player.AutomaticHuntUsedSeconds = reader.GetDouble(13);
+            player.Hunt = ReadHuntSession(reader, 14, 15, 16);
+            player.LastManualHuntAtUtc = ReadNullableDateTime(reader, 17);
+            return player;
+        }
+
+        // 플레이어 상태를 저장 쿼리에서 재사용할 SQL 매개 변수로 변환합니다.
+        private static void AddPlayerParameters(SqlCommand command, PlayerState player)
+        {
+            var stats = player.Stats ?? new PlayerStats();
+            command.Parameters.Add("@Nickname", SqlDbType.NVarChar, 12).Value =
+                string.IsNullOrWhiteSpace(player.Nickname) ? (object)DBNull.Value : player.Nickname.Trim();
+            command.Parameters.Add("@Gold", SqlDbType.BigInt).Value = player.Gold;
+            command.Parameters.Add("@WeaponLevel", SqlDbType.Int).Value = player.WeaponLevel;
+            command.Parameters.Add("@HighestWeaponLevel", SqlDbType.Int).Value = player.HighestWeaponLevel;
+            command.Parameters.Add("@HighestBossDefeated", SqlDbType.Int).Value = player.HighestBossDefeated;
+            command.Parameters.Add("@ProtectionTickets", SqlDbType.Int).Value = player.ProtectionTickets;
+            command.Parameters.Add("@Level", SqlDbType.Int).Value = player.Level;
+            command.Parameters.Add("@Experience", SqlDbType.BigInt).Value = player.Experience;
+            command.Parameters.Add("@DualWield", SqlDbType.Int).Value = stats.DualWield;
+            command.Parameters.Add("@GoldGain", SqlDbType.Int).Value = stats.GoldGain;
+            command.Parameters.Add("@ExperienceGain", SqlDbType.Int).Value = stats.ExperienceGain;
+            command.Parameters.Add("@ArtisanTouch", SqlDbType.Int).Value = stats.ArtisanTouch;
+            command.Parameters.Add("@AutomaticHuntCycleStartedAtUtc", SqlDbType.DateTimeOffset).Value =
+                player.AutomaticHuntCycleStartedAtUtc.HasValue
+                    ? (object)player.AutomaticHuntCycleStartedAtUtc.Value
+                    : DBNull.Value;
+            command.Parameters.Add("@AutomaticHuntUsedSeconds", SqlDbType.Float).Value =
+                player.AutomaticHuntUsedSeconds;
+            command.Parameters.Add("@HuntAreaId", SqlDbType.Int).Value =
+                player.Hunt == null ? (object)DBNull.Value : player.Hunt.AreaId;
+            command.Parameters.Add("@HuntStartedAtUtc", SqlDbType.DateTimeOffset).Value =
+                player.Hunt == null ? (object)DBNull.Value : player.Hunt.StartedAtUtc;
+            command.Parameters.Add("@HuntRewardCapAtUtc", SqlDbType.DateTimeOffset).Value =
+                player.Hunt == null ? (object)DBNull.Value : player.Hunt.RewardCapAtUtc;
+            command.Parameters.Add("@LastManualHuntAtUtc", SqlDbType.DateTimeOffset).Value =
+                player.LastManualHuntAtUtc.HasValue ? (object)player.LastManualHuntAtUtc.Value : DBNull.Value;
+            command.Parameters.Add("@StateJson", SqlDbType.NVarChar, -1).Value = Json.Serialize(player);
+        }
+
+        // DB의 NULL 가능 시간 컬럼을 플레이어 상태에서 사용하는 값으로 읽습니다.
+        private static DateTime? ReadNullableDateTime(SqlDataReader reader, int ordinal)
+        {
+            return reader.IsDBNull(ordinal) ? (DateTime?)null : reader.GetDateTimeOffset(ordinal).UtcDateTime;
+        }
+
+        // 자동 사냥 컬럼이 채워진 경우에만 자동 사냥 상태를 조립합니다.
+        private static HuntSession ReadHuntSession(
+            SqlDataReader reader,
+            int areaOrdinal,
+            int startedAtOrdinal,
+            int rewardCapAtOrdinal)
+        {
+            if (reader.IsDBNull(areaOrdinal) || reader.IsDBNull(startedAtOrdinal) || reader.IsDBNull(rewardCapAtOrdinal))
+                return null;
+
+            return new HuntSession
+            {
+                AreaId = reader.GetInt32(areaOrdinal),
+                StartedAtUtc = reader.GetDateTimeOffset(startedAtOrdinal).UtcDateTime,
+                RewardCapAtUtc = reader.GetDateTimeOffset(rewardCapAtOrdinal).UtcDateTime
+            };
         }
 
         // 현재 환경에 맞는 MSSQL 연결을 열어 반환합니다.

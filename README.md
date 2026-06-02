@@ -23,6 +23,7 @@
 | `database/setup.sql` | 로컬 DB와 전용 테이블 생성 |
 | `database/verify_legacy_migration.sql` | 이전 데이터가 빠짐없이 옮겨졌는지 조회 |
 | `database/cleanup_legacy_tables.sql` | 검증을 통과한 이전 테이블을 수동 삭제 |
+| `database/view_player_states.sql` | 운영 플레이어의 핵심 상태를 일반 컬럼으로 조회 |
 
 ## 로컬 MSSQL 생성
 
@@ -43,11 +44,13 @@ D:\SqlData\enhance_addiction_log.ldf
 
 - 브라우저 세션에는 플레이어 조회용 키만 저장합니다.
 - 카카오 로그인 계정은 `dbo.ea_social_accounts` 테이블에서 플레이어와 연결합니다.
-- 실제 게임 상태는 MSSQL `dbo.ea_players` 테이블에 JSON으로 저장합니다.
+- 닉네임, 골드, 강화도, 레벨, 경험치, 스탯과 자동 사냥 상태는 `dbo.ea_players`의 일반 컬럼에 저장합니다.
+- `StateJson`은 최근 메시지와 이전 버전 호환을 위한 보조 사본으로 함께 저장합니다.
 - 강화 시도는 `dbo.ea_enhancement_attempts` 테이블에 별도로 누적합니다.
 - 상태에 영향을 줄 수 있는 게임 요청은 성공과 실패 모두 `dbo.ea_game_action_logs` 테이블에 기록합니다.
 - 기존 ForgeIdle 운영 DB와 충돌하지 않도록 새 테이블에는 `ea_` 접두사를 사용합니다.
 - 서버 시작 시 기존 `dbo.accounts`가 발견되면 사용자 상태와 강화 이력을 `ea_` 테이블로 한 번만 자동 이전합니다.
+- 기존 JSON 중심 플레이어는 첫 조회 때 일반 컬럼 구조로 자동 동기화합니다.
 
 ## 이식된 게임 시스템
 

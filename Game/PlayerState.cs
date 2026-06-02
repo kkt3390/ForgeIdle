@@ -6,8 +6,8 @@ namespace EnhanceAddiction.WebForms.Game
     [Serializable]
     public sealed class PlayerState
     {
-        // 사용자별 상태는 MSSQL의 ea_players.StateJson 컬럼에 JSON으로 저장합니다.
-        // 새 필드는 기본값을 지정해 기존 사용자 JSON과 호환되도록 유지하세요.
+        // 자주 조회하는 상태는 MSSQL의 ea_players 일반 컬럼에 저장합니다.
+        // StateJson은 최근 메시지와 이전 버전 호환을 위한 보조 사본으로 유지합니다.
         // 신규 플레이어가 처음 로그인했을 때 적용할 기본 상태를 만듭니다.
         public PlayerState()
         {

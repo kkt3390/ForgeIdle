@@ -39,6 +39,7 @@
     <Content Include="database\cleanup_legacy_tables.sql" />
     <Content Include="database\setup.sql" />
     <Content Include="database\verify_legacy_migration.sql" />
+    <Content Include="database\view_player_states.sql" />
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Scripts\game.js" />

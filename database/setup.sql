@@ -23,12 +23,72 @@ BEGIN
     (
         Id bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_ea_players PRIMARY KEY,
         PlayerKey nvarchar(100) NOT NULL,
+        Nickname nvarchar(12) NULL,
+        Gold bigint NOT NULL CONSTRAINT DF_ea_players_Gold DEFAULT (5000),
+        WeaponLevel int NOT NULL CONSTRAINT DF_ea_players_WeaponLevel DEFAULT (0),
+        HighestWeaponLevel int NOT NULL CONSTRAINT DF_ea_players_HighestWeaponLevel DEFAULT (0),
+        HighestBossDefeated int NOT NULL CONSTRAINT DF_ea_players_HighestBossDefeated DEFAULT (-1),
+        ProtectionTickets int NOT NULL CONSTRAINT DF_ea_players_ProtectionTickets DEFAULT (3),
+        Level int NOT NULL CONSTRAINT DF_ea_players_Level DEFAULT (1),
+        Experience bigint NOT NULL CONSTRAINT DF_ea_players_Experience DEFAULT (0),
+        DualWield int NOT NULL CONSTRAINT DF_ea_players_DualWield DEFAULT (0),
+        GoldGain int NOT NULL CONSTRAINT DF_ea_players_GoldGain DEFAULT (0),
+        ExperienceGain int NOT NULL CONSTRAINT DF_ea_players_ExperienceGain DEFAULT (0),
+        ArtisanTouch int NOT NULL CONSTRAINT DF_ea_players_ArtisanTouch DEFAULT (0),
+        AutomaticHuntCycleStartedAtUtc datetimeoffset NULL,
+        AutomaticHuntUsedSeconds float NOT NULL CONSTRAINT DF_ea_players_AutomaticHuntUsedSeconds DEFAULT (0),
+        HuntAreaId int NULL,
+        HuntStartedAtUtc datetimeoffset NULL,
+        HuntRewardCapAtUtc datetimeoffset NULL,
+        LastManualHuntAtUtc datetimeoffset NULL,
         StateJson nvarchar(max) NOT NULL,
+        StateSchemaVersion int NOT NULL CONSTRAINT DF_ea_players_StateSchemaVersion DEFAULT (1),
         CreatedAt datetimeoffset NOT NULL,
         UpdatedAt datetimeoffset NOT NULL
     );
     CREATE UNIQUE INDEX IX_ea_players_PlayerKey ON dbo.ea_players (PlayerKey);
 END;
+GO
+
+-- 기존 JSON 중심 테이블에는 조회와 통계에 자주 쓰는 일반 컬럼을 추가합니다.
+IF COL_LENGTH(N'dbo.ea_players', N'Nickname') IS NULL
+    ALTER TABLE dbo.ea_players ADD Nickname nvarchar(12) NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'Gold') IS NULL
+    ALTER TABLE dbo.ea_players ADD Gold bigint NOT NULL CONSTRAINT DF_ea_players_Gold DEFAULT (5000) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'WeaponLevel') IS NULL
+    ALTER TABLE dbo.ea_players ADD WeaponLevel int NOT NULL CONSTRAINT DF_ea_players_WeaponLevel DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'HighestWeaponLevel') IS NULL
+    ALTER TABLE dbo.ea_players ADD HighestWeaponLevel int NOT NULL CONSTRAINT DF_ea_players_HighestWeaponLevel DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'HighestBossDefeated') IS NULL
+    ALTER TABLE dbo.ea_players ADD HighestBossDefeated int NOT NULL CONSTRAINT DF_ea_players_HighestBossDefeated DEFAULT (-1) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'ProtectionTickets') IS NULL
+    ALTER TABLE dbo.ea_players ADD ProtectionTickets int NOT NULL CONSTRAINT DF_ea_players_ProtectionTickets DEFAULT (3) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'Level') IS NULL
+    ALTER TABLE dbo.ea_players ADD Level int NOT NULL CONSTRAINT DF_ea_players_Level DEFAULT (1) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'Experience') IS NULL
+    ALTER TABLE dbo.ea_players ADD Experience bigint NOT NULL CONSTRAINT DF_ea_players_Experience DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'DualWield') IS NULL
+    ALTER TABLE dbo.ea_players ADD DualWield int NOT NULL CONSTRAINT DF_ea_players_DualWield DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'GoldGain') IS NULL
+    ALTER TABLE dbo.ea_players ADD GoldGain int NOT NULL CONSTRAINT DF_ea_players_GoldGain DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'ExperienceGain') IS NULL
+    ALTER TABLE dbo.ea_players ADD ExperienceGain int NOT NULL CONSTRAINT DF_ea_players_ExperienceGain DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'ArtisanTouch') IS NULL
+    ALTER TABLE dbo.ea_players ADD ArtisanTouch int NOT NULL CONSTRAINT DF_ea_players_ArtisanTouch DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'AutomaticHuntCycleStartedAtUtc') IS NULL
+    ALTER TABLE dbo.ea_players ADD AutomaticHuntCycleStartedAtUtc datetimeoffset NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'AutomaticHuntUsedSeconds') IS NULL
+    ALTER TABLE dbo.ea_players ADD AutomaticHuntUsedSeconds float NOT NULL CONSTRAINT DF_ea_players_AutomaticHuntUsedSeconds DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'HuntAreaId') IS NULL
+    ALTER TABLE dbo.ea_players ADD HuntAreaId int NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'HuntStartedAtUtc') IS NULL
+    ALTER TABLE dbo.ea_players ADD HuntStartedAtUtc datetimeoffset NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'HuntRewardCapAtUtc') IS NULL
+    ALTER TABLE dbo.ea_players ADD HuntRewardCapAtUtc datetimeoffset NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'LastManualHuntAtUtc') IS NULL
+    ALTER TABLE dbo.ea_players ADD LastManualHuntAtUtc datetimeoffset NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'StateSchemaVersion') IS NULL
+    ALTER TABLE dbo.ea_players ADD StateSchemaVersion int NOT NULL CONSTRAINT DF_ea_players_StateSchemaVersion DEFAULT (0) WITH VALUES;
 GO
 
 IF OBJECT_ID(N'dbo.ea_social_accounts', N'U') IS NULL
@@ -44,6 +104,23 @@ BEGIN
     CREATE UNIQUE INDEX IX_ea_social_accounts_Provider_ExternalId ON dbo.ea_social_accounts (Provider, ExternalId);
     CREATE UNIQUE INDEX IX_ea_social_accounts_PlayerKey ON dbo.ea_social_accounts (PlayerKey);
 END;
+GO
+
+-- 기존 사용자와 위 단계에서 옮긴 이전 계정의 핵심 수치를 일반 컬럼에 채웁니다.
+UPDATE dbo.ea_players
+SET Nickname = JSON_VALUE(StateJson, N'$.Nickname'),
+    Gold = COALESCE(TRY_CONVERT(bigint, JSON_VALUE(StateJson, N'$.Gold')), Gold),
+    WeaponLevel = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.WeaponLevel')), WeaponLevel),
+    HighestWeaponLevel = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.HighestWeaponLevel')), HighestWeaponLevel),
+    HighestBossDefeated = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.HighestBossDefeated')), HighestBossDefeated),
+    ProtectionTickets = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.ProtectionTickets')), ProtectionTickets),
+    Level = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Level')), Level),
+    Experience = COALESCE(TRY_CONVERT(bigint, JSON_VALUE(StateJson, N'$.Experience')), Experience),
+    DualWield = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.DualWield')), DualWield),
+    GoldGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.GoldGain')), GoldGain),
+    ExperienceGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ExperienceGain')), ExperienceGain),
+    ArtisanTouch = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ArtisanTouch')), ArtisanTouch)
+WHERE StateSchemaVersion = 0;
 GO
 
 IF OBJECT_ID(N'dbo.ea_enhancement_attempts', N'U') IS NULL
@@ -134,4 +211,21 @@ BEGIN
     INSERT INTO dbo.ea_legacy_migrations (MigrationKey, MigratedAt)
     VALUES (N'aspnet-core-accounts-v1', SYSDATETIMEOFFSET());
 END;
+GO
+
+-- 위 단계에서 옮긴 이전 계정도 일반 컬럼에 핵심 수치를 채웁니다.
+UPDATE dbo.ea_players
+SET Nickname = JSON_VALUE(StateJson, N'$.Nickname'),
+    Gold = COALESCE(TRY_CONVERT(bigint, JSON_VALUE(StateJson, N'$.Gold')), Gold),
+    WeaponLevel = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.WeaponLevel')), WeaponLevel),
+    HighestWeaponLevel = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.HighestWeaponLevel')), HighestWeaponLevel),
+    HighestBossDefeated = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.HighestBossDefeated')), HighestBossDefeated),
+    ProtectionTickets = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.ProtectionTickets')), ProtectionTickets),
+    Level = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Level')), Level),
+    Experience = COALESCE(TRY_CONVERT(bigint, JSON_VALUE(StateJson, N'$.Experience')), Experience),
+    DualWield = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.DualWield')), DualWield),
+    GoldGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.GoldGain')), GoldGain),
+    ExperienceGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ExperienceGain')), ExperienceGain),
+    ArtisanTouch = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ArtisanTouch')), ArtisanTouch)
+WHERE StateSchemaVersion = 0;
 GO
