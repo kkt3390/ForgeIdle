@@ -212,6 +212,6 @@
     </section>
   </main>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js"></script>
+  <script src="Scripts/game.js?v=20260602-1"></script>
 </body>
 </html>

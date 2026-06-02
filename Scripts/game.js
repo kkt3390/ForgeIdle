@@ -1,6 +1,8 @@
 let state;
 let catalog;
 let manualHuntAvailableAt;
+let manualHuntUnlockTimer;
+let manualHuntRequestPending = false;
 let authentication;
 const $ = selector => document.querySelector(selector);
 const number = value => Number(value).toLocaleString("ko-KR");
@@ -35,21 +37,33 @@ async function load() {
 
 // 게임 행동을 서버에 요청하고 최신 상태와 결과 알림을 화면에 반영합니다.
 async function action(name, body = {}) {
+    const isManualHunt = name === "hunt-manual";
     try {
         // 서버 응답을 기다리는 동안 중복 클릭을 막습니다.
-        if (name === "hunt-manual") {
-            $("#manual-hunt-button").disabled = true;
-            $("#manual-hunt-button").textContent = "처치 중...";
+        if (isManualHunt) {
+            manualHuntRequestPending = true;
+            manualHuntAvailableAt = new Date(Date.now() + 1000).toISOString();
+            scheduleManualHuntButtonUpdate();
+            updateManualHuntButton();
         }
 
         const result = await api(name, body);
 
         state = result.State || result.state;
         manualHuntAvailableAt = state.manualHunt.availableAt;
+        if (isManualHunt) {
+            manualHuntRequestPending = false;
+            scheduleManualHuntButtonUpdate();
+        }
         updateManualHuntButton();
         render();
         toast(result.Message || result.message);
     } catch (error) {
+        if (isManualHunt) {
+            manualHuntRequestPending = false;
+            manualHuntAvailableAt = state?.manualHunt?.availableAt;
+            scheduleManualHuntButtonUpdate();
+        }
         toast(error.message);
         render();
     }
@@ -290,11 +304,23 @@ function updateManualHuntButton() {
     const at = manualHuntAvailableAt || state.manualHunt.availableAt;
     const remaining = at ? Math.max(0, new Date(at).getTime() - Date.now()) : 0;
 
-    $("#manual-hunt-button").disabled = remaining > 0;
-    $("#manual-hunt-button").textContent = remaining > 0 ? `${Math.ceil(remaining / 1000)}초 후 가능` : "몬스터 처치";
+    $("#manual-hunt-button").disabled = manualHuntRequestPending || remaining > 0;
+    $("#manual-hunt-button").textContent = manualHuntRequestPending
+        ? "처치 중..."
+        : remaining > 0
+            ? `${Math.ceil(remaining / 1000)}초 후 가능`
+            : "몬스터 처치";
     $("#manual-hunt-cooldown").textContent = remaining > 0
         ? "다음 몬스터를 찾고 있습니다."
         : "1초마다 직접 처치할 수 있습니다.";
+}
+// 반복 타이머가 지연되더라도 직접 사냥 버튼이 쿨타임 종료 직후 풀리도록 갱신을 예약합니다.
+function scheduleManualHuntButtonUpdate() {
+    clearTimeout(manualHuntUnlockTimer);
+    if (!manualHuntAvailableAt) return;
+
+    const remaining = Math.max(0, new Date(manualHuntAvailableAt).getTime() - Date.now());
+    manualHuntUnlockTimer = setTimeout(updateManualHuntButton, remaining + 20);
 }
 // 초 단위 시간을 사용자가 읽기 쉬운 시·분·초 문자열로 바꿉니다.
 function formatDuration(seconds) {
