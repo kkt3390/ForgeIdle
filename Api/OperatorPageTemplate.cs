@@ -1,33 +1,7 @@
-using System;
-using System.Web;
-using System.Web.SessionState;
-using EnhanceAddiction.WebForms.Data;
-
-namespace EnhanceAddiction.WebForms
+namespace EnhanceAddiction.WebForms.Api
 {
-    public sealed class OperatorHandler : IHttpHandler, IRequiresSessionState
+    public static class OperatorPageTemplate
     {
-        public bool IsReusable { get { return false; } }
-
-        // 일부 호스팅에서 새 .aspx 파일 반영이 늦거나 차단되어 .ashx로 운영자 화면을 제공합니다.
-        public void ProcessRequest(HttpContext context)
-        {
-            try
-            {
-                new AdminRepository().RequireOperator(context);
-            }
-            catch (UnauthorizedAccessException exception)
-            {
-                context.Response.StatusCode = 403;
-                context.Response.ContentType = "text/plain; charset=utf-8";
-                context.Response.Write(exception.Message);
-                return;
-            }
-
-            context.Response.ContentType = "text/html; charset=utf-8";
-            context.Response.Write(PageHtml);
-        }
-
         public static string PageHtml { get { return Html; } }
 
         private const string Html = @"<!doctype html>

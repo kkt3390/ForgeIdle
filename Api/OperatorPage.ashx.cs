@@ -25,7 +25,7 @@ namespace EnhanceAddiction.WebForms.Api
             }
 
             context.Response.ContentType = "text/html; charset=utf-8";
-            context.Response.Write(OperatorHandler.PageHtml);
+            context.Response.Write(OperatorPageTemplate.PageHtml);
         }
     }
 }
