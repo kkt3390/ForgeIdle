@@ -33,6 +33,7 @@
     <Content Include="Api\GameApi.ashx" />
     <Content Include="Api\AdminApi.ashx" />
     <Content Include="Admin.aspx" />
+    <Content Include="Operator.aspx" />
     <Content Include="Auth\DevelopmentLogin.ashx" />
     <Content Include="Auth\KakaoCallback.ashx" />
     <Content Include="Auth\KakaoLogin.ashx" />
@@ -46,6 +47,7 @@
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Scripts\game.js" />
+    <Content Include="Scripts\operator.js" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -53,6 +55,9 @@
     <Compile Include="Api\AdminApi.ashx.cs" />
     <Compile Include="Admin.aspx.cs">
       <DependentUpon>Admin.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Operator.aspx.cs">
+      <DependentUpon>Operator.aspx</DependentUpon>
     </Compile>
     <Compile Include="Auth\AuthSession.cs" />
     <Compile Include="Auth\DevelopmentLogin.ashx.cs" />
