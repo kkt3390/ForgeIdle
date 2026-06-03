@@ -201,6 +201,18 @@ BEGIN
     );
     CREATE UNIQUE INDEX IX_ea_weapon_catalog_WeaponKey ON dbo.ea_weapon_catalog (WeaponKey);
 END;
+IF OBJECT_ID(N'dbo.ea_enhancement_rules', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ea_enhancement_rules (
+        CurrentLevel int NOT NULL CONSTRAINT PK_ea_enhancement_rules PRIMARY KEY,
+        Cost bigint NOT NULL,
+        SuccessRate float NOT NULL,
+        KeepRate float NOT NULL,
+        DestroyRate float NOT NULL,
+        IsEnabled bit NOT NULL CONSTRAINT DF_ea_enhancement_rules_IsEnabled DEFAULT (1),
+        UpdatedAt datetimeoffset NOT NULL
+    );
+END;
 IF OBJECT_ID(N'dbo.ea_legacy_migrations', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.ea_legacy_migrations (

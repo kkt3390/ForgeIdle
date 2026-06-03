@@ -1,6 +1,7 @@
 let adminState = null;
 const $ = selector => document.querySelector(selector);
 const number = value => Number(value || 0).toLocaleString("ko-KR");
+const percent = value => `${(Number(value || 0) * 100).toLocaleString("ko-KR", { maximumFractionDigits: 4 })}%`;
 const escapeHtml = value => {
     const div = document.createElement("div");
     div.textContent = value ?? "";
@@ -24,6 +25,7 @@ async function loadAdmin() {
     renderHotTime();
     renderSuspicious();
     renderUsers(adminState.operators);
+    renderEnhancements();
     renderMonsters();
     renderWeapons();
     renderAdminLogs();
@@ -103,6 +105,18 @@ function renderWeapons() {
         </tr>`).join("");
 }
 
+function renderEnhancements() {
+    $("#enhancement-body").innerHTML = adminState.enhancementRules.map(row => `
+        <tr>
+          <td>+${row.currentLevel} → +${row.currentLevel + 1}</td>
+          <td>${number(row.cost)}</td>
+          <td>${percent(row.successRate)}</td>
+          <td>${percent(row.keepRate)}</td>
+          <td>${percent(row.destroyRate)}</td>
+          <td><button onclick='editEnhancement(${JSON.stringify(row)})'>편집</button></td>
+        </tr>`).join("");
+}
+
 function renderAdminLogs() {
     $("#admin-log-body").innerHTML = adminState.recentAdminLogs.map(row => `
         <tr>
@@ -155,6 +169,15 @@ function editWeapon(row) {
     $("#weapon-description").value = row.description;
 }
 
+function editEnhancement(row) {
+    $("#enhancement-level").value = row.currentLevel;
+    $("#enhancement-cost").value = row.cost;
+    $("#enhancement-success").value = row.successRate;
+    $("#enhancement-keep").value = row.keepRate;
+    $("#enhancement-destroy").value = row.destroyRate;
+    $("#enhancement-enabled").value = String(row.isEnabled);
+}
+
 function toast(message) {
     $("#toast").textContent = message;
     $("#toast").classList.add("show");
@@ -197,6 +220,20 @@ $("#monster-form").addEventListener("submit", async event => {
         description: $("#monster-description").value
     });
     toast("도감 데이터를 저장했습니다.");
+    await loadAdmin();
+});
+
+$("#enhancement-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    await adminApi("save-enhancement", {
+        currentLevel: Number($("#enhancement-level").value),
+        cost: Number($("#enhancement-cost").value),
+        successRate: Number($("#enhancement-success").value),
+        keepRate: Number($("#enhancement-keep").value),
+        destroyRate: Number($("#enhancement-destroy").value),
+        isEnabled: $("#enhancement-enabled").value === "true"
+    });
+    toast("강화 확률을 저장했습니다.");
     await loadAdmin();
 });
 

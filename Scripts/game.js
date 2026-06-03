@@ -87,7 +87,7 @@ function render() {
     if (!state) return;
     $("#player-name").textContent = state.nickname ? `${state.nickname} 님의 대장간` : "";
     $("#gold").textContent = number(state.gold);
-    $("#weapon").textContent = `+${state.weaponLevel} 검`;
+    $("#weapon").textContent = `+${state.weaponLevel} ${state.weaponName || "검"}`;
     $("#attack").textContent = number(state.attackPower);
     $("#tickets").textContent = `${state.protectionTickets}장`;
     $("#weapon-orb").textContent = `+${state.weaponLevel}`;
@@ -310,7 +310,7 @@ function renderCollection() {
             return `
                 <article class="${cardClasses}">
                     <div class="collection-image">
-                        <img src="Content/monsters/${monster.key}.webp" alt="" onerror="this.hidden=true" />
+                        <img src="${escapeHtml(monster.imagePath || `Content/monsters/${monster.key}.webp`)}" alt="" onerror="this.hidden=true" />
                         <span>${monster.collected ? "등록 완료" : "미등록"}</span>
                     </div>
                     <div class="collection-card-info">

@@ -49,6 +49,10 @@ namespace EnhanceAddiction.WebForms.Api
                         repository.UpsertWeapon(operatorKey, Body(context));
                         result = new { ok = true, message = "무기 데이터를 저장했습니다." };
                         break;
+                    case "save-enhancement":
+                        repository.UpsertEnhancementRule(operatorKey, Body(context));
+                        result = new { ok = true, message = "강화 확률을 저장했습니다." };
+                        break;
                     default:
                         context.Response.StatusCode = 404;
                         result = new { message = "없는 관리자 요청입니다." };

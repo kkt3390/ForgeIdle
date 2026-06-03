@@ -71,6 +71,7 @@
     <Compile Include="Auth\Logout.ashx.cs" />
     <Compile Include="Data\ConnectionSettings.cs" />
     <Compile Include="Data\AdminRepository.cs" />
+    <Compile Include="Data\GameContentRepository.cs" />
     <Compile Include="Data\GameRewardSettings.cs" />
     <Compile Include="Data\PlayerRepository.cs" />
     <Compile Include="Data\SchemaInitializer.cs" />

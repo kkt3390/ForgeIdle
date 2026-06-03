@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.Linq;
 using System.Web;
 using System.Web.Script.Serialization;
+using EnhanceAddiction.WebForms.Game;
 
 namespace EnhanceAddiction.WebForms.Data
 {
@@ -65,7 +67,8 @@ namespace EnhanceAddiction.WebForms.Data
                 operators = GetOperators(),
                 recentAdminLogs = GetRecentAdminLogs(),
                 monsterCatalog = GetMonsterCatalog(),
-                weaponCatalog = GetWeaponCatalog()
+                weaponCatalog = GetWeaponCatalog(),
+                enhancementRules = GetEnhancementRules()
             };
         }
 
@@ -201,6 +204,7 @@ namespace EnhanceAddiction.WebForms.Data
                 command.ExecuteNonQuery();
             }
             AddAdminLog(operatorKey, "도감 데이터 저장", null, body);
+            GameContentRepository.ClearCache();
         }
 
         public void UpsertWeapon(string operatorKey, Dictionary<string, object> body)
@@ -231,6 +235,44 @@ namespace EnhanceAddiction.WebForms.Data
                 command.ExecuteNonQuery();
             }
             AddAdminLog(operatorKey, "무기 데이터 저장", null, body);
+            GameContentRepository.ClearCache();
+        }
+
+        public void UpsertEnhancementRule(string operatorKey, Dictionary<string, object> body)
+        {
+            var currentLevel = IntValue(body, "currentLevel");
+            var cost = LongValue(body, "cost");
+            var successRate = RateValue(body, "successRate");
+            var keepRate = RateValue(body, "keepRate");
+            var destroyRate = RateValue(body, "destroyRate");
+            if (currentLevel < 0 || currentLevel > 29) throw new InvalidOperationException("강화 단계는 0~29만 사용할 수 있습니다.");
+            if (cost < 0) throw new InvalidOperationException("강화 비용은 0 이상이어야 합니다.");
+            if (Math.Abs((successRate + keepRate + destroyRate) - 1) > 0.0001)
+                throw new InvalidOperationException("성공/유지/파괴 확률의 합은 100%여야 합니다.");
+
+            using (var connection = OpenConnection())
+            using (var command = new SqlCommand(
+                @"MERGE dbo.ea_enhancement_rules AS target
+                  USING (SELECT @CurrentLevel AS CurrentLevel) AS source
+                  ON target.CurrentLevel = source.CurrentLevel
+                  WHEN MATCHED THEN
+                    UPDATE SET Cost = @Cost, SuccessRate = @SuccessRate, KeepRate = @KeepRate,
+                               DestroyRate = @DestroyRate, IsEnabled = @IsEnabled, UpdatedAt = SYSDATETIMEOFFSET()
+                  WHEN NOT MATCHED THEN
+                    INSERT (CurrentLevel, Cost, SuccessRate, KeepRate, DestroyRate, IsEnabled, UpdatedAt)
+                    VALUES (@CurrentLevel, @Cost, @SuccessRate, @KeepRate, @DestroyRate, @IsEnabled, SYSDATETIMEOFFSET());",
+                connection))
+            {
+                command.Parameters.Add("@CurrentLevel", SqlDbType.Int).Value = currentLevel;
+                command.Parameters.Add("@Cost", SqlDbType.BigInt).Value = cost;
+                command.Parameters.Add("@SuccessRate", SqlDbType.Float).Value = successRate;
+                command.Parameters.Add("@KeepRate", SqlDbType.Float).Value = keepRate;
+                command.Parameters.Add("@DestroyRate", SqlDbType.Float).Value = destroyRate;
+                command.Parameters.Add("@IsEnabled", SqlDbType.Bit).Value = BoolValue(body, "isEnabled", true);
+                command.ExecuteNonQuery();
+            }
+            GameContentRepository.ClearCache();
+            AddAdminLog(operatorKey, "강화 확률 저장", null, body);
         }
 
         private object GetDashboard()
@@ -404,6 +446,22 @@ namespace EnhanceAddiction.WebForms.Data
             return rows;
         }
 
+        private object GetEnhancementRules()
+        {
+            var defaults = new GameCatalog().Enhancements;
+            return GameContentRepository.EnhancementRules(defaults)
+                .Select(rule => new
+                {
+                    currentLevel = rule.CurrentLevel,
+                    cost = rule.Cost,
+                    successRate = rule.SuccessRate,
+                    keepRate = rule.KeepRate,
+                    destroyRate = rule.DestroyRate,
+                    isEnabled = true
+                })
+                .ToArray();
+        }
+
         private void UpsertSetting(string key, string value, string operatorKey)
         {
             using (var connection = OpenConnection())
@@ -479,6 +537,20 @@ namespace EnhanceAddiction.WebForms.Data
         {
             int value;
             return body.ContainsKey(key) && body[key] != null && int.TryParse(body[key].ToString(), out value) ? value : 0;
+        }
+
+        private static long LongValue(Dictionary<string, object> body, string key)
+        {
+            long value;
+            return body.ContainsKey(key) && body[key] != null && long.TryParse(body[key].ToString(), out value) ? value : 0;
+        }
+
+        private static double RateValue(Dictionary<string, object> body, string key)
+        {
+            double value;
+            return body.ContainsKey(key) && body[key] != null && double.TryParse(body[key].ToString(), out value)
+                ? Math.Min(1, Math.Max(0, value))
+                : 0;
         }
 
         private static bool BoolValue(Dictionary<string, object> body, string key, bool fallback)

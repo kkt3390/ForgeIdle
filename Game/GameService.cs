@@ -41,8 +41,10 @@ namespace EnhanceAddiction.WebForms.Game
                     experiencePerHour = area.ExperiencePerHour,
                     canEnter = CanEnter(player, area)
                 }).ToArray();
-            var adjustedRule = player.WeaponLevel < _catalog.Enhancements.Count
-                ? AdjustEnhancement(_catalog.Enhancements[player.WeaponLevel], player.Stats.ArtisanTouch)
+            var enhancements = GameContentRepository.EnhancementRules(_catalog.Enhancements);
+            var weapon = GameContentRepository.ActiveWeapon();
+            var adjustedRule = player.WeaponLevel < enhancements.Count
+                ? AdjustEnhancement(enhancements[player.WeaponLevel], player.Stats.ArtisanTouch)
                 : null;
             var nextBossArea = _catalog.Areas.ElementAtOrDefault(player.HighestBossDefeated + 1);
             var manualHuntArea = ManualHuntArea(player);
@@ -51,6 +53,9 @@ namespace EnhanceAddiction.WebForms.Game
                 nickname = player.Nickname,
                 gold = player.Gold,
                 weaponLevel = player.WeaponLevel,
+                weaponName = weapon.Name,
+                weaponImagePath = weapon.ImagePath,
+                weaponDescription = weapon.Description,
                 highestWeaponLevel = player.HighestWeaponLevel,
                 attackPower = _catalog.AttackPower(player.WeaponLevel),
                 protectionTickets = player.ProtectionTickets,
@@ -135,7 +140,7 @@ namespace EnhanceAddiction.WebForms.Game
                         monstersPerGrade = MonstersPerCollectionGrade
                     }
                     : null,
-                enhancements = _catalog.Enhancements.Select(RuleSnapshot).ToArray()
+                enhancements = GameContentRepository.EnhancementRules(_catalog.Enhancements).Select(RuleSnapshot).ToArray()
             };
         }
 
@@ -219,8 +224,9 @@ namespace EnhanceAddiction.WebForms.Game
         public GameResult Enhance(PlayerState player, bool useProtection)
         {
             if (player.Hunt != null) return Failure(player, "자동 사냥을 종료하고 정산한 뒤 강화할 수 있습니다.");
-            if (player.WeaponLevel >= _catalog.Enhancements.Count) return Failure(player, "이미 최고 강화 단계입니다.");
-            var rule = AdjustEnhancement(_catalog.Enhancements[player.WeaponLevel], player.Stats.ArtisanTouch);
+            var enhancements = GameContentRepository.EnhancementRules(_catalog.Enhancements);
+            if (player.WeaponLevel >= enhancements.Count) return Failure(player, "이미 최고 강화 단계입니다.");
+            var rule = AdjustEnhancement(enhancements[player.WeaponLevel], player.Stats.ArtisanTouch);
             if (player.Gold < rule.Cost) return Failure(player, "골드가 부족합니다.");
             if (useProtection && rule.DestroyRate > 0 && player.ProtectionTickets <= 0)
                 return Failure(player, "보호권이 없습니다.");
@@ -473,6 +479,7 @@ namespace EnhanceAddiction.WebForms.Game
         // 도감 화면에 필요한 전체 항목과 사용자 등록 여부를 반환합니다.
         private object CollectionSnapshot(PlayerState player)
         {
+            var monsterCatalog = GameContentRepository.MonsterMap();
             return new
             {
                 collectedCount = player.CollectedMonsterKeys.Count,
@@ -484,12 +491,22 @@ namespace EnhanceAddiction.WebForms.Game
                     unlocked = area.Id <= player.HighestBossDefeated + 1,
                     monsters = new[] { "normal", "elite", "golden" }
                         .SelectMany(grade => Enumerable.Range(1, MonstersPerCollectionGrade)
-                            .Select(number => new
+                            .Select(number =>
                             {
-                                key = CollectionKey(area.Id, grade, number),
-                                grade = grade,
-                                name = CollectionMonsterName(area.Name, grade, number),
-                                collected = player.CollectedMonsterKeys.Contains(CollectionKey(area.Id, grade, number))
+                                var key = CollectionKey(area.Id, grade, number);
+                                MonsterCatalogEntry custom;
+                                monsterCatalog.TryGetValue(key, out custom);
+                                return new
+                                {
+                                    key = key,
+                                    grade = grade,
+                                    name = custom == null ? CollectionMonsterName(area.Name, grade, number) : custom.Name,
+                                    description = custom == null ? "" : custom.Description,
+                                    imagePath = custom == null || string.IsNullOrWhiteSpace(custom.ImagePath)
+                                        ? string.Format("Content/monsters/{0}.webp", key)
+                                        : custom.ImagePath,
+                                    collected = player.CollectedMonsterKeys.Contains(key)
+                                };
                             })).ToArray()
                 }).ToArray()
             };
