@@ -33,6 +33,7 @@
     <Content Include="Api\GameApi.ashx" />
     <Content Include="Api\AdminApi.ashx" />
     <Content Include="Admin.aspx" />
+    <Content Include="Operator.ashx" />
     <Content Include="Operator.aspx" />
     <Content Include="Auth\DevelopmentLogin.ashx" />
     <Content Include="Auth\KakaoCallback.ashx" />
@@ -59,6 +60,7 @@
     <Compile Include="Operator.aspx.cs">
       <DependentUpon>Operator.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Operator.ashx.cs" />
     <Compile Include="Auth\AuthSession.cs" />
     <Compile Include="Auth\DevelopmentLogin.ashx.cs" />
     <Compile Include="Auth\KakaoCallback.ashx.cs" />

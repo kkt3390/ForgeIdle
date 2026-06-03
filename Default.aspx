@@ -35,7 +35,7 @@
     <section id="game" hidden>
       <div class="player-row">
         <p class="player-name" id="player-name"></p>
-        <a class="logout" id="admin-link" href="Operator.aspx" hidden>관리자</a>
+        <a class="logout" id="admin-link" href="Operator.ashx" hidden>관리자</a>
         <a class="logout" href="Auth/Logout.ashx">로그아웃</a>
       </div>
       <section class="level-card">
