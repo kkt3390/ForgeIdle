@@ -33,6 +33,10 @@ BEGIN
         LastManualHuntAtUtc datetimeoffset NULL,
         ManualHuntAreaId int NOT NULL CONSTRAINT DF_ea_players_ManualHuntAreaId DEFAULT (0),
         CollectedMonsterKeysJson nvarchar(max) NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterKeysJson DEFAULT (N'[]'),
+        IsOperator bit NOT NULL CONSTRAINT DF_ea_players_IsOperator DEFAULT (0),
+        IsBanned bit NOT NULL CONSTRAINT DF_ea_players_IsBanned DEFAULT (0),
+        BanReason nvarchar(500) NULL,
+        BannedAtUtc datetimeoffset NULL,
         StateJson nvarchar(max) NOT NULL,
         StateSchemaVersion int NOT NULL CONSTRAINT DF_ea_players_StateSchemaVersion DEFAULT (1),
         CreatedAt datetimeoffset NOT NULL,
@@ -97,6 +101,14 @@ IF COL_LENGTH(N'dbo.ea_players', N'ManualHuntAreaId') IS NULL
     ALTER TABLE dbo.ea_players ADD ManualHuntAreaId int NOT NULL CONSTRAINT DF_ea_players_ManualHuntAreaId DEFAULT (0) WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'CollectedMonsterKeysJson') IS NULL
     ALTER TABLE dbo.ea_players ADD CollectedMonsterKeysJson nvarchar(max) NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterKeysJson DEFAULT (N'[]') WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'IsOperator') IS NULL
+    ALTER TABLE dbo.ea_players ADD IsOperator bit NOT NULL CONSTRAINT DF_ea_players_IsOperator DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'IsBanned') IS NULL
+    ALTER TABLE dbo.ea_players ADD IsBanned bit NOT NULL CONSTRAINT DF_ea_players_IsBanned DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'BanReason') IS NULL
+    ALTER TABLE dbo.ea_players ADD BanReason nvarchar(500) NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'BannedAtUtc') IS NULL
+    ALTER TABLE dbo.ea_players ADD BannedAtUtc datetimeoffset NULL;
 IF COL_LENGTH(N'dbo.ea_players', N'StateSchemaVersion') IS NULL
     ALTER TABLE dbo.ea_players ADD StateSchemaVersion int NOT NULL CONSTRAINT DF_ea_players_StateSchemaVersion DEFAULT (0) WITH VALUES;
 
@@ -135,6 +147,59 @@ BEGIN
     );
     CREATE INDEX IX_ea_game_action_logs_PlayerKey_CreatedAt ON dbo.ea_game_action_logs (PlayerKey, CreatedAt DESC);
     CREATE INDEX IX_ea_game_action_logs_ActionType_CreatedAt ON dbo.ea_game_action_logs (ActionType, CreatedAt DESC);
+END;
+IF OBJECT_ID(N'dbo.ea_admin_action_logs', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ea_admin_action_logs (
+        Id bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_ea_admin_action_logs PRIMARY KEY,
+        OperatorPlayerKey nvarchar(100) NOT NULL,
+        ActionType nvarchar(80) NOT NULL,
+        TargetPlayerKey nvarchar(100) NULL,
+        DetailsJson nvarchar(max) NULL,
+        CreatedAt datetimeoffset NOT NULL
+    );
+    CREATE INDEX IX_ea_admin_action_logs_CreatedAt ON dbo.ea_admin_action_logs (CreatedAt DESC);
+    CREATE INDEX IX_ea_admin_action_logs_TargetPlayerKey ON dbo.ea_admin_action_logs (TargetPlayerKey);
+END;
+IF OBJECT_ID(N'dbo.ea_game_settings', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ea_game_settings (
+        SettingKey nvarchar(80) NOT NULL CONSTRAINT PK_ea_game_settings PRIMARY KEY,
+        SettingValue nvarchar(max) NOT NULL,
+        UpdatedByPlayerKey nvarchar(100) NULL,
+        UpdatedAt datetimeoffset NOT NULL
+    );
+END;
+IF OBJECT_ID(N'dbo.ea_monster_catalog', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ea_monster_catalog (
+        Id bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_ea_monster_catalog PRIMARY KEY,
+        MonsterKey nvarchar(120) NOT NULL,
+        AreaId int NOT NULL,
+        Grade nvarchar(20) NOT NULL,
+        SlotNumber int NOT NULL,
+        Name nvarchar(100) NOT NULL,
+        Description nvarchar(1000) NULL,
+        ImagePath nvarchar(300) NULL,
+        SortOrder int NOT NULL CONSTRAINT DF_ea_monster_catalog_SortOrder DEFAULT (0),
+        IsVisible bit NOT NULL CONSTRAINT DF_ea_monster_catalog_IsVisible DEFAULT (1),
+        UpdatedAt datetimeoffset NOT NULL
+    );
+    CREATE UNIQUE INDEX IX_ea_monster_catalog_MonsterKey ON dbo.ea_monster_catalog (MonsterKey);
+END;
+IF OBJECT_ID(N'dbo.ea_weapon_catalog', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ea_weapon_catalog (
+        Id bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_ea_weapon_catalog PRIMARY KEY,
+        WeaponKey nvarchar(120) NOT NULL,
+        Name nvarchar(100) NOT NULL,
+        Description nvarchar(1000) NULL,
+        ImagePath nvarchar(300) NULL,
+        SortOrder int NOT NULL CONSTRAINT DF_ea_weapon_catalog_SortOrder DEFAULT (0),
+        IsVisible bit NOT NULL CONSTRAINT DF_ea_weapon_catalog_IsVisible DEFAULT (1),
+        UpdatedAt datetimeoffset NOT NULL
+    );
+    CREATE UNIQUE INDEX IX_ea_weapon_catalog_WeaponKey ON dbo.ea_weapon_catalog (WeaponKey);
 END;
 IF OBJECT_ID(N'dbo.ea_legacy_migrations', N'U') IS NULL
 BEGIN

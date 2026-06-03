@@ -31,6 +31,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Api\GameApi.ashx" />
+    <Content Include="Api\AdminApi.ashx" />
+    <Content Include="Admin.aspx" />
     <Content Include="Auth\DevelopmentLogin.ashx" />
     <Content Include="Auth\KakaoCallback.ashx" />
     <Content Include="Auth\KakaoLogin.ashx" />
@@ -48,6 +50,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api\GameApi.ashx.cs" />
+    <Compile Include="Api\AdminApi.ashx.cs" />
+    <Compile Include="Admin.aspx.cs">
+      <DependentUpon>Admin.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Auth\AuthSession.cs" />
     <Compile Include="Auth\DevelopmentLogin.ashx.cs" />
     <Compile Include="Auth\KakaoCallback.ashx.cs" />
@@ -55,6 +61,8 @@
     <Compile Include="Auth\KakaoSettings.cs" />
     <Compile Include="Auth\Logout.ashx.cs" />
     <Compile Include="Data\ConnectionSettings.cs" />
+    <Compile Include="Data\AdminRepository.cs" />
+    <Compile Include="Data\GameRewardSettings.cs" />
     <Compile Include="Data\PlayerRepository.cs" />
     <Compile Include="Data\SchemaInitializer.cs" />
     <Compile Include="Default.aspx.cs">

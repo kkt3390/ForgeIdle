@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using EnhanceAddiction.WebForms.Data;
 
 namespace EnhanceAddiction.WebForms.Game
 {
@@ -522,13 +523,17 @@ namespace EnhanceAddiction.WebForms.Game
         // 골드 획득량 스탯을 배율로 변환합니다.
         private static double GoldMultiplier(PlayerState player)
         {
-            return 1 + player.Stats.GoldGain * .01;
+            var eventSettings = GameRewardSettings.Current();
+            var eventMultiplier = eventSettings.IsActive(DateTime.UtcNow) ? eventSettings.GoldMultiplier : 1;
+            return (1 + player.Stats.GoldGain * .01) * eventMultiplier;
         }
 
         // 경험치 획득량 스탯을 배율로 변환합니다.
         private static double ExperienceMultiplier(PlayerState player)
         {
-            return 1 + player.Stats.ExperienceGain * .01;
+            var eventSettings = GameRewardSettings.Current();
+            var eventMultiplier = eventSettings.IsActive(DateTime.UtcNow) ? eventSettings.ExperienceMultiplier : 1;
+            return (1 + player.Stats.ExperienceGain * .01) * eventMultiplier;
         }
 
         // 기본 시간과 보스 처치 보너스를 합쳐 오늘의 자동 사냥 한도를 계산합니다.

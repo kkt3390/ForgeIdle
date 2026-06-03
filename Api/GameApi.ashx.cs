@@ -87,12 +87,32 @@ namespace EnhanceAddiction.WebForms.Api
         // 현재 세션의 로그인 여부와 로컬 테스트 로그인 허용 여부를 반환합니다.
         private static object Auth(HttpContext context)
         {
+            var playerKey = context.Session["PlayerKey"] as string;
+            var admin = new AdminRepository();
+            var authenticated = AuthSession.IsAuthenticated(context);
+            var banned = false;
+            var banMessage = "";
+            if (authenticated)
+            {
+                try
+                {
+                    admin.EnsureNotBanned(playerKey);
+                }
+                catch (UnauthorizedAccessException exception)
+                {
+                    banned = true;
+                    banMessage = exception.Message;
+                }
+            }
             return new
             {
-                authenticated = AuthSession.IsAuthenticated(context),
+                authenticated = authenticated,
                 provider = context.Session["LoginProvider"] as string,
                 allowDevelopmentLogin = AuthSession.IsLocalRequest(context),
-                kakaoConfigured = KakaoSettings.IsConfigured
+                kakaoConfigured = KakaoSettings.IsConfigured,
+                isOperator = authenticated && !banned && admin.IsOperator(playerKey),
+                isBanned = banned,
+                banMessage = banMessage
             };
         }
 
@@ -156,6 +176,7 @@ namespace EnhanceAddiction.WebForms.Api
             playerKey = context.Session["PlayerKey"] as string;
             if (string.IsNullOrWhiteSpace(playerKey))
                 throw new UnauthorizedAccessException("로그인이 필요합니다.");
+            new AdminRepository().EnsureNotBanned(playerKey);
             return repository.GetOrCreate(playerKey);
         }
 

@@ -29,8 +29,10 @@ async function load() {
     $("#login-panel").hidden = authentication.authenticated;
     $("#development-login").hidden = !authentication.allowDevelopmentLogin;
     if (!authentication.authenticated) return;
+    if (authentication.isBanned) throw new Error(authentication.banMessage || "접속이 제한된 계정입니다.");
     catalog = await api("catalog");
     state = await api("state");
+    $("#admin-link").hidden = !authentication.isOperator;
     $("#collection-tab").hidden = !state.collectionEnabled;
     $("#collection-guide").hidden = !state.collectionEnabled;
     renderRates();
