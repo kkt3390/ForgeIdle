@@ -5,10 +5,21 @@ let manualHuntUnlockTimer;
 let manualHuntRequestPending = false;
 let selectedCollectionAreaId = 0;
 let authentication;
+let serverTimeOffsetMs = 0;
 const $ = selector => document.querySelector(selector);
 const number = value => Number(value).toLocaleString("ko-KR");
 const experience = value => Number(value).toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const percent = value => `${(value * 100).toLocaleString("ko-KR", { maximumFractionDigits: 2 })}%`;
+
+// 데스크톱 브라우저의 로컬 시계/타이머가 서버와 어긋나도 게임 시간은 서버 기준으로 표시합니다.
+function syncServerClock(nextState) {
+    if (!nextState?.serverNow) return;
+    serverTimeOffsetMs = new Date(nextState.serverNow).getTime() - Date.now();
+}
+
+function serverNowMs() {
+    return Date.now() + serverTimeOffsetMs;
+}
 
 // 서버 기능을 추가할 때는 Api/GameApi.ashx.cs의 action과 이 함수를 함께 확인하세요.
 // 지정한 게임 API를 호출하고 실패 응답은 사용자용 오류로 바꿉니다.
@@ -32,6 +43,7 @@ async function load() {
     if (authentication.isBanned) throw new Error(authentication.banMessage || "접속이 제한된 계정입니다.");
     catalog = await api("catalog");
     state = await api("state");
+    syncServerClock(state);
     $("#admin-link").hidden = !authentication.isOperator;
     $("#collection-tab").hidden = !state.collectionEnabled;
     $("#collection-guide").hidden = !state.collectionEnabled;
@@ -48,7 +60,7 @@ async function action(name, body = {}) {
         // 서버 응답을 기다리는 동안 중복 클릭을 막습니다.
         if (isManualHunt) {
             manualHuntRequestPending = true;
-            manualHuntAvailableAt = new Date(Date.now() + 1000).toISOString();
+            manualHuntAvailableAt = new Date(serverNowMs() + 1000).toISOString();
             scheduleManualHuntButtonUpdate();
             updateManualHuntButton();
         }
@@ -56,6 +68,7 @@ async function action(name, body = {}) {
         const result = await api(name, body);
 
         state = result.State || result.state;
+        syncServerClock(state);
         manualHuntAvailableAt = state.manualHunt.availableAt;
         if (isManualHunt) {
             manualHuntRequestPending = false;
@@ -336,7 +349,7 @@ function updateTimer() {
     const rewardCapAt = new Date(state.hunt.rewardCapAt).getTime();
 
     // 서버 위치(유럽)로 인한 지연을 고려하여 현재 시간을 가져옴
-    const now = Date.now();
+    const now = serverNowMs();
 
     // [보정 로직] 
     // 만약 서버에서 온 시작 시간이 네트워크 지연으로 인해 현재 시간보다 아주 약간 미래라면
@@ -368,7 +381,7 @@ function updateAutomaticHuntBudget() {
     if (state.hunt) {
         const startedAt = new Date(state.hunt.startedAt).getTime();
         const rewardCapAt = new Date(state.hunt.rewardCapAt).getTime();
-        const elapsedSeconds = Math.floor((Math.min(Date.now(), rewardCapAt) - startedAt) / 1000);
+        const elapsedSeconds = Math.floor((Math.min(serverNowMs(), rewardCapAt) - startedAt) / 1000);
         seconds = Math.max(0, seconds - elapsedSeconds);
     }
     $("#hunt-budget").textContent =
@@ -379,7 +392,7 @@ function updateAutomaticHuntBudget() {
 function updateManualHuntButton() {
     if (!state) return;
     const at = manualHuntAvailableAt || state.manualHunt.availableAt;
-    const remaining = at ? Math.max(0, new Date(at).getTime() - Date.now()) : 0;
+    const remaining = at ? Math.max(0, new Date(at).getTime() - serverNowMs()) : 0;
 
     $("#manual-hunt-button").disabled = manualHuntRequestPending || remaining > 0;
     $("#manual-hunt-button").textContent = manualHuntRequestPending
@@ -396,7 +409,7 @@ function scheduleManualHuntButtonUpdate() {
     clearTimeout(manualHuntUnlockTimer);
     if (!manualHuntAvailableAt) return;
 
-    const remaining = Math.max(0, new Date(manualHuntAvailableAt).getTime() - Date.now());
+    const remaining = Math.max(0, new Date(manualHuntAvailableAt).getTime() - serverNowMs());
     manualHuntUnlockTimer = setTimeout(updateManualHuntButton, remaining + 20);
 }
 // 초 단위 시간을 사용자가 읽기 쉬운 시·분·초 문자열로 바꿉니다.

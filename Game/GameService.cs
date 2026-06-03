@@ -28,8 +28,9 @@ namespace EnhanceAddiction.WebForms.Game
         // 화면 항목을 추가할 때는 이 객체와 Scripts/game.js를 함께 수정하세요.
         public object Snapshot(PlayerState player)
         {
+            var now = DateTime.UtcNow;
             NormalizePlayer(player);
-            NormalizeAutomaticHuntCycle(player, DateTime.UtcNow);
+            NormalizeAutomaticHuntCycle(player, now);
             var availableAreas = _catalog.Areas
                 .Where(area => area.Id <= player.HighestBossDefeated + 1)
                 .Select(area => new
@@ -51,6 +52,7 @@ namespace EnhanceAddiction.WebForms.Game
             return new
             {
                 nickname = player.Nickname,
+                serverNow = Iso(now),
                 gold = player.Gold,
                 weaponLevel = player.WeaponLevel,
                 weaponName = weapon.Name,
@@ -75,7 +77,7 @@ namespace EnhanceAddiction.WebForms.Game
                 {
                     limitHours = AutomaticHuntLimit(player).TotalHours,
                     remainingHours = RemainingAutomaticHuntDuration(player).TotalHours,
-                    resetsAt = Iso(NextAutomaticHuntCycleStart(DateTime.UtcNow))
+                    resetsAt = Iso(NextAutomaticHuntCycleStart(now))
                 },
                 hunt = player.Hunt == null ? null : new
                 {
