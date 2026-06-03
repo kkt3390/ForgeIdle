@@ -316,7 +316,10 @@ namespace EnhanceAddiction.WebForms.Data
                     TRY_CONVERT(float, JSON_VALUE(l.AfterStateJson, '$.Experience')) AS AfterExp,
                     TRY_CONVERT(int, JSON_VALUE(l.AfterStateJson, '$.WeaponLevel')) AS AfterWeapon,
                     TRY_CONVERT(int, JSON_VALUE(l.AfterStateJson, '$.ProtectionTickets')) AS AfterTickets,
-                    p.IsBanned
+                    p.IsBanned,
+                    COALESCE(TRY_CONVERT(float, JSON_VALUE(l.DetailsJson, '$.claimed.Gold')), 0)
+                    + COALESCE(TRY_CONVERT(float, JSON_VALUE(l.DetailsJson, '$.first.Gold')), 0)
+                    + COALESCE(TRY_CONVERT(float, JSON_VALUE(l.DetailsJson, '$.second.Gold')), 0) AS ExpectedGoldGain
                   FROM dbo.ea_game_action_logs l
                   LEFT JOIN dbo.ea_players p ON p.PlayerKey = l.PlayerKey
                   WHERE l.CreatedAt >= DATEADD(day, -7, SYSDATETIMEOFFSET())
@@ -326,8 +329,13 @@ namespace EnhanceAddiction.WebForms.Data
                         OR TRY_CONVERT(int, JSON_VALUE(l.AfterStateJson, '$.WeaponLevel')) > 30
                         OR TRY_CONVERT(int, JSON_VALUE(l.AfterStateJson, '$.ProtectionTickets')) < 0
                         OR (l.ActionType = N'ManualHunt'
+                            AND l.DetailsJson IS NOT NULL
                             AND TRY_CONVERT(float, JSON_VALUE(l.AfterStateJson, '$.Gold'))
-                              - TRY_CONVERT(float, JSON_VALUE(l.BeforeStateJson, '$.Gold')) > 10000)
+                              - TRY_CONVERT(float, JSON_VALUE(l.BeforeStateJson, '$.Gold'))
+                              > COALESCE(TRY_CONVERT(float, JSON_VALUE(l.DetailsJson, '$.claimed.Gold')), 0)
+                                + COALESCE(TRY_CONVERT(float, JSON_VALUE(l.DetailsJson, '$.first.Gold')), 0)
+                                + COALESCE(TRY_CONVERT(float, JSON_VALUE(l.DetailsJson, '$.second.Gold')), 0)
+                                + 1)
                     )
                   ORDER BY l.CreatedAt DESC", connection))
             using (var reader = command.ExecuteReader())
@@ -342,7 +350,12 @@ namespace EnhanceAddiction.WebForms.Data
                     if (afterGold < 0) reason = "골드가 음수입니다.";
                     else if (afterWeapon > 30) reason = "강화도가 30을 초과했습니다.";
                     else if (afterTickets < 0) reason = "보호권이 음수입니다.";
-                    else if (reader.GetString(2) == "ManualHunt" && afterGold - beforeGold > 10000) reason = "직접 사냥 1회 보상이 비정상적으로 큽니다.";
+                    else if (reader.GetString(2) == "ManualHunt")
+                    {
+                        var expectedGoldGain = reader.IsDBNull(12) ? 0 : reader.GetDouble(12);
+                        if (afterGold - beforeGold > expectedGoldGain + 1)
+                            reason = "로그에 기록된 정상 보상보다 골드 증가량이 큽니다.";
+                    }
 
                     rows.Add(new
                     {
