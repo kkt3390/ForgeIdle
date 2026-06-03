@@ -32,6 +32,7 @@
   <ItemGroup>
     <Content Include="Api\GameApi.ashx" />
     <Content Include="Api\AdminApi.ashx" />
+    <Content Include="Api\OperatorPage.ashx" />
     <Content Include="Admin.aspx" />
     <Content Include="Operator.ashx" />
     <Content Include="Operator.aspx" />
@@ -54,6 +55,7 @@
   <ItemGroup>
     <Compile Include="Api\GameApi.ashx.cs" />
     <Compile Include="Api\AdminApi.ashx.cs" />
+    <Compile Include="Api\OperatorPage.ashx.cs" />
     <Compile Include="Admin.aspx.cs">
       <DependentUpon>Admin.aspx</DependentUpon>
     </Compile>

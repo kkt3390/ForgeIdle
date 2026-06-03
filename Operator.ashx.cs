@@ -25,8 +25,10 @@ namespace EnhanceAddiction.WebForms
             }
 
             context.Response.ContentType = "text/html; charset=utf-8";
-            context.Response.Write(Html);
+            context.Response.Write(PageHtml);
         }
+
+        public static string PageHtml { get { return Html; } }
 
         private const string Html = @"<!doctype html>
 <html lang=""ko"">
@@ -34,7 +36,7 @@ namespace EnhanceAddiction.WebForms
   <meta charset=""utf-8"" />
   <meta name=""viewport"" content=""width=device-width, initial-scale=1"" />
   <title>강화중독 운영자</title>
-  <link rel=""stylesheet"" href=""Content/site.css"" />
+  <link rel=""stylesheet"" href=""/Content/site.css"" />
   <style>
     .admin-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
     .admin-card { border:1px solid #ffffff12; border-radius:14px; padding:14px; background:#11131a; }
@@ -60,7 +62,7 @@ namespace EnhanceAddiction.WebForms
 </head>
 <body>
   <main class=""shell"">
-    <header class=""topbar""><div><p class=""eyebrow"">OPERATOR CENTER</p><h1>운영자 관리</h1></div><a class=""logout"" href=""Default.aspx"">게임으로</a></header>
+    <header class=""topbar""><div><p class=""eyebrow"">OPERATOR CENTER</p><h1>운영자 관리</h1></div><a class=""logout"" href=""/Default.aspx"">게임으로</a></header>
     <section class=""admin-grid"" id=""dashboard""></section>
     <section class=""admin-layout"">
       <nav class=""admin-menu"">
@@ -82,7 +84,7 @@ namespace EnhanceAddiction.WebForms
     </section>
   </main>
   <div class=""toast"" id=""toast""></div>
-  <script src=""Scripts/operator.js?v=20260603-1""></script>
+  <script src=""/Scripts/operator.js?v=20260603-1""></script>
 </body>
 </html>";
     }

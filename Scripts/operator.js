@@ -8,7 +8,7 @@ const escapeHtml = value => {
 };
 
 async function adminApi(action, body) {
-    const response = await fetch(`Api/AdminApi.ashx?action=${action}`, {
+    const response = await fetch(`/Api/AdminApi.ashx?action=${action}`, {
         method: body === undefined ? "GET" : "POST",
         headers: body === undefined ? {} : { "Content-Type": "application/json" },
         body: body === undefined ? undefined : JSON.stringify(body)
