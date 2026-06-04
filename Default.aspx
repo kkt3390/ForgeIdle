@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>강화중독</title>
-  <link rel="stylesheet" href="Content/site.css?v=20260604-8" />
+  <link rel="stylesheet" href="Content/site.css?v=20260605-2" />
 </head>
 <body>
   <main class="shell">
@@ -38,6 +38,7 @@
         <a class="logout" id="admin-link" href="Api/OperatorPage.ashx" hidden>관리자</a>
         <a class="logout" href="Auth/Logout.ashx">로그아웃</a>
       </div>
+      <section class="hot-time-banner" id="hot-time-banner" hidden></section>
       <section class="level-card">
         <div class="level-header">
           <strong id="level">Lv. 1</strong>
@@ -261,6 +262,6 @@
   <div class="collection-modal" id="collection-modal" hidden></div>
   <div class="collection-toast" id="collection-toast" hidden></div>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260605-2"></script>
+  <script src="Scripts/game.js?v=20260605-4"></script>
 </body>
 </html>

@@ -12,7 +12,9 @@ let collectionToastHideTimer;
 let collectionToastNextTimer;
 let collectionToastShowing = false;
 let selectedRankingCategory = "level";
-let weaponGyroBound = false;
+let weaponGyroListening = false;
+let weaponGyroReceived = false;
+const weaponGyroPermissionKey = "enhanceAddictionWeaponMotionGranted";
 const $ = selector => document.querySelector(selector);
 const number = value => Number(value).toLocaleString("ko-KR");
 const experience = value => Number(value).toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -136,6 +138,7 @@ function showPlayerOrNickname() {
 function render() {
     if (!state) return;
     $("#player-name").textContent = state.nickname ? `${state.nickname} 님의 대장간` : "";
+    renderHotTimeBanner();
     $("#gold").textContent = number(state.gold);
     $("#weapon").textContent = `+${state.weaponLevel} ${state.weaponName || "검"}`;
     renderWeaponImage();
@@ -172,10 +175,31 @@ function renderWeaponImage() {
     const tier = weaponTierForLevel(state.weaponLevel);
     display.innerHTML = [
         weaponShowcaseHtml(imagePath, state.weaponName || "검", tier),
+        `<button class="weapon-motion-button" id="weapon-motion-button" type="button" hidden>모션 효과 켜기</button>`,
         localWeaponPreviewHtml(imagePath)
     ].join("");
     bindWeaponTiltEffects(display);
     display.hidden = false;
+}
+
+function renderHotTimeBanner() {
+    const banner = $("#hot-time-banner");
+    const hot = state.hotTime;
+    if (!banner || !hot || !hot.enabled || !hot.active) {
+        if (banner) banner.hidden = true;
+        return;
+    }
+
+    banner.innerHTML = `
+        <div>
+            <strong>핫타임 이벤트 진행 중</strong>
+            <p>${escapeHtml(hot.startsAtKst)} ~ ${escapeHtml(hot.endsAtKst)}</p>
+        </div>
+        <div class="hot-time-rewards">
+            <span>골드 ${number(hot.goldMultiplier)}배</span>
+            <span>경험치 ${number(hot.experienceMultiplier)}배</span>
+        </div>`;
+    banner.hidden = false;
 }
 
 function weaponTierForLevel(level) {
@@ -221,12 +245,65 @@ function bindWeaponTiltEffects(root) {
 }
 
 function bindWeaponGyroEffects(root) {
-    if (weaponGyroBound || !window.DeviceOrientationEvent || !window.matchMedia("(hover: none)").matches) return;
-    weaponGyroBound = true;
+    if (!window.DeviceOrientationEvent || !window.matchMedia("(hover: none)").matches) return;
+
+    const button = $("#weapon-motion-button");
+    if (typeof DeviceOrientationEvent.requestPermission !== "function") {
+        if (button) button.hidden = true;
+        startWeaponGyroListening();
+        return;
+    }
+
+    if (button) {
+        button.hidden = localStorage.getItem(weaponGyroPermissionKey) === "granted";
+        button.textContent = "모션 효과 켜기";
+    }
+
+    if (localStorage.getItem(weaponGyroPermissionKey) === "granted") {
+        startWeaponGyroListening();
+        setTimeout(() => {
+            if (!weaponGyroReceived && button) {
+                button.hidden = false;
+                button.textContent = "모션 효과 켜기";
+            }
+        }, 1600);
+    }
+
+    if (!button || button.dataset.motionBound === "true") return;
+    button.dataset.motionBound = "true";
+    button.addEventListener("click", async () => {
+        button.disabled = true;
+        button.textContent = "권한 확인 중...";
+        try {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            if (permission === "granted") {
+                localStorage.setItem(weaponGyroPermissionKey, "granted");
+                button.hidden = true;
+                startWeaponGyroListening();
+                return;
+            }
+
+            localStorage.removeItem(weaponGyroPermissionKey);
+            button.textContent = "모션 권한이 필요합니다";
+        } catch {
+            localStorage.removeItem(weaponGyroPermissionKey);
+            button.textContent = "모션 효과 켜기";
+        } finally {
+            button.disabled = false;
+        }
+    });
+}
+
+function startWeaponGyroListening() {
+    if (weaponGyroListening) return;
+    weaponGyroListening = true;
     let baseline = null;
 
     const listen = () => window.addEventListener("deviceorientation", event => {
         if (typeof event.beta !== "number" || typeof event.gamma !== "number") return;
+        weaponGyroReceived = true;
+        const button = $("#weapon-motion-button");
+        if (button) button.hidden = true;
         if (!baseline) {
             baseline = { beta: event.beta, gamma: event.gamma };
             document.querySelectorAll("#weapon-display .weapon-showcase").forEach(resetWeaponTilt);
@@ -243,18 +320,7 @@ function bindWeaponGyroEffects(root) {
             applyWeaponTilt(container, rotateX, rotateY, opacity, position));
     }, true);
 
-    if (typeof DeviceOrientationEvent.requestPermission !== "function") {
-        listen();
-        return;
-    }
-
-    root.addEventListener("click", async () => {
-        try {
-            if (await DeviceOrientationEvent.requestPermission() === "granted") listen();
-        } catch {
-            // 권한을 거부하거나 브라우저가 막으면 마우스/터치 없는 정적 카드로 둡니다.
-        }
-    }, { once: true });
+    listen();
 }
 
 function normalizeAngleDelta(value) {

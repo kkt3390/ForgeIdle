@@ -52,6 +52,7 @@ namespace EnhanceAddiction.WebForms.Game
             {
                 nickname = player.Nickname,
                 serverNow = Iso(now),
+                hotTime = HotTimeSnapshot(now),
                 gold = player.Gold,
                 weaponLevel = player.WeaponLevel,
                 weaponName = weapon.Name,
@@ -108,6 +109,23 @@ namespace EnhanceAddiction.WebForms.Game
                 },
                 availableAreas = availableAreas,
                 recentMessages = player.RecentMessages.Take(10)
+            };
+        }
+
+        // 현재 핫타임 배율과 한국시간 표시용 기간을 브라우저에 내려줍니다.
+        private static object HotTimeSnapshot(DateTime now)
+        {
+            var settings = GameRewardSettings.Current();
+            return new
+            {
+                enabled = settings.Enabled,
+                active = settings.IsActive(now),
+                goldMultiplier = settings.GoldMultiplier,
+                experienceMultiplier = settings.ExperienceMultiplier,
+                startsAt = settings.StartsAtUtc.HasValue ? Iso(settings.StartsAtUtc.Value) : "",
+                endsAt = settings.EndsAtUtc.HasValue ? Iso(settings.EndsAtUtc.Value) : "",
+                startsAtKst = settings.StartsAtUtc.HasValue ? KstDisplay(settings.StartsAtUtc.Value) : "상시",
+                endsAtKst = settings.EndsAtUtc.HasValue ? KstDisplay(settings.EndsAtUtc.Value) : "종료 미정"
             };
         }
 
@@ -669,6 +687,12 @@ namespace EnhanceAddiction.WebForms.Game
         private static string Iso(DateTime value)
         {
             return value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        }
+
+        private static string KstDisplay(DateTime value)
+        {
+            var utc = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+            return TimeZoneInfo.ConvertTimeFromUtc(utc, KoreaTimeZone).ToString("MM월 dd일 HH:mm");
         }
 
         // 전달한 확률에 따라 참·거짓 판정을 수행합니다.
