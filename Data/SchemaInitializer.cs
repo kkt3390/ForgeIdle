@@ -44,6 +44,8 @@ BEGIN
         IsBanned bit NOT NULL CONSTRAINT DF_ea_players_IsBanned DEFAULT (0),
         BanReason nvarchar(500) NULL,
         BannedAtUtc datetimeoffset NULL,
+        ActiveLoginToken nvarchar(64) NULL,
+        ActiveLoginAtUtc datetimeoffset NULL,
         StateJson nvarchar(max) NOT NULL,
         StateSchemaVersion int NOT NULL CONSTRAINT DF_ea_players_StateSchemaVersion DEFAULT (1),
         CreatedAt datetimeoffset NOT NULL,
@@ -124,6 +126,10 @@ IF COL_LENGTH(N'dbo.ea_players', N'BanReason') IS NULL
     ALTER TABLE dbo.ea_players ADD BanReason nvarchar(500) NULL;
 IF COL_LENGTH(N'dbo.ea_players', N'BannedAtUtc') IS NULL
     ALTER TABLE dbo.ea_players ADD BannedAtUtc datetimeoffset NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'ActiveLoginToken') IS NULL
+    ALTER TABLE dbo.ea_players ADD ActiveLoginToken nvarchar(64) NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'ActiveLoginAtUtc') IS NULL
+    ALTER TABLE dbo.ea_players ADD ActiveLoginAtUtc datetimeoffset NULL;
 IF COL_LENGTH(N'dbo.ea_players', N'StateSchemaVersion') IS NULL
     ALTER TABLE dbo.ea_players ADD StateSchemaVersion int NOT NULL CONSTRAINT DF_ea_players_StateSchemaVersion DEFAULT (0) WITH VALUES;
 

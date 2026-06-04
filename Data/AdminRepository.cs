@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Web;
 using System.Web.Script.Serialization;
+using EnhanceAddiction.WebForms.Auth;
 using EnhanceAddiction.WebForms.Game;
 
 namespace EnhanceAddiction.WebForms.Data
@@ -18,6 +19,7 @@ namespace EnhanceAddiction.WebForms.Data
         // 관리자 API는 매 요청마다 로그인 여부와 운영자 권한을 DB에서 다시 확인합니다.
         public string RequireOperator(HttpContext context)
         {
+            AuthSession.EnsureCurrentLogin(context);
             var playerKey = context.Session["PlayerKey"] as string;
             if (string.IsNullOrWhiteSpace(playerKey))
                 throw new UnauthorizedAccessException("로그인이 필요합니다.");

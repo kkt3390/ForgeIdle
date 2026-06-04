@@ -50,6 +50,172 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
 .exp-track { height: 8px; margin-top: 10px; overflow: hidden; border-radius: 8px; background: #11131a; }
 .exp-fill { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #7655cf, #c59cff); transition: width .25s; }
 .level-card small { display: block; margin-top: 8px; color: #a99e92; }
+.weapon-display {
+  display: grid;
+  gap: 12px;
+  place-items: center;
+  margin: 14px auto 0;
+  padding: 12px 0 2px;
+}
+.weapon-showcase {
+  position: relative;
+  display: grid;
+  width: min(260px, 68vw);
+  min-height: min(280px, 74vw);
+  place-items: center;
+  isolation: isolate;
+  perspective: 420px;
+}
+.weapon-frame {
+  position: relative;
+  display: grid;
+  width: min(228px, 60vw);
+  height: min(228px, 60vw);
+  place-items: center;
+  border: 0;
+  border-radius: 30px;
+  background: var(--weapon-bg, radial-gradient(circle at 50% 42%, #f8f9ff 0, #cfd5df 58%, #7d8490 100%));
+  box-shadow: 0 20px 70px #00000090;
+  overflow: hidden;
+  transform: perspective(420px) rotateX(0deg) rotateY(0deg);
+  transition: transform .12s ease, box-shadow .18s ease, filter .18s ease;
+  will-change: transform;
+}
+.weapon-frame::before,
+.weapon-frame::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+.weapon-frame::before {
+  inset: -40%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--weapon-aura, #ffffff42), transparent 62%);
+  filter: blur(20px);
+  opacity: .8;
+}
+.weapon-frame::after {
+  inset: 0;
+  z-index: 5;
+  border: 3px solid var(--weapon-border, #d7d4cf);
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 18px #ffffff42,
+    0 0 18px var(--weapon-border-glow, #ffffff66);
+}
+.weapon-holo {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  background: var(--weapon-holo, linear-gradient(105deg, transparent 38%, #ffffffcc 46%, transparent 56%));
+  background-size: 180% 180%;
+  background-position: 100%;
+  mix-blend-mode: color-dodge;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease, background-position .12s ease;
+}
+.weapon-frame img {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  filter: drop-shadow(0 18px 18px #00000078);
+}
+.weapon-preview-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.weapon-preview-row .weapon-showcase {
+  width: 100%;
+  min-height: 154px;
+}
+.weapon-preview-row .weapon-frame {
+  width: 128px;
+  height: 128px;
+  border-radius: 22px;
+}
+.weapon-tier-silver {
+  --weapon-aura: #f2f6ff55;
+  --weapon-border: #f5f8ff;
+  --weapon-border-glow: #e9edf899;
+  --weapon-bg:
+    radial-gradient(circle at 48% 36%, #ffffff 0, #eef3ff 36%, #c7cedd 72%, #8f98aa 100%);
+  --weapon-holo:
+    linear-gradient(105deg, transparent 35%, #ffffffee 45%, #b9c2d8cc 50%, transparent 58%);
+  box-shadow: 0 20px 70px #00000090, inset 0 0 28px #ffffff66, 0 0 30px #edf4ff80;
+}
+.weapon-tier-blue {
+  --weapon-aura: #3e9bff96;
+  --weapon-border: #63c4ff;
+  --weapon-border-glow: #39b8ffaa;
+  --weapon-bg:
+    radial-gradient(circle at 45% 35%, #d9f5ff 0, #3387ff 44%, #113b8c 76%, #071b48 100%);
+  --weapon-holo:
+    linear-gradient(105deg, transparent 34%, #c4efffcc 43%, #47b8ffcc 50%, transparent 60%);
+  animation: weaponBlueAura 2.8s ease-in-out infinite;
+  box-shadow: 0 20px 70px #00000090, 0 0 34px #208dff80, inset 0 0 20px #45adff2f;
+}
+.weapon-tier-purple {
+  --weapon-aura: #a875ff85;
+  --weapon-border: #b98bff;
+  --weapon-border-glow: #a875ffaa;
+  --weapon-bg:
+    radial-gradient(circle at 48% 34%, #f0dfff 0, #8d5bff 42%, #3d197c 76%, #1c0d38 100%);
+  --weapon-holo:
+    linear-gradient(105deg, transparent 36%, #f0d6ffb5 45%, #9b6dffc2 51%, transparent 60%);
+  animation: weaponSoftPulse 3.6s ease-in-out infinite;
+  box-shadow: 0 20px 70px #00000090, 0 0 34px #8b5cff65, inset 0 0 22px #ba8cff26;
+}
+.weapon-tier-gold {
+  --weapon-aura: #ffd15fa0;
+  --weapon-border: #ffe28a;
+  --weapon-border-glow: #ffd15fbb;
+  --weapon-bg:
+    radial-gradient(circle at 48% 34%, #fff7cd 0, #f3bd3d 42%, #8e5814 78%, #3a2108 100%);
+  --weapon-holo:
+    linear-gradient(105deg, transparent 33%, #fff4a8f0 42%, #ffcf5dcc 48%, #ffffffcc 52%, transparent 60%);
+  animation: weaponGoldSparkle 1.9s ease-in-out infinite;
+  box-shadow: 0 20px 70px #00000090, 0 0 44px #e3a84e90, inset 0 0 24px #ffd15f38;
+}
+.weapon-tier-rainbow {
+  --weapon-aura: #ff4f6f9c;
+  --weapon-border: #ff5b66;
+  --weapon-border-glow: #ff5b66bb;
+  --weapon-bg:
+    radial-gradient(circle at 48% 35%, #fff0f3 0, #ff406d 26%, #7b2cff 48%, #1e8dff 68%, #17101e 100%);
+  --weapon-holo:
+    linear-gradient(105deg, transparent 30%, #ffd15fd6 40%, #ff4f6fcc 46%, #7b5cffcc 52%, #4fd7ffcc 58%, transparent 66%);
+  animation: weaponRainbow 3.2s linear infinite;
+  box-shadow: 0 20px 70px #00000090, 0 0 48px #ff375f85, inset 0 0 26px #ffffff26;
+}
+@keyframes weaponBlueAura {
+  0%, 100% { box-shadow: 0 20px 70px #00000090, 0 0 24px #208dff65, inset 0 0 18px #45adff28; }
+  50% { box-shadow: 0 20px 70px #00000090, 0 0 48px #39b8ffbb, inset 0 0 26px #45adff44; }
+}
+@keyframes weaponSoftPulse {
+  0%, 100% { filter: saturate(1) brightness(1); }
+  50% { filter: saturate(1.18) brightness(1.08); }
+}
+@keyframes weaponGoldSparkle {
+  0%, 100% { filter: brightness(1); }
+  35% { filter: brightness(1.18); }
+  70% { filter: brightness(1.05); }
+}
+@keyframes weaponRainbow {
+  0% { border-color: #ff4f6f; box-shadow: 0 20px 70px #00000090, 0 0 44px #ff375f85, inset 0 0 24px #ffffff22; }
+  25% { border-color: #ffd15f; box-shadow: 0 20px 70px #00000090, 0 0 48px #ffd15f88, inset 0 0 24px #ffffff24; }
+  50% { border-color: #55b7ff; box-shadow: 0 20px 70px #00000090, 0 0 50px #55b7ff85, inset 0 0 24px #ffffff24; }
+  75% { border-color: #a875ff; box-shadow: 0 20px 70px #00000090, 0 0 50px #a875ff85, inset 0 0 24px #ffffff24; }
+  100% { border-color: #ff4f6f; box-shadow: 0 20px 70px #00000090, 0 0 44px #ff375f85, inset 0 0 24px #ffffff22; }
+}
 .status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
 .status-grid article, .card { border: 1px solid #ffffff10; border-radius: 14px; padding: 14px 12px; background: #11131a; }
 .status-grid span, .section-title span { display: block; color: #a99e92; font-size: 12px; }
@@ -66,6 +232,13 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
 .area-card button { width: 100%; padding: 9px; font-size: 13px; }
 .budget-line { margin: 0 0 10px; color: #d9c8ff; font-size: 13px; }
 .hunt-running { margin-bottom: 10px; }
+.budget-line {
+  margin: 0 0 14px;
+  color: #f1ddff;
+  font-size: 17px;
+  font-weight: 800;
+}
+#areas { display: none; }
 .running-card, .manual-hunt-card, .stat-card {
   display: flex;
   align-items: center;

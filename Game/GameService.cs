@@ -13,7 +13,8 @@ namespace EnhanceAddiction.WebForms.Game
         private static readonly TimeSpan AutomaticHuntDurationPerBoss = TimeSpan.FromMinutes(30);
         private static readonly TimeZoneInfo KoreaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
         private const int MonstersPerCollectionGrade = 10;
-        private const double CollectionRegistrationRate = .10;
+        private const double NormalCollectionRegistrationRate = 1.00;
+        private const double SpecialCollectionRegistrationRate = .10;
         private readonly GameCatalog _catalog;
 
         // 게임 규칙 카탈로그를 받아 서비스에서 재사용합니다.
@@ -106,7 +107,7 @@ namespace EnhanceAddiction.WebForms.Game
                     canChallenge = player.WeaponLevel >= nextBossArea.BossRequiredEnhancement.Value
                 },
                 availableAreas = availableAreas,
-                recentMessages = player.RecentMessages
+                recentMessages = player.RecentMessages.Take(10)
             };
         }
 
@@ -133,9 +134,9 @@ namespace EnhanceAddiction.WebForms.Game
                         goldenRate = .001,
                         collectionRates = new
                         {
-                            normal = CollectionRegistrationRate,
-                            elite = CollectionRegistrationRate,
-                            golden = CollectionRegistrationRate
+                            normal = NormalCollectionRegistrationRate,
+                            elite = SpecialCollectionRegistrationRate,
+                            golden = SpecialCollectionRegistrationRate
                         },
                         monstersPerGrade = MonstersPerCollectionGrade
                     }
@@ -431,7 +432,7 @@ namespace EnhanceAddiction.WebForms.Game
         {
             NormalizePlayer(player);
             player.RecentMessages.Insert(0, message);
-            while (player.RecentMessages.Count > 100) player.RecentMessages.RemoveAt(player.RecentMessages.Count - 1);
+            while (player.RecentMessages.Count > 10) player.RecentMessages.RemoveAt(player.RecentMessages.Count - 1);
         }
 
         // 해금된 지역이고 강화 조건도 충족했는지 확인합니다.
@@ -452,7 +453,7 @@ namespace EnhanceAddiction.WebForms.Game
         // 처치한 등급의 등록 확률에 따라 도감 항목 하나를 뽑고 중복 여부를 기록합니다.
         private static CollectionRegistration RollCollectionRegistration(PlayerState player, ManualHuntReward reward)
         {
-            if (!Roll(CollectionRegistrationRate)) return new CollectionRegistration();
+            if (!Roll(CollectionRateForGrade(reward.Grade))) return new CollectionRegistration();
 
             var key = reward.MonsterKey;
             var duplicate = player.CollectedMonsterKeys.Contains(key);
@@ -530,6 +531,12 @@ namespace EnhanceAddiction.WebForms.Game
         }
 
         // 레벨로 획득한 포인트에서 이미 사용한 포인트를 빼 반환합니다.
+        // 일반 몬스터는 도감 등록을 쉽게 열어주고 정예/황금은 희귀 등록 확률을 유지합니다.
+        private static double CollectionRateForGrade(string grade)
+        {
+            return grade == "normal" ? NormalCollectionRegistrationRate : SpecialCollectionRegistrationRate;
+        }
+
         private static int AvailableStatPoints(PlayerState player)
         {
             return Math.Max(0, player.Level - 1 - player.Stats.SpentPoints);

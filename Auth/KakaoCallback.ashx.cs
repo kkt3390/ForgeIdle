@@ -30,8 +30,7 @@ namespace EnhanceAddiction.WebForms.Auth
             var externalId = RequestKakaoUserId(accessToken);
             var playerKey = new PlayerRepository().GetOrCreateSocialPlayerKey("kakao", externalId);
             context.Session.Remove("KakaoOAuthState");
-            context.Session["PlayerKey"] = playerKey;
-            context.Session["LoginProvider"] = "kakao";
+            AuthSession.SignIn(context, playerKey, "kakao");
             context.Response.Redirect(VirtualPathUtility.ToAbsolute("~/"));
         }
 

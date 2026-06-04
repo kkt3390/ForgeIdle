@@ -9,6 +9,33 @@ const escapeHtml = value => {
     return div.innerHTML;
 };
 
+function searchText(id) {
+    const element = $("#" + id);
+    return element ? element.value.trim().toLowerCase() : "";
+}
+
+function matchesKeyword(row, keyword, fields) {
+    if (!keyword) return true;
+    return fields.some(field => String(row[field] ?? "").toLowerCase().includes(keyword));
+}
+
+function adminAssetUrl(path) {
+    const imagePath = String(path || "").trim().replace(/\\/g, "/");
+    if (!imagePath) return "";
+    if (/^(https?:|data:|\/)/i.test(imagePath)) return imagePath;
+    return `/${imagePath.replace(/^\.\//, "")}`;
+}
+
+function assetPreview(path, label) {
+    const imagePath = String(path || "").trim();
+    if (!imagePath) return `<span class="admin-muted">이미지 없음</span>`;
+    return `
+        <div class="admin-image-cell">
+          <img class="admin-thumb" src="${escapeHtml(adminAssetUrl(imagePath))}" alt="${escapeHtml(label || "이미지")}" onerror="this.hidden=true" />
+          <span>${escapeHtml(imagePath)}</span>
+        </div>`;
+}
+
 async function adminApi(action, body) {
     const response = await fetch(`/Api/AdminApi.ashx?action=${action}`, {
         method: body === undefined ? "GET" : "POST",
@@ -56,8 +83,11 @@ function renderHotTime() {
 }
 
 function renderSuspicious() {
-    $("#abuse-body").innerHTML = adminState.suspiciousUsers.length
-        ? adminState.suspiciousUsers.map(row => `
+    const keyword = searchText("abuse-search");
+    const rows = adminState.suspiciousUsers.filter(row =>
+        matchesKeyword(row, keyword, ["nickname", "playerKey", "actionType", "reason", "message"]));
+    $("#abuse-body").innerHTML = rows.length
+        ? rows.map(row => `
           <tr>
             <td>${escapeHtml(row.nickname || row.playerKey)}<br><small>${escapeHtml(row.playerKey)}</small></td>
             <td>${escapeHtml(row.actionType)}</td>
@@ -87,28 +117,40 @@ function renderUsers(rows) {
 }
 
 function renderMonsters() {
-    $("#monster-body").innerHTML = adminState.monsterCatalog.map(row => `
+    const keyword = searchText("monster-search");
+    const rows = adminState.monsterCatalog.filter(row =>
+        matchesKeyword(row, keyword, ["monsterKey", "grade", "name", "imagePath", "description", "sortOrder"]));
+    $("#monster-body").innerHTML = rows.map(row => `
         <tr>
           <td>${escapeHtml(row.monsterKey)}</td>
           <td>${row.areaId} / ${escapeHtml(row.grade)} / ${row.slotNumber}</td>
+          <td>${number(row.sortOrder)}</td>
           <td>${escapeHtml(row.name)}</td>
-          <td>${escapeHtml(row.imagePath)}</td>
+          <td>${assetPreview(row.imagePath, row.name)}</td>
           <td><button onclick='editMonster(${JSON.stringify(row)})'>편집</button></td>
         </tr>`).join("");
 }
-
 function renderWeapons() {
-    $("#weapon-body").innerHTML = adminState.weaponCatalog.map(row => `
+    const keyword = searchText("weapon-search");
+    const rows = adminState.weaponCatalog.filter(row =>
+        matchesKeyword(row, keyword, ["weaponKey", "name", "imagePath", "description", "sortOrder"]));
+    $("#weapon-body").innerHTML = rows.map(row => `
         <tr>
           <td>${escapeHtml(row.weaponKey)}</td>
+          <td>${number(row.sortOrder)}</td>
           <td>${escapeHtml(row.name)}</td>
-          <td>${escapeHtml(row.imagePath)}</td>
+          <td>${assetPreview(row.imagePath, row.name)}</td>
           <td><button onclick='editWeapon(${JSON.stringify(row)})'>편집</button></td>
         </tr>`).join("");
 }
-
 function renderEnhancements() {
-    $("#enhancement-body").innerHTML = adminState.enhancementRules.map(row => `
+    const keyword = searchText("enhancement-search");
+    const rows = adminState.enhancementRules.filter(row => {
+        if (!keyword) return true;
+        return [`+${row.currentLevel}`, row.cost, row.successRate, row.keepRate, row.destroyRate]
+            .some(value => String(value).toLowerCase().includes(keyword));
+    });
+    $("#enhancement-body").innerHTML = rows.map(row => `
         <tr>
           <td>+${row.currentLevel} -> +${row.currentLevel + 1}</td>
           <td>${number(row.cost)}</td>
@@ -120,7 +162,10 @@ function renderEnhancements() {
 }
 
 function renderAdminLogs() {
-    $("#admin-log-body").innerHTML = adminState.recentAdminLogs.map(row => `
+    const keyword = searchText("admin-log-search");
+    const rows = adminState.recentAdminLogs.filter(row =>
+        matchesKeyword(row, keyword, ["operatorPlayerKey", "actionType", "targetPlayerKey", "createdAt"]));
+    $("#admin-log-body").innerHTML = rows.map(row => `
         <tr>
           <td>${escapeHtml(row.operatorPlayerKey)}</td>
           <td>${escapeHtml(row.actionType)}</td>
@@ -278,6 +323,21 @@ $("#hot-time-form").addEventListener("submit", async event => {
     const element = $("#" + id);
     element.addEventListener("input", updateHotTimeSummary);
     element.addEventListener("change", updateHotTimeSummary);
+});
+
+[
+    ["abuse-search", renderSuspicious],
+    ["monster-search", renderMonsters],
+    ["weapon-search", renderWeapons],
+    ["enhancement-search", renderEnhancements],
+    ["admin-log-search", renderAdminLogs]
+].forEach(([id, render]) => {
+    const element = $("#" + id);
+    if (element) element.addEventListener("input", render);
+});
+
+$("#user-search").addEventListener("keydown", event => {
+    if (event.key === "Enter") searchPlayers();
 });
 
 $("#monster-form").addEventListener("submit", async event => {

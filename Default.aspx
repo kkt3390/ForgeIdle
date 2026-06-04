@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>강화중독</title>
-  <link rel="stylesheet" href="Content/site.css?v=20260604-1" />
+  <link rel="stylesheet" href="Content/site.css?v=20260604-8" />
 </head>
 <body>
   <main class="shell">
@@ -49,6 +49,10 @@
         <small id="stat-points">사용 가능한 스탯 포인트 0</small>
       </section>
 
+      <section class="weapon-display" id="weapon-display" hidden>
+        <img id="weapon-image" alt="현재 무기 이미지" />
+      </section>
+
       <div class="status-grid">
         <article>
           <span>보유 골드</span>
@@ -80,12 +84,20 @@
       </nav>
 
       <section class="panel active" id="hunt-panel">
-        <div class="section-title">
-          <h2>자동 사냥</h2>
-          <span>매일 한국 시간 자정 초기화</span>
-        </div>
         <p class="budget-line" id="hunt-budget"></p>
         <div id="hunt-running" class="hunt-running"></div>
+        <article class="manual-hunt-card">
+          <div>
+            <h3>자동 사냥</h3>
+            <label class="manual-area-label">
+              사냥터
+              <select id="auto-hunt-area"></select>
+            </label>
+            <p id="auto-hunt-details"></p>
+            <span>선택한 사냥터로 자동 사냥을 시작합니다.</span>
+          </div>
+          <button class="manual-hunt-button" id="auto-hunt-button">자동 사냥</button>
+        </article>
         <article class="manual-hunt-card">
           <div>
             <h3>직접 사냥</h3>
@@ -172,7 +184,7 @@
           <span id="collection-progress">0 / 360</span>
         </div>
         <p class="collection-description">
-          직접 사냥에서 처치한 몬스터가 10% 확률로 등록됩니다. 같은 몬스터가 중복 등록될 수 있습니다.
+          직접 사냥에서 처치한 일반 몬스터는 100%, 정예/황금 몬스터는 10% 확률로 등록됩니다. 같은 몬스터가 중복 등록될 수 있습니다.
         </p>
         <div class="collection-area-tabs" id="collection-area-tabs"></div>
         <div class="collection-grid" id="collection-grid"></div>
@@ -214,7 +226,7 @@
               <tbody id="guide-monster-rates"></tbody>
             </table>
           </div>
-          <p class="guide-note">직접 사냥에서 처치한 몬스터가 등급과 상관없이 10% 확률로 등록됩니다. 이미 등록된 몬스터도 다시 나올 수 있습니다.</p>
+          <p class="guide-note">직접 사냥에서 처치한 일반 몬스터는 100%, 정예/황금 몬스터는 10% 확률로 등록됩니다. 이미 등록된 몬스터도 다시 나올 수 있습니다.</p>
         </article>
         <article class="guide-block">
           <h3>강화</h3>
@@ -249,6 +261,6 @@
   <div class="collection-modal" id="collection-modal" hidden></div>
   <div class="collection-toast" id="collection-toast" hidden></div>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260604-4"></script>
+  <script src="Scripts/game.js?v=20260604-11"></script>
 </body>
 </html>

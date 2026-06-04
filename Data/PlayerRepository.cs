@@ -144,6 +144,59 @@ namespace EnhanceAddiction.WebForms.Data
         }
 
         // 요청한 랭킹 종류별로 상위 100명을 반환합니다. 동률이면 먼저 달성한 사람이 위에 옵니다.
+        // 새 로그인 토큰을 DB에 저장해서 같은 계정의 이전 세션을 무효화합니다.
+        public void SetActiveLoginToken(string playerKey, string loginToken)
+        {
+            GetOrCreate(playerKey);
+            using (var connection = OpenConnection())
+            using (var command = new SqlCommand(
+                @"UPDATE dbo.ea_players
+                  SET ActiveLoginToken = @LoginToken,
+                      ActiveLoginAtUtc = SYSDATETIMEOFFSET(),
+                      UpdatedAt = SYSDATETIMEOFFSET()
+                  WHERE PlayerKey = @PlayerKey", connection))
+            {
+                command.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = playerKey;
+                command.Parameters.Add("@LoginToken", SqlDbType.NVarChar, 64).Value = loginToken;
+                command.ExecuteNonQuery();
+            }
+        }
+
+        // 현재 세션 토큰이 DB에 저장된 최신 로그인 토큰과 같은지 확인합니다.
+        public bool IsActiveLoginToken(string playerKey, string loginToken)
+        {
+            if (string.IsNullOrWhiteSpace(playerKey) || string.IsNullOrWhiteSpace(loginToken)) return false;
+            using (var connection = OpenConnection())
+            using (var command = new SqlCommand(
+                @"SELECT ActiveLoginToken
+                  FROM dbo.ea_players
+                  WHERE PlayerKey = @PlayerKey", connection))
+            {
+                command.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = playerKey;
+                var activeToken = command.ExecuteScalar() as string;
+                return string.Equals(activeToken, loginToken, StringComparison.Ordinal);
+            }
+        }
+
+        // 로그아웃한 세션이 아직 최신 세션일 때만 DB 로그인 토큰을 비웁니다.
+        public void ClearActiveLoginToken(string playerKey, string loginToken)
+        {
+            if (string.IsNullOrWhiteSpace(playerKey) || string.IsNullOrWhiteSpace(loginToken)) return;
+            using (var connection = OpenConnection())
+            using (var command = new SqlCommand(
+                @"UPDATE dbo.ea_players
+                  SET ActiveLoginToken = NULL,
+                      ActiveLoginAtUtc = NULL,
+                      UpdatedAt = SYSDATETIMEOFFSET()
+                  WHERE PlayerKey = @PlayerKey
+                    AND ActiveLoginToken = @LoginToken", connection))
+            {
+                command.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = playerKey;
+                command.Parameters.Add("@LoginToken", SqlDbType.NVarChar, 64).Value = loginToken;
+                command.ExecuteNonQuery();
+            }
+        }
+
         public object GetRankings(string category)
         {
             category = NormalizeRankingCategory(category);

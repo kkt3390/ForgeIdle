@@ -4,6 +4,7 @@ let manualHuntAvailableAt;
 let manualHuntUnlockTimer;
 let manualHuntRequestPending = false;
 let selectedCollectionAreaId = 0;
+let selectedAutoHuntAreaId = 0;
 let authentication;
 let serverTimeOffsetMs = 0;
 let collectionToastQueue = [];
@@ -135,6 +136,7 @@ function render() {
     $("#player-name").textContent = state.nickname ? `${state.nickname} 님의 대장간` : "";
     $("#gold").textContent = number(state.gold);
     $("#weapon").textContent = `+${state.weaponLevel} ${state.weaponName || "검"}`;
+    renderWeaponImage();
     $("#attack").textContent = number(state.attackPower);
     $("#tickets").textContent = `${state.protectionTickets}장`;
     $("#weapon-orb").textContent = `+${state.weaponLevel}`;
@@ -156,6 +158,86 @@ function render() {
         .join("");
 }
 
+function renderWeaponImage() {
+    const display = $("#weapon-display");
+    const imagePath = normalizeAssetPath(state.weaponImagePath);
+
+    if (!imagePath) {
+        display.hidden = true;
+        return;
+    }
+
+    const tier = weaponTierForLevel(state.weaponLevel);
+    display.innerHTML = [
+        weaponShowcaseHtml(imagePath, state.weaponName || "검", tier),
+        localWeaponPreviewHtml(imagePath)
+    ].join("");
+    bindWeaponTiltEffects(display);
+    display.hidden = false;
+}
+
+function weaponTierForLevel(level) {
+    if (level >= 25) return "rainbow";
+    if (level >= 20) return "gold";
+    if (level >= 15) return "purple";
+    if (level >= 10) return "blue";
+    return "silver";
+}
+
+function weaponShowcaseHtml(imagePath, weaponName, tier) {
+    return `
+        <div class="weapon-showcase">
+          <div class="weapon-frame weapon-tier-${tier}">
+            <div class="weapon-holo"></div>
+            <img src="${escapeHtml(imagePath)}" alt="${escapeHtml(weaponName)}" onerror="this.hidden=true" />
+          </div>
+        </div>`;
+}
+
+function bindWeaponTiltEffects(root) {
+    root.querySelectorAll(".weapon-showcase").forEach(container => {
+        const overlay = container.querySelector(".weapon-holo");
+        const frame = container.querySelector(".weapon-frame");
+        if (!overlay || !frame) return;
+
+        container.addEventListener("mousemove", event => {
+            const rect = container.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const rotateY = (x / rect.width - .5) * 18;
+            const rotateX = (y / rect.height - .5) * -18;
+            const light = Math.min(.9, Math.max(.18, x / rect.width));
+
+            frame.style.transform = `perspective(420px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            overlay.style.backgroundPosition = `${x / rect.width * 100 + y / rect.height * 24}%`;
+            overlay.style.opacity = light;
+        });
+
+        container.addEventListener("mouseleave", () => {
+            frame.style.transform = "perspective(420px) rotateX(0deg) rotateY(0deg)";
+            overlay.style.opacity = "0";
+            overlay.style.backgroundPosition = "100%";
+        });
+    });
+}
+
+function localWeaponPreviewHtml(imagePath) {
+    if (!["localhost", "127.0.0.1"].includes(location.hostname)) return "";
+
+    const previews = [
+        ["silver", "은빛 반사"],
+        ["blue", "파란 오라"],
+        ["purple", "보라 파동"],
+        ["gold", "금빛 반짝"],
+        ["rainbow", "붉은 무지개"]
+    ];
+    return `
+        <div class="weapon-preview-row">
+          ${previews.map(([tier, label]) =>
+              weaponShowcaseHtml(imagePath, label, tier)).join("")}
+        </div>`;
+}
+
 // 자동 사냥, 직접 사냥, 입장 가능한 사냥터 목록을 표시합니다.
 function renderHunt() {
     $("#hunt-running").innerHTML = state.hunt
@@ -172,6 +254,13 @@ function renderHunt() {
         : "";
     updateAutomaticHuntBudget();
     updateTimer();
+    const selectedAutoAreaId = Number($("#auto-hunt-area").value || selectedAutoHuntAreaId || state.manualHunt.areaId);
+    $("#auto-hunt-area").innerHTML = state.manualHunt.availableAreas
+        .filter(area => area.canEnter)
+        .map(area => `<option value="${area.id}" ${area.id === selectedAutoAreaId ? "selected" : ""}>${area.name}</option>`)
+        .join("");
+    selectedAutoHuntAreaId = Number($("#auto-hunt-area").value || state.manualHunt.areaId);
+    updateAutoHuntDetails();
     const selectedAreaId = Number($("#manual-hunt-area").value || state.manualHunt.areaId);
     $("#manual-hunt-area").innerHTML = state.manualHunt.availableAreas
         .filter(area => area.canEnter)
@@ -198,6 +287,19 @@ function renderHunt() {
 }
 
 // 직접 사냥터 선택에 맞춰 시간당 기대 보상을 갱신합니다.
+// 자동 사냥 선택값에 맞춰 시간당 보상과 입장 조건을 보여줍니다.
+function updateAutoHuntDetails() {
+    const areaId = Number($("#auto-hunt-area").value || selectedAutoHuntAreaId || state.manualHunt.areaId);
+    const area = catalog.areas.find(candidate => candidate.id === areaId);
+    if (!area) return;
+
+    selectedAutoHuntAreaId = area.id;
+    $("#auto-hunt-details").textContent =
+        `${area.name} 기준 · 시간당 ${number(area.goldPerHour)} 골드 · `
+        + `경험치 ${number(area.experiencePerHour)} · 입장 +${area.requiredEnhancement}`;
+    $("#auto-hunt-button").disabled = Boolean(state.hunt) || state.weaponLevel < area.requiredEnhancement;
+}
+
 function updateManualHuntDetails() {
     const areaId = Number($("#manual-hunt-area").value || state.manualHunt.areaId);
     const area = catalog.areas.find(candidate => candidate.id === areaId);
@@ -400,7 +502,6 @@ function openCollectionModal(monsterKey) {
     modal.innerHTML = `
         <div class="collection-modal-backdrop" onclick="closeCollectionModal()"></div>
         <article class="collection-modal-card">
-            <button class="collection-modal-close" type="button" onclick="closeCollectionModal()">닫기</button>
             <span class="collection-grade-${monster.grade}">${gradeName}</span>
             <img src="${escapeHtml(imagePath)}" data-fallback="${escapeHtml(fallbackPath)}" alt="" onerror="useFallbackImage(this)" />
             <h3>${escapeHtml(monster.name)}</h3>
@@ -614,6 +715,10 @@ $("#nickname-form").addEventListener("submit", async event => {
     }
 });
 $("#enhance-button").addEventListener("click", () => action("enhance", { useProtection: $("#use-ticket").checked }));
+$("#auto-hunt-area").addEventListener("change", updateAutoHuntDetails);
+$("#auto-hunt-button").addEventListener("click", () => action("hunt-start", {
+    areaId: Number($("#auto-hunt-area").value)
+}));
 $("#manual-hunt-area").addEventListener("change", updateManualHuntDetails);
 $("#manual-hunt-button").addEventListener("click", () => action("hunt-manual", {
     areaId: Number($("#manual-hunt-area").value)

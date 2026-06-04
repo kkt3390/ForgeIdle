@@ -48,6 +48,7 @@
     <Content Include="Content\monsters\README.md" />
     <Content Include="Content\monsters\monster-manifest.tsv" />
     <Content Include="Content\monsters\*.webp" />
+    <Content Include="Content\weapons\*.webp" />
     <Content Include="database\cleanup_legacy_tables.sql" />
     <Content Include="database\setup.sql" />
     <Content Include="database\verify_legacy_migration.sql" />

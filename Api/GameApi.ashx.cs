@@ -89,7 +89,11 @@ namespace EnhanceAddiction.WebForms.Api
         {
             var playerKey = context.Session["PlayerKey"] as string;
             var admin = new AdminRepository();
-            var authenticated = AuthSession.IsAuthenticated(context);
+            var authenticated = AuthSession.IsAuthenticated(context) && AuthSession.IsCurrentLogin(context);
+            if (AuthSession.IsAuthenticated(context) && !authenticated)
+            {
+                context.Session.Clear();
+            }
             var banned = false;
             var banMessage = "";
             if (authenticated)
@@ -173,6 +177,7 @@ namespace EnhanceAddiction.WebForms.Api
         // 로그인 세션의 플레이어 키로 DB 상태를 조회하거나 새 상태를 만듭니다.
         private static PlayerState GetPlayer(HttpContext context, PlayerRepository repository, out string playerKey)
         {
+            AuthSession.EnsureCurrentLogin(context);
             playerKey = context.Session["PlayerKey"] as string;
             if (string.IsNullOrWhiteSpace(playerKey))
                 throw new UnauthorizedAccessException("로그인이 필요합니다.");

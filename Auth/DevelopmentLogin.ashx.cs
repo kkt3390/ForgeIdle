@@ -16,8 +16,7 @@ namespace EnhanceAddiction.WebForms.Auth
                 context.Response.StatusCode = 404;
                 return;
             }
-            context.Session["PlayerKey"] = "development-" + Guid.NewGuid().ToString("N");
-            context.Session["LoginProvider"] = "development";
+            AuthSession.SignIn(context, "development-" + Guid.NewGuid().ToString("N"), "development");
             context.Response.Redirect(VirtualPathUtility.ToAbsolute("~/"));
         }
     }
