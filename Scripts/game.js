@@ -337,8 +337,11 @@ function renderCollection() {
                 "collection-card",
                 monster.collected ? "collected" : "locked"
             ].join(" ");
+            const clickAction = monster.collected
+                ? `onclick="openCollectionModal('${escapeHtml(monster.key)}')"`
+                : "";
             return `
-                <article class="${cardClasses}">
+                <article class="${cardClasses}" ${clickAction}>
                     <div class="collection-image">
                         <img src="${escapeHtml(monster.imagePath || `Content/monsters/${monster.key}.webp`)}" alt="" onerror="this.hidden=true" />
                         <span>${monster.collected ? "등록 완료" : "미등록"}</span>
@@ -356,6 +359,47 @@ function renderCollection() {
 function selectCollectionArea(areaId) {
     selectedCollectionAreaId = areaId;
     renderCollection();
+}
+
+// 수집 완료된 도감 카드를 눌렀을 때 큰 정보카드를 띄웁니다.
+function openCollectionModal(monsterKey) {
+    const monster = findCollectionMonster(monsterKey);
+    if (!monster || !monster.collected) return;
+
+    const gradeName = monster.grade === "golden" ? "황금" : monster.grade === "elite" ? "정예" : "일반";
+    const imagePath = monster.imagePath || `Content/monsters/${monster.key}.webp`;
+    const modal = $("#collection-modal");
+    modal.className = `collection-modal collection-modal-${monster.grade}`;
+    modal.innerHTML = `
+        <div class="collection-modal-backdrop" onclick="closeCollectionModal()"></div>
+        <article class="collection-modal-card">
+            <button class="collection-modal-close" type="button" onclick="closeCollectionModal()">닫기</button>
+            <span class="collection-grade-${monster.grade}">${gradeName}</span>
+            <img src="${escapeHtml(imagePath)}" alt="" onerror="this.hidden=true" />
+            <h3>${escapeHtml(monster.name)}</h3>
+            <p>${escapeHtml(monster.description || "아직 설명이 등록되지 않은 몬스터입니다.")}</p>
+        </article>`;
+    modal.hidden = false;
+    requestAnimationFrame(() => modal.classList.add("show"));
+}
+
+// 도감 정보카드를 닫습니다.
+function closeCollectionModal() {
+    const modal = $("#collection-modal");
+    modal.classList.remove("show");
+    setTimeout(() => {
+        if (!modal.classList.contains("show")) modal.hidden = true;
+    }, 180);
+}
+
+// 도감 전체 목록에서 키가 같은 몬스터를 찾습니다.
+function findCollectionMonster(monsterKey) {
+    if (!state?.collection) return null;
+    for (const area of state.collection.areas) {
+        const monster = area.monsters.find(candidate => candidate.key === monsterKey);
+        if (monster) return monster;
+    }
+    return null;
 }
 
 // 진행 중인 자동 사냥의 경과 시간과 예상 누적 보상을 갱신합니다.
@@ -511,12 +555,12 @@ function showNextCollectionToast() {
         </div>`;
     box.hidden = false;
     box.classList.add("show");
-    collectionToastHideTimer = setTimeout(() => box.classList.remove("show"), 3600);
+    collectionToastHideTimer = setTimeout(() => box.classList.remove("show"), 900);
     collectionToastNextTimer = setTimeout(() => {
         if (!box.classList.contains("show")) box.hidden = true;
         collectionToastShowing = false;
         showNextCollectionToast();
-    }, 3950);
+    }, 1120);
 }
 
 // 닉네임처럼 사용자 입력이 HTML로 해석되지 않도록 안전하게 변환합니다.

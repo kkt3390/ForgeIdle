@@ -103,6 +103,8 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
 .collection-area-tab.active { color: #25190a; background: #f0b85c; }
 .collection-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
 .collection-card { overflow: hidden; padding: 6px; border: 1px solid #ffffff12; border-radius: 12px; background: #11131a; }
+.collection-card.collected { cursor: pointer; }
+.collection-card.collected:hover { transform: translateY(-2px); transition: .15s; }
 .collection-image {
   display: grid;
   aspect-ratio: 1 / 1;
@@ -261,6 +263,73 @@ th:first-child, td:first-child { text-align: left; }
 .collection-toast strong { display: block; color: #f6c56f; font-size: 15px; }
 .collection-toast span { display: inline-block; margin-top: 4px; font-size: 12px; }
 .collection-toast p { margin: 4px 0 0; color: #e8ded0; font-size: 13px; line-height: 1.45; }
+.collection-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  opacity: 0;
+  pointer-events: none;
+  transition: .18s ease;
+}
+.collection-modal.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.collection-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: #00000099;
+  backdrop-filter: blur(4px);
+}
+.collection-modal-card {
+  position: relative;
+  width: min(360px, 92vw);
+  padding: 20px;
+  border: 3px solid #f4f0e8;
+  border-radius: 24px;
+  text-align: center;
+  background: linear-gradient(145deg, #252034, #11131a);
+  box-shadow: 0 28px 90px #000000b5;
+  transform: translateY(16px) scale(.97);
+  transition: .18s ease;
+}
+.collection-modal.show .collection-modal-card {
+  transform: translateY(0) scale(1);
+}
+.collection-modal-card img {
+  display: block;
+  width: min(240px, 68vw);
+  height: min(240px, 68vw);
+  margin: 12px auto;
+  object-fit: contain;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 38%, #ffffff, #efe5d0 70%, #d7c09b);
+}
+.collection-modal-card h3 {
+  margin: 0 0 8px;
+  color: #fff8e8;
+  font-size: 22px;
+}
+.collection-modal-card p {
+  margin: 0;
+  color: #c4b8aa;
+  line-height: 1.55;
+}
+.collection-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 7px 10px;
+  color: #d9c8ff;
+  background: #ffffff12;
+  font-size: 12px;
+}
+.collection-modal-normal .collection-modal-card { border-color: #f4f0e8; }
+.collection-modal-elite .collection-modal-card { border-color: #a875ff; box-shadow: 0 28px 90px #7d4dff70; }
+.collection-modal-golden .collection-modal-card { border-color: #ffd15f; box-shadow: 0 28px 95px #e3a84e80; }
 @media (max-width: 560px) {
   .status-grid { grid-template-columns: repeat(2, 1fr); }
   .tabs { grid-template-columns: repeat(3, 1fr); }
