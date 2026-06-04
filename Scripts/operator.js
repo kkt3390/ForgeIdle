@@ -238,7 +238,6 @@ function koreaNow() {
 
 function roundedKoreaNow() {
     const now = koreaNow();
-    now.setMinutes(now.getMinutes() + 5);
     now.setSeconds(0, 0);
     return now;
 }
