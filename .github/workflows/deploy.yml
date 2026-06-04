@@ -1,4 +1,4 @@
-name: 강화중독 빌드 및 MonsterASP.NET 배포
+name: Build and deploy to MonsterASP.NET
 
 on:
   push:
@@ -9,23 +9,23 @@ jobs:
   build_and_deploy:
     runs-on: windows-latest
     steps:
-      - name: 소스 코드 받기
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: MSBuild 준비
+      - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Release 빌드
+      - name: Build release
         run: msbuild EnhanceAddiction.WebForms.sln /t:Build /p:Configuration=Release
 
-      - name: 배포 폴더 구성
+      - name: Prepare publish folder
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path publish | Out-Null
           Copy-Item Api, Auth, Content, Scripts, bin -Destination publish -Recurse
           Copy-Item Default.aspx, Global.asax, Web.config -Destination publish
 
-      - name: MonsterASP.NET에 배포
+      - name: Deploy to MonsterASP.NET
         uses: rasmusbuchholdt/simply-web-deploy@2.2.0
         with:
           website-name: ${{ secrets.WEBSITE_NAME }}
