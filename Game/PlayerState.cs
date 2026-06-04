@@ -92,5 +92,7 @@ namespace EnhanceAddiction.WebForms.Game
         public bool Duplicate { get; set; }
         public string MonsterKey { get; set; }
         public string MonsterName { get; set; }
+        public string Grade { get; set; }
+        public string ImagePath { get; set; }
     }
 }

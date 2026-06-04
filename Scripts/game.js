@@ -77,6 +77,7 @@ async function action(name, body = {}) {
         updateManualHuntButton();
         render();
         toast(result.Message || result.message);
+        if (isManualHunt) showCollectionRegistrations(result.Details || result.details);
     } catch (error) {
         if (isManualHunt) {
             manualHuntRequestPending = false;
@@ -424,6 +425,37 @@ function toast(message) {
     $("#toast").textContent = message;
     $("#toast").classList.add("show");
     setTimeout(() => $("#toast").classList.remove("show"), 2600);
+}
+
+// 직접 사냥에서 도감 판정이 성공하면 등록된 몬스터 이미지와 등급을 카드로 보여줍니다.
+function showCollectionRegistrations(details) {
+    const registrations = (details?.registrations || [])
+        .filter(registration => registration.Registered || registration.registered);
+    if (!registrations.length) return;
+
+    const registration = registrations[0];
+    const duplicate = registration.Duplicate ?? registration.duplicate;
+    const grade = registration.Grade || registration.grade || "normal";
+    const gradeName = grade === "golden" ? "황금" : grade === "elite" ? "정예" : "일반";
+    const monsterName = registration.MonsterName || registration.monsterName || "도감 몬스터";
+    const imagePath = registration.ImagePath || registration.imagePath || `Content/monsters/${registration.MonsterKey || registration.monsterKey}.webp`;
+    const extraCount = registrations.length > 1 ? `<p>추가 등록 판정 ${registrations.length - 1}건이 더 발생했습니다.</p>` : "";
+
+    const box = $("#collection-toast");
+    box.innerHTML = `
+        <img src="${escapeHtml(imagePath)}" alt="" onerror="this.hidden=true" />
+        <div>
+            <strong>${duplicate ? "도감 중복 등록" : "도감 신규 등록!"}</strong>
+            <span class="collection-grade-${grade}">${gradeName}</span>
+            <p>${escapeHtml(monsterName)}</p>
+            ${extraCount}
+        </div>`;
+    box.hidden = false;
+    box.classList.add("show");
+    setTimeout(() => box.classList.remove("show"), 4200);
+    setTimeout(() => {
+        if (!box.classList.contains("show")) box.hidden = true;
+    }, 4500);
 }
 
 // 닉네임처럼 사용자 입력이 HTML로 해석되지 않도록 안전하게 변환합니다.

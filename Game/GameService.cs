@@ -457,12 +457,19 @@ namespace EnhanceAddiction.WebForms.Game
             var key = CollectionKey(area.Id, grade, number);
             var duplicate = player.CollectedMonsterKeys.Contains(key);
             if (!duplicate) player.CollectedMonsterKeys.Add(key);
+            var monsterCatalog = GameContentRepository.MonsterMap();
+            MonsterCatalogEntry custom;
+            monsterCatalog.TryGetValue(key, out custom);
             return new CollectionRegistration
             {
                 Registered = true,
                 Duplicate = duplicate,
                 MonsterKey = key,
-                MonsterName = CollectionMonsterName(area.Name, grade, number)
+                MonsterName = custom == null ? CollectionMonsterName(area.Name, grade, number) : custom.Name,
+                Grade = grade,
+                ImagePath = custom == null || string.IsNullOrWhiteSpace(custom.ImagePath)
+                    ? string.Format("Content/monsters/{0}.webp", key)
+                    : custom.ImagePath
             };
         }
 

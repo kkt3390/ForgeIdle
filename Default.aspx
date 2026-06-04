@@ -240,7 +240,8 @@
       </section>
     </section>
   </main>
+  <div class="collection-toast" id="collection-toast" hidden></div>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260603-3"></script>
+  <script src="Scripts/game.js?v=20260604-1"></script>
 </body>
 </html>
