@@ -172,7 +172,7 @@
           <span id="collection-progress">0 / 360</span>
         </div>
         <p class="collection-description">
-          직접 사냥에서 매우 낮은 확률로 등록됩니다. 같은 몬스터가 중복 등록될 수 있습니다.
+          직접 사냥에서 처치한 몬스터가 10% 확률로 등록됩니다. 같은 몬스터가 중복 등록될 수 있습니다.
         </p>
         <div class="collection-area-tabs" id="collection-area-tabs"></div>
         <div class="collection-grid" id="collection-grid"></div>
@@ -214,7 +214,7 @@
               <tbody id="guide-monster-rates"></tbody>
             </table>
           </div>
-          <p class="guide-note">등록 판정에 성공하면 해당 사냥터와 등급의 10종 중 하나가 무작위로 선택됩니다. 이미 등록된 몬스터도 다시 나올 수 있습니다.</p>
+          <p class="guide-note">직접 사냥에서 처치한 몬스터가 등급과 상관없이 10% 확률로 등록됩니다. 이미 등록된 몬스터도 다시 나올 수 있습니다.</p>
         </article>
         <article class="guide-block">
           <h3>강화</h3>
@@ -249,6 +249,6 @@
   <div class="collection-modal" id="collection-modal" hidden></div>
   <div class="collection-toast" id="collection-toast" hidden></div>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260604-2"></script>
+  <script src="Scripts/game.js?v=20260604-4"></script>
 </body>
 </html>

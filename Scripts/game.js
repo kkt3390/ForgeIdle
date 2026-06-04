@@ -15,6 +15,30 @@ const $ = selector => document.querySelector(selector);
 const number = value => Number(value).toLocaleString("ko-KR");
 const experience = value => Number(value).toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const percent = value => `${(value * 100).toLocaleString("ko-KR", { maximumFractionDigits: 2 })}%`;
+const manualHuntResultVisibleMs = 1300;
+const manualHuntResultCloseMs = 220;
+
+// 서버나 DB에 저장된 이미지 경로가 윈도우식 역슬래시여도 브라우저 URL로 사용할 수 있게 보정합니다.
+function normalizeAssetPath(value) {
+    return String(value || "").replace(/\\/g, "/");
+}
+
+// 몬스터 이미지가 없거나 예전 PNG 경로가 깨질 때, 항상 배포되는 webp 파일로 한 번 더 대체합니다.
+function monsterImagePath(primaryPath, monsterKey) {
+    const fallbackPath = monsterKey ? `Content/monsters/${monsterKey}.webp` : "";
+    return normalizeAssetPath(primaryPath || fallbackPath);
+}
+
+// 이미지 로딩 실패 시 카드 전체를 숨기지 않고 webp 대체 파일을 먼저 시도합니다.
+function useFallbackImage(image) {
+    const fallbackPath = image.dataset.fallback;
+    if (fallbackPath) {
+        image.dataset.fallback = "";
+        image.src = fallbackPath;
+        return;
+    }
+    image.hidden = true;
+}
 
 // 데스크톱 브라우저의 로컬 시계/타이머가 서버와 어긋나도 게임 시간은 서버 기준으로 표시합니다.
 function syncServerClock(nextState) {
@@ -333,6 +357,8 @@ function renderCollection() {
     $("#collection-grid").innerHTML = selectedArea.monsters
         .map(monster => {
             const gradeName = monster.grade === "golden" ? "황금" : monster.grade === "elite" ? "정예" : "일반";
+            const imagePath = monsterImagePath(monster.imagePath, monster.key);
+            const fallbackPath = monsterImagePath("", monster.key);
             const cardClasses = [
                 "collection-card",
                 monster.collected ? "collected" : "locked"
@@ -343,7 +369,7 @@ function renderCollection() {
             return `
                 <article class="${cardClasses}" ${clickAction}>
                     <div class="collection-image">
-                        <img src="${escapeHtml(monster.imagePath || `Content/monsters/${monster.key}.webp`)}" alt="" onerror="this.hidden=true" />
+                        <img src="${escapeHtml(imagePath)}" data-fallback="${escapeHtml(fallbackPath)}" alt="" onerror="useFallbackImage(this)" />
                         <span>${monster.collected ? "등록 완료" : "미등록"}</span>
                     </div>
                     <div class="collection-card-info">
@@ -367,7 +393,8 @@ function openCollectionModal(monsterKey) {
     if (!monster || !monster.collected) return;
 
     const gradeName = monster.grade === "golden" ? "황금" : monster.grade === "elite" ? "정예" : "일반";
-    const imagePath = monster.imagePath || `Content/monsters/${monster.key}.webp`;
+    const imagePath = monsterImagePath(monster.imagePath, monster.key);
+    const fallbackPath = monsterImagePath("", monster.key);
     const modal = $("#collection-modal");
     modal.className = `collection-modal collection-modal-${monster.grade}`;
     modal.innerHTML = `
@@ -375,7 +402,7 @@ function openCollectionModal(monsterKey) {
         <article class="collection-modal-card">
             <button class="collection-modal-close" type="button" onclick="closeCollectionModal()">닫기</button>
             <span class="collection-grade-${monster.grade}">${gradeName}</span>
-            <img src="${escapeHtml(imagePath)}" alt="" onerror="this.hidden=true" />
+            <img src="${escapeHtml(imagePath)}" data-fallback="${escapeHtml(fallbackPath)}" alt="" onerror="useFallbackImage(this)" />
             <h3>${escapeHtml(monster.name)}</h3>
             <p>${escapeHtml(monster.description || "아직 설명이 등록되지 않은 몬스터입니다.")}</p>
         </article>`;
@@ -495,14 +522,16 @@ function showManualHuntResult(details) {
     const grade = hunt.Grade || hunt.grade || "normal";
     const gradeName = grade === "golden" ? "황금" : grade === "elite" ? "정예" : "일반";
     const monsterName = hunt.MonsterName || hunt.monsterName || "몬스터";
-    const imagePath = hunt.ImagePath || hunt.imagePath || `Content/monsters/${hunt.MonsterKey || hunt.monsterKey}.webp`;
+    const monsterKey = hunt.MonsterKey || hunt.monsterKey;
+    const imagePath = monsterImagePath(hunt.ImagePath || hunt.imagePath, monsterKey);
+    const fallbackPath = monsterImagePath("", monsterKey);
     const box = $("#manual-hunt-result");
 
     box.className = `manual-hunt-result manual-hunt-result-${grade}`;
     box.innerHTML = `
         <div class="manual-hunt-result-card">
             <span>${gradeName} 처치</span>
-            <img src="${escapeHtml(imagePath)}" alt="" onerror="this.hidden=true" />
+            <img src="${escapeHtml(imagePath)}" data-fallback="${escapeHtml(fallbackPath)}" alt="" onerror="useFallbackImage(this)" />
             <strong>${escapeHtml(monsterName)}</strong>
         </div>`;
     box.hidden = false;
@@ -513,8 +542,8 @@ function showManualHuntResult(details) {
         box.classList.remove("show");
         setTimeout(() => {
             if (!box.classList.contains("show")) box.hidden = true;
-        }, 220);
-    }, 900);
+        }, manualHuntResultCloseMs);
+    }, manualHuntResultVisibleMs);
 }
 
 // 직접 사냥에서 도감 판정이 성공하면 등록된 몬스터 이미지와 등급을 카드로 보여줍니다.
@@ -537,7 +566,9 @@ function showNextCollectionToast() {
     const grade = registration.Grade || registration.grade || "normal";
     const gradeName = grade === "golden" ? "황금" : grade === "elite" ? "정예" : "일반";
     const monsterName = registration.MonsterName || registration.monsterName || "도감 몬스터";
-    const imagePath = registration.ImagePath || registration.imagePath || `Content/monsters/${registration.MonsterKey || registration.monsterKey}.webp`;
+    const monsterKey = registration.MonsterKey || registration.monsterKey;
+    const imagePath = monsterImagePath(registration.ImagePath || registration.imagePath, monsterKey);
+    const fallbackPath = monsterImagePath("", monsterKey);
     const remainCount = collectionToastQueue.length
         ? `<p>대기 중인 도감 알림 ${collectionToastQueue.length}건</p>`
         : "";
@@ -546,7 +577,7 @@ function showNextCollectionToast() {
     clearTimeout(collectionToastHideTimer);
     clearTimeout(collectionToastNextTimer);
     box.innerHTML = `
-        <img src="${escapeHtml(imagePath)}" alt="" onerror="this.hidden=true" />
+        <img src="${escapeHtml(imagePath)}" data-fallback="${escapeHtml(fallbackPath)}" alt="" onerror="useFallbackImage(this)" />
         <div>
             <strong>${duplicate ? "도감 중복 등록" : "도감 신규 등록!"}</strong>
             <span class="collection-grade-${grade}">${gradeName}</span>
@@ -555,12 +586,12 @@ function showNextCollectionToast() {
         </div>`;
     box.hidden = false;
     box.classList.add("show");
-    collectionToastHideTimer = setTimeout(() => box.classList.remove("show"), 900);
+    collectionToastHideTimer = setTimeout(() => box.classList.remove("show"), manualHuntResultVisibleMs);
     collectionToastNextTimer = setTimeout(() => {
         if (!box.classList.contains("show")) box.hidden = true;
         collectionToastShowing = false;
         showNextCollectionToast();
-    }, 1120);
+    }, manualHuntResultVisibleMs + manualHuntResultCloseMs);
 }
 
 // 닉네임처럼 사용자 입력이 HTML로 해석되지 않도록 안전하게 변환합니다.
