@@ -261,6 +261,6 @@
   <div class="collection-modal" id="collection-modal" hidden></div>
   <div class="collection-toast" id="collection-toast" hidden></div>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260605-1"></script>
+  <script src="Scripts/game.js?v=20260605-2"></script>
 </body>
 </html>

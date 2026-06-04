@@ -714,7 +714,8 @@ function showManualHuntResult(details) {
 // 직접 사냥에서 도감 판정이 성공하면 등록된 몬스터 이미지와 등급을 카드로 보여줍니다.
 function showCollectionRegistrations(details) {
     const registrations = (details?.registrations || [])
-        .filter(registration => registration.Registered || registration.registered);
+        .filter(registration => (registration.Registered || registration.registered)
+            && !(registration.Duplicate ?? registration.duplicate));
     if (!registrations.length) return;
 
     collectionToastQueue.push(...registrations);

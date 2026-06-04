@@ -468,14 +468,12 @@ namespace EnhanceAddiction.WebForms.Game
             };
         }
 
-        // 도감 등록 결과가 있으면 신규 또는 중복 등록 안내 문구를 만듭니다.
+        // 새로 등록된 도감 결과만 안내 문구로 보여줍니다. 중복 등록은 로그에는 남기되 화면 알림은 생략합니다.
         private static string CollectionRegistrationMessage(IEnumerable<CollectionRegistration> registrations)
         {
             var messages = registrations
-                .Where(registration => registration.Registered)
-                .Select(registration => registration.Duplicate
-                    ? " 도감 중복: " + registration.MonsterName
-                    : " 도감 등록: " + registration.MonsterName + "!")
+                .Where(registration => registration.Registered && !registration.Duplicate)
+                .Select(registration => " 도감 등록: " + registration.MonsterName + "!")
                 .ToArray();
             return string.Join("", messages);
         }
