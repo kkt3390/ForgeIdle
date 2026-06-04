@@ -349,8 +349,8 @@ namespace EnhanceAddiction.WebForms.Game
             var area = _catalog.Areas[hunt.AreaId];
             var duration = Min(now, hunt.RewardCapAtUtc) - hunt.StartedAtUtc;
             if (duration < TimeSpan.Zero) duration = TimeSpan.Zero;
-            var gold = (long)Math.Floor(area.GoldPerHour * duration.TotalHours * GoldMultiplier(player));
-            var experience = area.ExperiencePerHour * duration.TotalHours * ExperienceMultiplier(player);
+            var gold = (long)Math.Floor(area.GoldPerHour * duration.TotalHours * StatGoldMultiplier(player));
+            var experience = area.ExperiencePerHour * duration.TotalHours * StatExperienceMultiplier(player);
             player.AutomaticHuntUsedSeconds += duration.TotalSeconds;
             player.Gold += gold;
             GrantExperience(player, experience);
@@ -546,20 +546,32 @@ namespace EnhanceAddiction.WebForms.Game
             return player.Level * 10000L;
         }
 
-        // 골드 획득량 스탯을 배율로 변환합니다.
+        // 골드 획득량 스탯만 배율로 변환합니다. 자동사냥은 핫타임 배율을 적용하지 않습니다.
+        private static double StatGoldMultiplier(PlayerState player)
+        {
+            return 1 + player.Stats.GoldGain * .01;
+        }
+
+        // 경험치 획득량 스탯만 배율로 변환합니다. 자동사냥은 핫타임 배율을 적용하지 않습니다.
+        private static double StatExperienceMultiplier(PlayerState player)
+        {
+            return 1 + player.Stats.ExperienceGain * .01;
+        }
+
+        // 직접사냥용 골드 배율을 계산합니다. 핫타임 배율은 직접사냥에만 적용합니다.
         private static double GoldMultiplier(PlayerState player)
         {
             var eventSettings = GameRewardSettings.Current();
             var eventMultiplier = eventSettings.IsActive(DateTime.UtcNow) ? eventSettings.GoldMultiplier : 1;
-            return (1 + player.Stats.GoldGain * .01) * eventMultiplier;
+            return StatGoldMultiplier(player) * eventMultiplier;
         }
 
-        // 경험치 획득량 스탯을 배율로 변환합니다.
+        // 직접사냥용 경험치 배율을 계산합니다. 핫타임 배율은 직접사냥에만 적용합니다.
         private static double ExperienceMultiplier(PlayerState player)
         {
             var eventSettings = GameRewardSettings.Current();
             var eventMultiplier = eventSettings.IsActive(DateTime.UtcNow) ? eventSettings.ExperienceMultiplier : 1;
-            return (1 + player.Stats.ExperienceGain * .01) * eventMultiplier;
+            return StatExperienceMultiplier(player) * eventMultiplier;
         }
 
         // 기본 시간과 보스 처치 보너스를 합쳐 오늘의 자동 사냥 한도를 계산합니다.
