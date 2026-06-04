@@ -12,6 +12,7 @@ let collectionToastHideTimer;
 let collectionToastNextTimer;
 let collectionToastShowing = false;
 let selectedRankingCategory = "level";
+let weaponGyroBound = false;
 const $ = selector => document.querySelector(selector);
 const number = value => Number(value).toLocaleString("ko-KR");
 const experience = value => Number(value).toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -26,7 +27,8 @@ function normalizeAssetPath(value) {
 
 // 몬스터 이미지가 없거나 예전 PNG 경로가 깨질 때, 항상 배포되는 webp 파일로 한 번 더 대체합니다.
 function monsterImagePath(primaryPath, monsterKey) {
-    const fallbackPath = monsterKey ? `Content/monsters/${monsterKey}.webp` : "";
+    const commonKey = String(monsterKey || "").replace(/^(area-\d{2})-(normal|elite|golden)-(\d{2})$/i, "$1-$3");
+    const fallbackPath = commonKey ? `Content/monsters/${commonKey}.webp` : "";
     return normalizeAssetPath(primaryPath || fallbackPath);
 }
 
@@ -195,6 +197,7 @@ function weaponShowcaseHtml(imagePath, weaponName, tier) {
 }
 
 function bindWeaponTiltEffects(root) {
+    bindWeaponGyroEffects(root);
     root.querySelectorAll(".weapon-showcase").forEach(container => {
         const overlay = container.querySelector(".weapon-holo");
         const frame = container.querySelector(".weapon-frame");
@@ -208,17 +211,78 @@ function bindWeaponTiltEffects(root) {
             const rotateX = (y / rect.height - .5) * -18;
             const light = Math.min(.9, Math.max(.18, x / rect.width));
 
-            frame.style.transform = `perspective(420px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-            overlay.style.backgroundPosition = `${x / rect.width * 100 + y / rect.height * 24}%`;
-            overlay.style.opacity = light;
+            applyWeaponTilt(container, rotateX, rotateY, light, x / rect.width * 100 + y / rect.height * 24);
         });
 
         container.addEventListener("mouseleave", () => {
-            frame.style.transform = "perspective(420px) rotateX(0deg) rotateY(0deg)";
-            overlay.style.opacity = "0";
-            overlay.style.backgroundPosition = "100%";
+            resetWeaponTilt(container);
         });
     });
+}
+
+function bindWeaponGyroEffects(root) {
+    if (weaponGyroBound || !window.DeviceOrientationEvent || !window.matchMedia("(hover: none)").matches) return;
+    weaponGyroBound = true;
+    let baseline = null;
+
+    const listen = () => window.addEventListener("deviceorientation", event => {
+        if (typeof event.beta !== "number" || typeof event.gamma !== "number") return;
+        if (!baseline) {
+            baseline = { beta: event.beta, gamma: event.gamma };
+            document.querySelectorAll("#weapon-display .weapon-showcase").forEach(resetWeaponTilt);
+            return;
+        }
+
+        const deltaGamma = normalizeAngleDelta(event.gamma - baseline.gamma);
+        const deltaBeta = normalizeAngleDelta(event.beta - baseline.beta);
+        const rotateY = clamp(deltaGamma, -24, 24) * .55;
+        const rotateX = clamp(deltaBeta, -24, 24) * -.42;
+        const position = 50 + rotateY * 2 + rotateX;
+        const opacity = Math.min(.85, Math.max(.18, (Math.abs(rotateY) + Math.abs(rotateX)) / 28 + .18));
+        document.querySelectorAll("#weapon-display .weapon-showcase").forEach(container =>
+            applyWeaponTilt(container, rotateX, rotateY, opacity, position));
+    }, true);
+
+    if (typeof DeviceOrientationEvent.requestPermission !== "function") {
+        listen();
+        return;
+    }
+
+    root.addEventListener("click", async () => {
+        try {
+            if (await DeviceOrientationEvent.requestPermission() === "granted") listen();
+        } catch {
+            // 권한을 거부하거나 브라우저가 막으면 마우스/터치 없는 정적 카드로 둡니다.
+        }
+    }, { once: true });
+}
+
+function normalizeAngleDelta(value) {
+    if (value > 180) return value - 360;
+    if (value < -180) return value + 360;
+    return value;
+}
+
+function applyWeaponTilt(container, rotateX, rotateY, opacity, backgroundPosition) {
+    const frame = container.querySelector(".weapon-frame");
+    const overlay = container.querySelector(".weapon-holo");
+    if (!frame || !overlay) return;
+    frame.style.transform = `perspective(420px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    overlay.style.backgroundPosition = `${backgroundPosition}%`;
+    overlay.style.opacity = opacity;
+}
+
+function resetWeaponTilt(container) {
+    const frame = container.querySelector(".weapon-frame");
+    const overlay = container.querySelector(".weapon-holo");
+    if (!frame || !overlay) return;
+    frame.style.transform = "perspective(420px) rotateX(0deg) rotateY(0deg)";
+    overlay.style.opacity = "0";
+    overlay.style.backgroundPosition = "100%";
+}
+
+function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
 }
 
 function localWeaponPreviewHtml(imagePath) {

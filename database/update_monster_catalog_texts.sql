@@ -1,0 +1,724 @@
+﻿-- 몬스터 도감 이름과 설명을 기획 데이터 시트 기준으로 갱신합니다.
+SET NOCOUNT ON;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'나뭇잎 슬라임',
+    Description = N'수풀 사이에 흔하게 발견되는 말랑말랑한 생물입니다. 머리 위에 자라난 작은 나뭇잎으로 영양분을 흡수하곤 합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 0 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'가시 애벌레',
+    Description = N'선명한 노란색 몸통에 독침 같은 가시가 돋아있습니다. 자극하면 몸을 웅크려 가시로 공격하니 초보 모험가들은 주의해야 합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 0 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'덤불 토끼',
+    Description = N'주변 풀숲과 동화되는 위장술을 가진 토끼입니다. 겁이 무척 많아 아주 작은 인기척에도 덤불 속으로 숨어버립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 0 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'도토리 멧돼지',
+    Description = N'단단한 도토리 껍질을 등껍질처럼 두르고 다닙니다. 작다고 방심하다간 매서운 돌진에 발목을 다칠 수 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 0 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'독니 빨간개미',
+    Description = N'붉은 군집을 이루어 생활하는 포악한 개미입니다. 제 몸집만 한 턱에는 치명적인 산성 독이 흐르고 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 0 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'버섯 거미',
+    Description = N'축축한 응달을 좋아하는 거미입니다. 등 뒤에 피어난 화려한 버섯은 먹잇감을 유혹하는 덫입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 0 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'숲 요정',
+    Description = N'숲의 마력으로부터 태어난 영체입니다. 평화로워 보이지만, 영역을 침범한 자에게는 가차 없이 눈이 멀어버리는 요정 가루를 뿌립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 0 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'나무껍질 게',
+    Description = N'오랜 세월 동안 나무 동굴에 살며 등껍질이 굳어버린 육지 게입니다. 얼핏 보면 그저 평범한 그루터기처럼 보입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 0 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'꽃꿀 벌',
+    Description = N'달콤한 꽃꿀을 모으기 위해 분주하게 날아다니는 통통한 벌입니다. 자신이 아끼는 꽃을 빼앗기면 끝까지 쫓아와 침을 쏩니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 0 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'고대 엔트',
+    Description = N'숲의 시작부터 자리를 지켜온 거대한 나무 정령입니다. 무분별하게 자연을 헤치는 침입자들을 처단하기 위해 깊은 잠에서 깨어났습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 0 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'철갑 두더지',
+    Description = N'버려진 광산의 단단한 암반을 파헤치며 진화한 두더지입니다. 강철보다 단단한 발톱으로 무엇이든 찢어발깁니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 1 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'고철 고렘',
+    Description = N'광부들이 버리고 간 부품이나 녹슨 철파이프들이 기괴한 마력에 이끌려 조립된 조잡한 피조물입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 1 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'동굴 거미',
+    Description = N'어둠이 내린 광산 깊은 곳에 둥지를 튼 거미입니다. 어둠 속에서 번뜩이는 황색 눈을 마주쳤다면 이미 늦은 것입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 1 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'광부 좀비',
+    Description = N'광산이 무너질 때 탈출하지 못했던 광부들의 원혼입니다. 죽어서도 굳어버린 손으로 곡괭이를 휘두르며 광석을 찾아 헤맵니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 1 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'바위 슬라임',
+    Description = N'광산의 돌가루와 진흙이 뭉쳐진 슬라임입니다. 몸 표면에 날카로운 자갈이 박혀있어 부딪히는 것만으로도 큰 상처를 입습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 1 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'녹슨 지네',
+    Description = N'구리 성분이 가득한 광산 바닥을 기어 다니는 거대한 지네입니다. 온몸이 금속 질감의 껍질로 뒤덮여 있어 여간한 공격은 튕겨냅니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 1 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'석탄 미믹',
+    Description = N'평범한 석탄 더미로 위장하고 있는 흉포한 괴물입니다. 연료를 구하려는 광부들이 접근하면 커다란 입을 벌려 삼켜버립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 1 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'타르 괴물',
+    Description = N'오랫동안 고여있던 폐유와 타르가 생명력을 얻어 탄생했습니다. 끈적한 신체로 적을 옭아매어 숨을 막히게 합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 1 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'카나리아 유령',
+    Description = N'과거 유독가스를 감지하던 카나리아들의 영혼이 뭉쳐진 원혼입니다. 광산의 슬픈 역사를 증명하듯 방독면 환영을 쓰고 날아다닙니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 1 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'폭주 광차',
+    Description = N'저주받은 붉은 수정의 마력에 잠식되어 스스로 움직이는 광차입니다. 선로를 벗어나 침입자를 향해 무시무시한 속도로 돌진합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 1 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'수정 박쥐',
+    Description = N'동굴 고유의 마력을 흡수하여 날개가 보랏빛 수정으로 변해버린 박쥐입니다. 날갯짓을 할 때마다 날카로운 수정 조각이 떨어집니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 2 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'발광 버섯 괴물',
+    Description = N'스스로 푸른 네온빛을 발산하는 기괴한 버섯입니다. 이 버섯이 뿜어내는 환각 포자에 중독되면 동굴 속을 영원히 헤매게 됩니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 2 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'바위 거북이',
+    Description = N'등껍질이 거친 화강암과 동화된 거북이입니다. 위험을 감지하고 껍질 속으로 들어가면 장정 여럿이 매달려도 흠집조차 낼 수 없습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 2 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'메아리 정령',
+    Description = N'동굴 속에서 울려 퍼지는 소리들이 응축되어 태어난 정령입니다. 보이지 않는 음파를 발사하여 침입자의 고막과 정신을 뒤흔듭니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 2 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'눈먼 도마뱀',
+    Description = N'빛이 완전히 차단된 어두운 동굴에서 시력을 잃은 대신 촉각이 극도로 발달한 도마뱀입니다. 미세한 공기의 흐름마저 포착합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 2 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'종유석 뱀',
+    Description = N'천장에 매달린 종유석 위를 보호색으로 채운 뱀입니다. 위를 살피지 않고 걷는 모험가들의 목덜미를 노려 수직으로 낙하합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 2 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'인광 지렁이',
+    Description = N'스스로 빛을 내는 거대한 지렁이입니다. 이들이 지나간 자리는 한동안 눈이 시린 네온 그린 빛의 점액질 궤적이 남습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 2 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'자수정 풍뎅이',
+    Description = N'천연 자수정을 등껍질로 삼은 귀한 풍뎅이입니다. 아름다운 외형과 달리 밀렵꾼들을 들이받아 물리치는 강력한 껍질을 가졌습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 2 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'진흙 괴물',
+    Description = N'지하수가 흘러드는 눅눅한 점토 지대에서 솟아오른 괴물입니다. 물리적인 타격을 그대로 흘려보내는 유동적인 신체를 가졌습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 2 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'지오드 타이탄',
+    Description = N'동굴의 심장부에서 군림하는 거대한 암석 거인입니다. 갈라진 몸체 틈새로 영롱하게 빛나는 거대한 자수정 군집이 잠재된 마력을 증명합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 2 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'녹슨 갑옷',
+    Description = N'주인을 잃고 성터에 방치되었던 기사의 갑옷입니다. 기사의 집념과 원망이 깃들어 알맹이가 비어있음에도 검을 휘두릅니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 3 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'가고일',
+    Description = N'성벽 높은 곳에서 침입자를 감시하는 석상 괴물입니다. 평소에는 완벽한 돌의 상태로 멈춰 있다가 기습적으로 날개를 펼칩니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 3 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'성터 쥐',
+    Description = N'시체와 쓰레기로 연명하며 비정상적으로 거대해진 쥐입니다. 성터의 버려진 천조각을 기우뚱하게 두르고 붉은 눈을 번뜩입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 3 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'저주받은 촛대',
+    Description = N'연회장을 밝히던 황금 촛대에서 악령이 깃들었습니다. 영혼을 태우는 보라색 불꽃을 뿜으며 공중을 부유합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 3 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'우는 초상화',
+    Description = N'과거 성주의 초상화입니다. 액자 속 인물의 눈에서 피눈물이 흐를 때, 원혼의 손길이 튀어나와 살아있는 자의 온기를 갈구합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 3 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'방패 고렘',
+    Description = N'무너진 성벽의 병사들이 쓰던 수많은 방패가 자성을 띤 마력으로 뒤엉켜 만들어진 움직이는 통곡의 벽입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 3 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'성터 까마귀',
+    Description = N'썩은 고기를 먹고 자란 흉조입니다. 저주를 받아 붉게 물든 부리로 비명에 가까운 울음소리를 내어 불운을 몰고 옵니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 3 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'그림자 추적자',
+    Description = N'성벽의 어두운 그늘 속에 완전히 숨어 지내는 암살자 형태의 영체입니다. 소리 없이 다가와 칼날 같은 손톱으로 등 뒤를 찌릅니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 3 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'유령 하녀',
+    Description = N'성이 멸망한 줄도 모른 채 영원히 청소를 반복하는 가련한 하녀의 유령입니다. 방해를 받으면 원한 서린 비명을 지릅니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 3 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'황혼의 가고일 킹',
+    Description = N'성터의 가장 높은 탑을 지배하는 가고일들의 왕입니다. 부서진 황금 왕관을 쓴 채 성터 전체를 내려다보며 침입자들을 압살합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 3 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'얼음 정령',
+    Description = N'혹한의 한기가 의지를 갖고 뭉쳐진 정령입니다. 주변의 열을 전부 빼앗아가며 날카로운 얼음 파편을 사방으로 날립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 4 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'설원 예티',
+    Description = N'만년설이 쌓인 계곡에 서식하는 거대 설인입니다. 몽실몽실한 외형과 맑은 눈망울을 가졌지만, 영역을 침범하면 무자비한 괴력을 발휘합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 4 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'서리 랩터',
+    Description = N'영하의 기온에 적응한 고대 파충류입니다. 등 뒤에 자라난 날카로운 고드름은 사냥감을 얼려버리는 강력한 무기입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 4 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'빙판 슬라임',
+    Description = N'차가운 강물이 흐르다 그대로 얼어붙어 생성된 슬라임입니다. 몸 전체가 단단한 얼음 결정이라 밟으면 미끄러지기 십상입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 4 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'설원 여우',
+    Description = N'눈밭에서 완벽하게 은신하는 영물 여우입니다. 신비로운 푸른 얼음이 서린 세 개의 꼬리를 가진 채 혹한의 마법을 부립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 4 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'눈보라 매',
+    Description = N'거센 눈보라를 뚫고 비행하는 계곡의 포식자입니다. 이 새가 날갯짓을 할 때마다 주변에 강력하고 매서운 칼바람이 몰아칩니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 4 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'눈사람 미믹',
+    Description = N'아이들이 만든 무해한 눈사람처럼 위장하고 있습니다. 순진한 여행자가 다가오면 몸체를 쩍 갈라 거대한 입으로 기습합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 4 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'고드름 거미',
+    Description = N'얼음 동굴 천장에 서식하는 투명한 거미입니다. 고드름처럼 뾰족한 다리로 소리 없이 내려앉아 사냥감을 꿰뚫어 버립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 4 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'동토의 늑대',
+    Description = N'무리를 지어 계곡을 누비는 은빛 사냥꾼입니다. 이들의 입에서 뿜어지는 한 서린 숨결은 스치는 것만으로도 상대를 동상에 걸리게 합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 4 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'서리 맘모스',
+    Description = N'빙하기 시절부터 살아남은 전설적인 고대 거수입니다. 거대한 몸집을 감싼 얼음 장갑과 산통을 깨부수는 대형 상아는 절망 그 자체입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 4 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'용암 슬라임',
+    Description = N'펄펄 끓는 분화구에서 흘러나온 마그마의 화신입니다. 이동할 때마다 주변 지형을 녹여버리는 지독한 열기를 품고 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 5 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'지옥견',
+    Description = N'화산의 분노에서 태어난 사냥개입니다. 목덜미를 따라 이글거리는 화염 갈기는 적을 위협함과 동시에 대지를 태워버립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 5 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'마그마 게',
+    Description = N'굳어버린 현무암을 등껍질로 사용하는 게입니다. 등껍질의 갈라진 틈새로 흐르는 붉은 마그마는 언제든 분출할 준비가 되어있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 5 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'재나비',
+    Description = N'화산재와 불씨가 나비의 형상으로 흩날리는 기이한 생물입니다. 지나간 자리에 매캐한 연기와 아지랑이를 남겨 시야를 방해합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 5 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'유황 풍뎅이',
+    Description = N'유황 가스를 먹고 자란 독특한 풍뎅이입니다. 위험에 처하면 노란 신체에서 지독한 악취와 폭발성 가스를 분출합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 5 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'화산 거북이',
+    Description = N'등껍질 자체가 하나의 작은 화산인 신비로운 거북이입니다. 화가 나면 등 뒤의 포구에서 불꽃과 용암 조각을 무차별적으로 쏘아 올립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 5 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'화염 도깨비불',
+    Description = N'응축된 화염 에너지가 스스로 의지를 갖고 떠도는 불꽃 구체입니다. 살아있는 생명체를 발견하면 자폭하듯 달려들어 폭발합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 5 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'흑요석 임프',
+    Description = N'날카로운 흑요석 피부를 가진 영악한 악마입니다. 용암으로 달군 삼지창을 들고 다니며 여행자들을 골탕 먹이고 괴롭힙니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 5 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'타오르는 바실리스크',
+    Description = N'화산의 열기를 견뎌내며 진화한 대형 도마뱀입니다. 이 괴수가 지나간 자리는 풀 한 포기 남지 않고 시커멓게 타버립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 5 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'이프리트 불사조',
+    Description = N'화염 지대의 군주이자 불멸의 존재입니다. 거대한 날개를 펼칠 때마다 화산 지대 전체가 요동치며 종말의 불비가 쏟아집니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 5 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'해골 병사',
+    Description = N'저주받은 대지에 이끌려 무덤에서 깨어난 옛 군인입니다. 앙상한 뼈 구조만 남았음에도 과거의 본능으로 방패와 검을 굳게 쥐고 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 6 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'유령',
+    Description = N'이승을 떠나지 못하고 성안을 방황하는 가련한 영혼입니다. 슬픈 눈으로 공중을 부유하며 산 자의 생명력을 흡수하려 듭니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 6 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'흡혈 박쥐',
+    Description = N'성의 지하 감옥에 서식하는 흉포한 박쥐입니다. 신선한 피의 냄새를 기막히게 맡으며, 무리를 지어 사냥감을 덮칩니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 6 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'좀비 경비병',
+    Description = N'부패해가는 몸으로 성의 복도를 순찰하는 시체 병사입니다. 통각을 느끼지 못하기 때문에 육체가 파괴될 때까지 격렬하게 저항합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 6 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'식시귀 사냥개',
+    Description = N'묘지의 사체를 먹고 역병에 걸린 사냥개입니다. 썩어 들어가는 피부 사이로 번뜩이는 녹색 안광은 굶주림으로 가득 차 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 6 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'망령의 망토',
+    Description = N'과거 귀족들이 입던 고급 망토에 원혼이 깃들었습니다. 붉은 안감을 펄럭이며 살아있는 생물처럼 공중을 비행하여 목을 조여옵니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 6 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'반시',
+    Description = N'죽음을 예고하는 구슬픈 곡소리를 내는 여성 원혼입니다. 그녀의 찢어지는 듯한 비명소리를 직접 들은 자는 심장이 얼어붙어 유명을 달리합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 6 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'골각 거미',
+    Description = N'무수한 유골들이 정교하게 맞물려 거미의 형상을 이룬 기괴한 언데드입니다. 뼈가 부딪히는 소뜩한 소리를 내며 벽을 타고 이동합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 6 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'망령 기사',
+    Description = N'칠흑의 갑옷을 입고 어두운 오라를 뿜어내는 정예 사기사입니다. 저주받은 녹색 대검을 휘둘러 영혼까지 베어버리는 공포의 대상입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 6 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'리치 왕',
+    Description = N'죽음을 초월하여 영생을 얻은 금단의 강령술사입니다. 해골이 장식된 지팡이로 무한한 언데드 군단을 부리며 망자의 성을 통치합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 6 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'그림자 임프',
+    Description = N'심연의 틈새에서 새어 나온 순수한 어둠의 찌꺼기입니다. 형태가 불분명한 검은 신체 속에서 오직 보라색 눈만이 기괴하게 빛납니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 7 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'공허의 눈',
+    Description = N'차원의 균열 너머에서 이쪽 세계를 관찰하는 거대한 외눈박이 괴물입니다. 촉수에서 뿜어내는 어둠의 광선은 물질의 존재 자체를 지워버립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 7 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'심연 해파리',
+    Description = N'대기 중을 바다처럼 헤엄쳐 다니는 심연의 생물입니다. 신비로운 네온빛 촉수에는 신경을 마비시키는 강력한 공허의 독이 흐릅니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 7 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'균열 탐색자',
+    Description = N'공간의 경계를 넘나드는 날렵한 공허의 야수입니다. 몸 표면의 네온 핑크빛 줄무늬로 에너지를 충전하여 차원 도약을 감행합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 7 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'괴질 거머리',
+    Description = N'기분 나쁜 보랏빛 눈들이 온몸에 다닥다닥 박힌 거머리입니다. 사냥감에게 달라붙어 마력 및 생명력을 통째로 빨아먹습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 7 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'암흑 성운',
+    Description = N'우주의 잔해와 공허의 마력이 뒤섞인 소용돌이 가스 구름입니다. 내부의 별 입자들은 접촉한 모든 물질을 부식시키는 성질을 띱니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 7 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'심연 게',
+    Description = N'빛이 닿지 않는 심연의 압력을 견뎌낸 검은 게입니다. 암흑 속에서 동료와 소통하기 위해 화려한 네온 블루빛 발광 패턴을 뿜어냅니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 7 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'공허 애벌레',
+    Description = N'차원의 벽을 갉아먹으며 성장하는 차원의 유충입니다. 통통한 보라색 몸집 내부에는 엄청난 양의 압축된 공허 에너지가 채워져 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 7 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'그림자 촉수 괴물',
+    Description = N'바닥의 그림자가 비정상적으로 부풀어 올라 형성된 촉수 군집입니다. 밟는 순간 끝없는 어둠 속으로 끌어내리려 꿈틀거립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 7 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'심연의 크라켄',
+    Description = N'심연의 문턱을 지키는 거대 괴수입니다. 수백 개의 네온 핑크빛 눈으로 전방위를 감시하며, 거대한 다리로 차원의 결계를 뒤흔듭니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 7 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'아기 용',
+    Description = N'이제 막 알을 깨고 나온 용의 새끼입니다. 아직 날지 못해 알껍질에 의지하고 있지만, 용족답게 입에서 작은 불꽃을 뿜어냅니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 8 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'용인 전사',
+    Description = N'드래곤을 숭배하며 그들의 피를 이어받은 아인종 전사입니다. 단단한 초록 비늘 장갑과 숙련된 창술로 둥지를 굳건히 지킵니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 8 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'와이번',
+    Description = N'앞다리가 날개와 통합된 날렵한 비룡입니다. 뛰어난 기동성으로 요격기처럼 하늘을 선회하다가 순식간에 하강하여 낚아챕니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 8 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'사춘기 용',
+    Description = N'한창 호기심과 장난기가 가득한 성장기 비룡입니다. 반짝이는 황금 동전을 장난감처럼 씹어 돌리며 침입자를 맞이합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 8 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'용비늘 슬라임',
+    Description = N'드래곤이 탈피할 때 떨어진 비늘들을 흡수한 슬라임입니다. 말랑한 본체 위에 드래곤의 방어력이 더해져 기묘한 탄성을 자랑합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 8 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'방화 드레이크',
+    Description = N'날개가 퇴화한 대신 강인한 뒷다리로 대지를 질주하는 지룡입니다. 거침없이 달리며 전방에 광범위한 화염 숨결을 흩뿌립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 8 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'용알 미믹',
+    Description = N'고가의 드래곤 알로 완벽하게 위장한 미믹입니다. 일확천금을 노리고 손을 뻗은 탐욕스러운 모험가들의 손목을 사정없이 물어뜯습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 8 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'도마뱀 마법사',
+    Description = N'불의 원소 마법을 체득한 붉은 도마뱀 마법사입니다. 고대 용의 언어로 주문을 외우며 대지에 폭발을 일으키는 지팡이를 휘두릅니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 8 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'갑룡',
+    Description = N'온몸이 강철 지느러미와 가시 같은 외갑으로 둘러싸인 중장갑 드레이크입니다. 어떠한 물리적 타격도 무디게 만드는 무지막지한 맷집을 자랑합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 8 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'고대 화룡',
+    Description = N'수천 년 동안 쌓아 올린 황금 산 위에서 군림하는 전설의 화룡입니다. 한 번의 포효로 하늘을 가르고, 대지를 용암 바다로 가라앉힙니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 8 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'황금 신상',
+    Description = N'천공의 신들을 모시기 위해 조각된 아름다운 대리석 신상입니다. 신전의 결계가 발동하자 황금 장식들이 빛나며 수호자로 변했습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 9 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'구름 페가수스',
+    Description = N'천상의 푹신한 뭉게구름과 응축된 안개로 이루어진 신비로운 천마입니다. 순백의 날개와 찬란한 황금 발굽으로 허공을 딛고 달립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 9 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'천공의 대천사',
+    Description = N'신전의 가장 성스러운 구역을 통제하는 고위 천사입니다. 순도 높은 신성 마력으로 제련된 빛의 검을 들고 사악한 자들을 심판합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 9 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'바람의 그리핀',
+    Description = N'하늘의 제왕 독수리와 대지의 왕 사자가 결합한 백금빛 서수입니다. 신전에 부는 거센 바람을 자유자재로 다루며 기습합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 9 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'빛의 정령',
+    Description = N'순수한 성스러운 빛의 입자들이 원형 궤도를 그리며 결합한 정령입니다. 기하학적인 고리를 회전시키며 침입자의 눈을 멀게 만듭니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 9 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'대리석 고렘',
+    Description = N'천상의 장인들이 백대리석을 깎아 만든 우아한 거인입니다. 이음새마다 박힌 황금 관절을 통해 신성한 동력을 공급받아 작동합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 9 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'발키리',
+    Description = N'신들의 선택을 받은 고결한 여성 전사입니다. 백조의 날개를 활짝 펼치고 은빛 갑옷을 휘날리며 전장을 지휘합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 9 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'하늘 가오리',
+    Description = N'신전 주변의 구름 바다를 유유히 헤엄치는 거대한 영물입니다. 표면의 은은한 황금빛 문양으로 기류를 제어하며 평화롭게 떠다닙니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 9 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'꼬마 천사',
+    Description = N'작고 포동포동한 외형을 가진 하급 천사입니다. 장난 가득한 표정으로 조준하는 소형 황금 화살에는 영혼을 꿰뚫는 마력이 깃들어 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 9 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'천공의 주신',
+    Description = N'천공의 신전을 창조한 위대한 주신입니다. 태양 왕관의 광채와 구름 수염을 휘날리며 신의 권능 그 자체로 침입자들을 무릎 꿇립니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 9 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'별조각 정령',
+    Description = N'밤하늘에서 떨어진 별똥별의 파편에 혼이 깃들었습니다. 반짝이는 우주 먼지를 휘날리며 유적 주위를 평화롭게 맴돕니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 10 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'아스트랄 스핑크스',
+    Description = N'유적의 수수께끼를 지키는 신비로운 영수입니다. 밤하늘의 은하수를 그대로 박아 넣은 듯한 푸른 성운 빛의 털을 지니고 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 10 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'운석 고렘',
+    Description = N'우주 외곽에서 낙하한 우주 광석들이 뭉쳐진 고렘입니다. 갈라진 몸체 틈새로 뜨거운 성간 에너지가 핑크빛으로 흐르고 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 10 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'별자리 게',
+    Description = N'황도 12궁의 마력을 받아 태어난 유리 재질의 게입니다. 등껍질에 정교하게 수놓아진 별자리들이 공명하며 방어막을 형성합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 10 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'달무리 슬라임',
+    Description = N'달빛의 정수를 가득 머금은 은빛 투명 슬라임입니다. 몸체의 중심에는 달의 위상을 나타내는 작은 초승달 핵이 빛나고 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 10 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'혜성 정령',
+    Description = N'유적의 통로를 빠른 속도로 횡단하는 혜성의 영혼입니다. 이 영체가 지나간 궤적에는 한동안 아름다운 별가루 잔상이 남습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 10 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'별빛 부엉이',
+    Description = N'심연의 밤하늘과 같은 깊은 미드나잇 블루 깃털을 가진 부엉이입니다. 유적의 지혜를 상징하며, 침입자의 행동을 꿰뚫어 봅니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 10 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'성운 요정',
+    Description = N'우주 가스 구름에서 피어난 몽환적인 요정입니다. 분홍빛과 보랏빛 성운 날개를 파닥이며 모험가의 정신을 아득하게 만듭니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 10 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'은하 뱀',
+    Description = N'거대한 은하의 소용돌이가 긴 뱀의 형상으로 압축되어 탄생한 초현실적 존재입니다. 온몸이 스스로 회전하는 별들로 이루어져 있습니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 10 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'오리온의 수호자',
+    Description = N'별자리의 의지를 이어받아 유적을 지키는 천상 최고의 사냥꾼입니다. 성간 물질로 이루어진 거대한 몸체로 별빛의 활시위를 당깁니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 10 AND SlotNumber = 10;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'균열의 파편',
+    Description = N'깨져버린 차원의 틈새에서 발생한 시공간의 오류입니다. 네온 보라색과 분홍색 입자가 디지털 글리치 현상을 일으키며 기괴하게 튑니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 11 AND SlotNumber = 1;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'차원 포식자',
+    Description = N'현실 세계의 존재를 지워버리기 위해 찾아온 차원 외계 생물입니다. 공허로 가득 찬 입 내부의 네온 그린 빛 이빨은 공간마저 씹어 삼킵니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 11 AND SlotNumber = 2;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'시간의 주시자',
+    Description = N'꼬여버린 시간의 축을 감시하는 기괴한 장치입니다. 부서진 시계 바늘 얼굴 아래로 뻗어 나온 검은 촉수들이 기계적으로 초침 소리를 냅니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 11 AND SlotNumber = 3;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'패러독스 슬라임',
+    Description = N'존재할 수 없는 시공간의 모순이 형상화된 슬라임입니다. 온몸의 흑백 체커보드 문양이 실시간으로 뒤틀려 보는 이의 어지러움을 유발합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 11 AND SlotNumber = 4;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'사이버 임프',
+    Description = N'균열의 디지털 노이즈 속에서 코딩 오류처럼 튀어나온 소악마입니다. 로우폴리 각진 형태의 가상 신체로 기민하게 움직입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 11 AND SlotNumber = 5;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'데이터 변종',
+    Description = N'유출된 세계의 비전 마력이 매트릭스 코드 형태로 형상화된 구체입니다. 끝없이 흘러내리는 녹색 숫자 배열이 특징입니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 11 AND SlotNumber = 6;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'공허 보행자',
+    Description = N'경계가 무너진 균열을 소리 없이 걸어 다니는 의문의 그림자 인간입니다. 아무런 이목구비 없이 하얗게 번쩍이는 가상 얼굴이 공포감을 줍니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 11 AND SlotNumber = 7;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'거울 도플갱어',
+    Description = N'침입자의 내면을 투영하여 복사하는 유리 마네킹입니다. 형체 없이 균열의 보랏빛 네온 광원만을 거울처럼 반사하며 똑같이 행동합니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 11 AND SlotNumber = 8;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'양자 행렬',
+    Description = N'관측할 때마다 분자 구조가 레이저 형태로 무작위하게 변하는 양자 루빅스 큐브입니다. 예측 불가능한 에너지 파동을 일으킵니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 11 AND SlotNumber = 9;
+
+UPDATE dbo.ea_monster_catalog
+SET Name = N'무한의 핵',
+    Description = N'모든 차원의 균열이 수렴되는 종착점이자 거대한 살아있는 블랙홀입니다. 상상을 초월하는 인력과 주변을 맴도는 네온 상태 링으로 모든 것을 종말시킵니다.',
+    UpdatedAt = SYSDATETIMEOFFSET()
+WHERE AreaId = 11 AND SlotNumber = 10;
+
+PRINT N'몬스터 도감 이름과 설명 갱신을 완료했습니다.';

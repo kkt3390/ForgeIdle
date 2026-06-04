@@ -333,7 +333,7 @@ INNER JOIN CollectionCounts c ON c.Id = p.Id;";
         // 원본 몬스터 120종을 일반/정예/황금 3등급 도감 항목으로 등록합니다.
         private static void SeedMonsterCatalog(SqlConnection connection)
         {
-            const string migrationKey = "monster-catalog-webp-v1";
+            const string migrationKey = "monster-catalog-texts-v3";
             using (var checkCommand = new SqlCommand(
                 "SELECT COUNT(1) FROM dbo.ea_legacy_migrations WHERE MigrationKey = @MigrationKey",
                 connection))
@@ -364,11 +364,14 @@ INNER JOIN CollectionCounts c ON c.Id = p.Id;";
                 if (!int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out slotNumber)) continue;
 
                 var name = parts[2].Trim();
+                var description = parts.Length >= 4 && !string.IsNullOrWhiteSpace(parts[3])
+                    ? parts[3].Trim()
+                    : "도감 몬스터";
                 foreach (var grade in grades)
                 {
                     var monsterKey = string.Format(CultureInfo.InvariantCulture, "area-{0:D2}-{1}-{2:D2}", areaId, grade, slotNumber);
-                    var imagePath = string.Format(CultureInfo.InvariantCulture, "Content/monsters/{0}.webp", monsterKey);
-                    var sortOrder = areaId * 1000 + GradeSortOrder(grade) * 100 + slotNumber;
+                    var imagePath = string.Format(CultureInfo.InvariantCulture, "Content/monsters/area-{0:D2}-{1:D2}.webp", areaId, slotNumber);
+                    var sortOrder = areaId * 1000 + slotNumber * 10 + GradeSortOrder(grade);
                     using (var command = new SqlCommand(@"
 IF NOT EXISTS (SELECT 1 FROM dbo.ea_monster_catalog WHERE MonsterKey = @MonsterKey)
 BEGIN
@@ -380,8 +383,11 @@ END
 ELSE
 BEGIN
     UPDATE dbo.ea_monster_catalog
-    SET ImagePath = CASE WHEN ImagePath IS NULL OR LTRIM(RTRIM(ImagePath)) = N'' THEN @ImagePath ELSE ImagePath END,
-        SortOrder = CASE WHEN SortOrder = 0 THEN @SortOrder ELSE SortOrder END
+    SET Name = @Name,
+        Description = @Description,
+        ImagePath = @ImagePath,
+        SortOrder = @SortOrder,
+        UpdatedAt = @UpdatedAt
     WHERE MonsterKey = @MonsterKey;
 END;", connection))
                     {
@@ -390,7 +396,7 @@ END;", connection))
                         command.Parameters.AddWithValue("@Grade", grade);
                         command.Parameters.AddWithValue("@SlotNumber", slotNumber);
                         command.Parameters.AddWithValue("@Name", name);
-                        command.Parameters.AddWithValue("@Description", GradeDisplayName(grade) + " 등급 도감 몬스터");
+                        command.Parameters.AddWithValue("@Description", description);
                         command.Parameters.AddWithValue("@ImagePath", imagePath);
                         command.Parameters.AddWithValue("@SortOrder", sortOrder);
                         command.Parameters.AddWithValue("@UpdatedAt", now);

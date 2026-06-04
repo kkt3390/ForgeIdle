@@ -36,6 +36,11 @@ function assetPreview(path, label) {
         </div>`;
 }
 
+function shortText(value, length = 120) {
+    const text = String(value || "");
+    return text.length > length ? `${text.slice(0, length)}...` : text;
+}
+
 async function adminApi(action, body) {
     const response = await fetch(`/Api/AdminApi.ashx?action=${action}`, {
         method: body === undefined ? "GET" : "POST",
@@ -54,8 +59,10 @@ async function loadAdmin() {
     renderSuspicious();
     renderUsers(adminState.operators);
     renderEnhancements();
+    renderEnhancementProof();
     renderMonsters();
     renderWeapons();
+    renderActionLogs(adminState.recentActionLogs || []);
     renderAdminLogs();
 }
 
@@ -127,7 +134,10 @@ function renderMonsters() {
           <td>${number(row.sortOrder)}</td>
           <td>${escapeHtml(row.name)}</td>
           <td>${assetPreview(row.imagePath, row.name)}</td>
-          <td><button onclick='editMonster(${JSON.stringify(row)})'>편집</button></td>
+          <td>
+            <button onclick='editMonster(${JSON.stringify(row)})'>편집</button>
+            <button onclick='deleteMonster(${JSON.stringify(row)})'>삭제</button>
+          </td>
         </tr>`).join("");
 }
 function renderWeapons() {
@@ -140,7 +150,10 @@ function renderWeapons() {
           <td>${number(row.sortOrder)}</td>
           <td>${escapeHtml(row.name)}</td>
           <td>${assetPreview(row.imagePath, row.name)}</td>
-          <td><button onclick='editWeapon(${JSON.stringify(row)})'>편집</button></td>
+          <td>
+            <button onclick='editWeapon(${JSON.stringify(row)})'>편집</button>
+            <button onclick='deleteWeapon(${JSON.stringify(row)})'>삭제</button>
+          </td>
         </tr>`).join("");
 }
 function renderEnhancements() {
@@ -161,6 +174,29 @@ function renderEnhancements() {
         </tr>`).join("");
 }
 
+function renderEnhancementProof() {
+    const proof = adminState.enhancementProof || { rows: [] };
+    $("#enhancement-proof-summary").innerHTML = [
+        ["전체 시도", number(proof.totalAttempts)],
+        ["성공 비율", percent(proof.totalSuccessRate)],
+        ["유지 비율", percent(proof.totalKeepRate)],
+        ["파괴 비율", percent(proof.totalDestroyRate)]
+    ].map(item => `<article class="admin-card"><span>${item[0]}</span><strong>${item[1]}</strong></article>`).join("");
+
+    const rows = proof.rows || [];
+    $("#enhancement-proof-body").innerHTML = rows.length
+        ? rows.map(row => `
+          <tr>
+            <td>+${row.beforeLevel} -> +${row.beforeLevel + 1}</td>
+            <td>${number(row.attempts)}</td>
+            <td>${number(row.successCount)}회<br><small>${percent(row.actualSuccessRate)} / ${percent(row.expectedSuccessRate)}</small></td>
+            <td>${number(row.keepCount)}회<br><small>${percent(row.actualKeepRate)} / ${percent(row.expectedKeepRate)}</small></td>
+            <td>${number(row.destroyCount)}회<br><small>${percent(row.actualDestroyRate)} / ${percent(row.expectedDestroyRate)}</small></td>
+            <td>${escapeHtml(row.lastAttemptedAt)}</td>
+          </tr>`).join("")
+        : `<tr><td colspan="6">아직 누적된 강화 시도 기록이 없습니다.</td></tr>`;
+}
+
 function renderAdminLogs() {
     const keyword = searchText("admin-log-search");
     const rows = adminState.recentAdminLogs.filter(row =>
@@ -174,9 +210,33 @@ function renderAdminLogs() {
         </tr>`).join("");
 }
 
+function renderActionLogs(rows) {
+    $("#action-log-body").innerHTML = rows.length
+        ? rows.map(row => `
+          <tr>
+            <td>${escapeHtml(row.nickname || row.playerKey)}<br><small>${escapeHtml(row.playerKey)}</small></td>
+            <td>${escapeHtml(row.actionType)}</td>
+            <td>${row.succeeded ? '<span class="admin-badge">성공</span>' : '<span class="admin-badge danger">실패</span>'}</td>
+            <td>${escapeHtml(row.message)}</td>
+            <td>
+              <details>
+                <summary>${escapeHtml(shortText(row.detailsJson || row.afterStateJson, 60))}</summary>
+                <pre>${escapeHtml(`before: ${row.beforeStateJson}\nafter: ${row.afterStateJson}\ndetails: ${row.detailsJson || ""}`)}</pre>
+              </details>
+            </td>
+            <td>${escapeHtml(row.createdAt)}</td>
+          </tr>`).join("")
+        : `<tr><td colspan="6">조건에 맞는 유저 행동 로그가 없습니다.</td></tr>`;
+}
+
 async function searchPlayers() {
     const rows = await adminApi(`search-players&q=${encodeURIComponent($("#user-search").value)}`);
     renderUsers(rows);
+}
+
+async function searchActionLogs() {
+    const rows = await adminApi(`search-action-logs&q=${encodeURIComponent($("#action-log-search").value)}`);
+    renderActionLogs(rows);
 }
 
 async function setOperator(playerKey, isOperator) {
@@ -193,6 +253,21 @@ async function banUser(playerKey, isBanned) {
     await loadAdmin();
 }
 
+async function deleteMonster(row) {
+    if (!confirm(`도감 데이터 '${row.name || row.monsterKey}' 항목을 삭제할까요?`)) return;
+    await adminApi("delete-monster", { id: row.id, monsterKey: row.monsterKey });
+    resetMonsterForm();
+    toast("도감 데이터를 삭제했습니다.");
+    await loadAdmin();
+}
+
+async function deleteWeapon(row) {
+    if (!confirm(`무기 데이터 '${row.name || row.weaponKey}' 항목을 삭제할까요?`)) return;
+    await adminApi("delete-weapon", { id: row.id, weaponKey: row.weaponKey });
+    resetWeaponForm();
+    toast("무기 데이터를 삭제했습니다.");
+    await loadAdmin();
+}
 function editMonster(row) {
     $("#monster-id").value = row.id;
     $("#monster-key").value = row.monsterKey;
@@ -223,6 +298,24 @@ function editEnhancement(row) {
     $("#enhancement-keep").value = row.keepRate;
     $("#enhancement-destroy").value = row.destroyRate;
     $("#enhancement-enabled").value = String(row.isEnabled);
+}
+
+function resetMonsterForm() {
+    $("#monster-form").reset();
+    $("#monster-id").value = "";
+    $("#monster-grade").value = "normal";
+    $("#monster-visible").value = "true";
+}
+
+function resetWeaponForm() {
+    $("#weapon-form").reset();
+    $("#weapon-id").value = "";
+    $("#weapon-visible").value = "true";
+}
+
+function resetEnhancementForm() {
+    $("#enhancement-form").reset();
+    $("#enhancement-enabled").value = "true";
 }
 
 function setHotMultiplier(value) {
@@ -330,6 +423,7 @@ $("#hot-time-form").addEventListener("submit", async event => {
     ["monster-search", renderMonsters],
     ["weapon-search", renderWeapons],
     ["enhancement-search", renderEnhancements],
+    ["action-log-search", () => {}],
     ["admin-log-search", renderAdminLogs]
 ].forEach(([id, render]) => {
     const element = $("#" + id);
@@ -338,6 +432,10 @@ $("#hot-time-form").addEventListener("submit", async event => {
 
 $("#user-search").addEventListener("keydown", event => {
     if (event.key === "Enter") searchPlayers();
+});
+
+$("#action-log-search").addEventListener("keydown", event => {
+    if (event.key === "Enter") searchActionLogs();
 });
 
 $("#monster-form").addEventListener("submit", async event => {
@@ -355,6 +453,7 @@ $("#monster-form").addEventListener("submit", async event => {
         description: $("#monster-description").value
     });
     toast("도감 데이터를 저장했습니다.");
+    resetMonsterForm();
     await loadAdmin();
 });
 
@@ -369,6 +468,7 @@ $("#enhancement-form").addEventListener("submit", async event => {
         isEnabled: $("#enhancement-enabled").value === "true"
     });
     toast("강화 확률을 저장했습니다.");
+    resetEnhancementForm();
     await loadAdmin();
 });
 
@@ -384,6 +484,7 @@ $("#weapon-form").addEventListener("submit", async event => {
         description: $("#weapon-description").value
     });
     toast("무기 데이터를 저장했습니다.");
+    resetWeaponForm();
     await loadAdmin();
 });
 

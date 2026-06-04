@@ -38,6 +38,8 @@ namespace EnhanceAddiction.WebForms.Api
         .admin-image-cell { display: flex; align-items: center; gap: 8px; min-width: 220px; }
         .admin-thumb { width: 42px; height: 42px; flex: 0 0 auto; object-fit: contain; border: 1px solid #ffffff24; border-radius: 8px; background: #11131a; }
         .admin-muted { color: #7f756d; font-size: 12px; }
+    .admin-table-wrap details { max-width: 360px; }
+    .admin-table-wrap pre { overflow: auto; max-height: 220px; white-space: pre-wrap; color: #d7c8bb; }
     .admin-badge { display: inline-block; border-radius: 999px; padding: 3px 7px; background: #ffffff12; font-size: 11px; }
     .admin-badge.warn { color: #25190a; background: #f0b85c; }
     .admin-badge.danger { color: #fff; background: #9f3636; }
@@ -68,8 +70,10 @@ namespace EnhanceAddiction.WebForms.Api
         <button class=""tab"" data-admin-tab=""users"">유저/권한/밴</button>
         <button class=""tab"" data-admin-tab=""event"">핫타임 배율</button>
         <button class=""tab"" data-admin-tab=""enhancements"">강화 확률</button>
+        <button class=""tab"" data-admin-tab=""enhancement-proof"">강화 입증</button>
         <button class=""tab"" data-admin-tab=""monsters"">도감 관리</button>
         <button class=""tab"" data-admin-tab=""weapons"">무기 관리</button>
+        <button class=""tab"" data-admin-tab=""action-logs"">유저 행동 로그</button>
         <button class=""tab"" data-admin-tab=""logs"">관리자 로그</button>
       </nav>
 
@@ -118,6 +122,13 @@ namespace EnhanceAddiction.WebForms.Api
           <div class=""admin-table-wrap""><table><thead><tr><th>단계</th><th>비용</th><th>성공</th><th>유지</th><th>파괴</th><th>편집</th></tr></thead><tbody id=""enhancement-body""></tbody></table></div>
         </section>
 
+        <section class=""panel admin-panel"" id=""enhancement-proof-panel"">
+          <div class=""section-title""><h2>강화 확률 입증</h2><span>누적 강화 시도 기준</span></div>
+          <p class=""collection-description"">강화 시도 테이블에 쌓인 실제 결과와 시도 당시 설정 확률을 단계별로 비교합니다. 표본이 많아질수록 실제 비율이 설정 확률에 가까워지는지 확인할 수 있습니다.</p>
+          <section class=""admin-grid"" id=""enhancement-proof-summary""></section>
+          <div class=""admin-table-wrap""><table><thead><tr><th>단계</th><th>시도</th><th>성공 실제/설정</th><th>유지 실제/설정</th><th>파괴 실제/설정</th><th>최근 시도</th></tr></thead><tbody id=""enhancement-proof-body""></tbody></table></div>
+        </section>
+
         <section class=""panel admin-panel"" id=""monsters-panel"">
           <div class=""section-title""><h2>도감 데이터</h2><span>이미지/이름/설명/순번 관리</span></div>
           <form class=""admin-form"" id=""monster-form"">
@@ -153,6 +164,13 @@ namespace EnhanceAddiction.WebForms.Api
           <div class=""admin-table-wrap""><table><thead><tr><th>키</th><th>정렬</th><th>이름</th><th>이미지</th><th>편집</th></tr></thead><tbody id=""weapon-body""></tbody></table></div>
         </section>
 
+        <section class=""panel admin-panel"" id=""action-logs-panel"">
+          <div class=""section-title""><h2>유저 행동 로그</h2><span>게임 데이터 변경 요청 추적</span></div>
+          <p class=""collection-description"">강화, 사냥, 스탯, 닉네임 등 게임 데이터에 영향을 준 행동의 전후 상태와 상세 정보를 확인합니다.</p>
+          <div class=""admin-actions""><input id=""action-log-search"" placeholder=""닉네임, PlayerKey, 행동, 메시지 검색"" /><button onclick=""searchActionLogs()"">검색</button></div>
+          <div class=""admin-table-wrap""><table><thead><tr><th>유저</th><th>행동</th><th>결과</th><th>메시지</th><th>상세</th><th>시간</th></tr></thead><tbody id=""action-log-body""></tbody></table></div>
+        </section>
+
         <section class=""panel admin-panel"" id=""logs-panel"">
           <div class=""section-title""><h2>관리자 행동 로그</h2><span>권한/배율/콘텐츠 변경 기록</span></div>
           <div class=""admin-actions""><input id=""admin-log-search"" placeholder=""운영자, 행동, 대상 검색"" /></div>
@@ -163,7 +181,7 @@ namespace EnhanceAddiction.WebForms.Api
   </main>
 
   <div class=""toast"" id=""toast""></div>
-  <script src=""/Scripts/operator.js?v=20260604-3""></script>
+  <script src=""/Scripts/operator.js?v=20260605-1""></script>
 </body>
 </html>";
     }

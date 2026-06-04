@@ -32,6 +32,9 @@ namespace EnhanceAddiction.WebForms.Api
                     case "search-players":
                         result = repository.SearchPlayers(context.Request.QueryString["q"] ?? "");
                         break;
+                    case "search-action-logs":
+                        result = repository.SearchGameActionLogs(context.Request.QueryString["q"] ?? "");
+                        break;
                     case "save-hottime":
                         result = SaveHotTime(repository, operatorKey, Body(context));
                         break;
@@ -45,9 +48,17 @@ namespace EnhanceAddiction.WebForms.Api
                         repository.UpsertMonster(operatorKey, Body(context));
                         result = new { ok = true, message = "도감 데이터를 저장했습니다." };
                         break;
+                    case "delete-monster":
+                        repository.DeleteMonster(operatorKey, Body(context));
+                        result = new { ok = true, message = "도감 데이터를 삭제했습니다." };
+                        break;
                     case "save-weapon":
                         repository.UpsertWeapon(operatorKey, Body(context));
                         result = new { ok = true, message = "무기 데이터를 저장했습니다." };
+                        break;
+                    case "delete-weapon":
+                        repository.DeleteWeapon(operatorKey, Body(context));
+                        result = new { ok = true, message = "무기 데이터를 삭제했습니다." };
                         break;
                     case "save-enhancement":
                         repository.UpsertEnhancementRule(operatorKey, Body(context));

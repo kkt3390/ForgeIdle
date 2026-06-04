@@ -69,6 +69,8 @@ namespace EnhanceAddiction.WebForms.Data
                 suspiciousUsers = GetSuspiciousUsers(),
                 operators = GetOperators(),
                 recentAdminLogs = GetRecentAdminLogs(),
+                recentActionLogs = SearchGameActionLogs(""),
+                enhancementProof = GetEnhancementProof(),
                 monsterCatalog = GetMonsterCatalog(),
                 weaponCatalog = GetWeaponCatalog(),
                 enhancementRules = GetEnhancementRules()
@@ -191,6 +193,48 @@ namespace EnhanceAddiction.WebForms.Data
             return rows;
         }
 
+        // 게임 데이터에 영향을 준 유저 행동 로그를 운영자가 검색해 볼 수 있게 반환합니다.
+        public object SearchGameActionLogs(string keyword)
+        {
+            var rows = new List<object>();
+            using (var connection = OpenConnection())
+            using (var command = new SqlCommand(
+                @"SELECT TOP (200)
+                    l.Id, l.PlayerKey, ISNULL(p.Nickname, N'') AS Nickname, l.ActionType,
+                    l.Succeeded, l.Message, l.BeforeStateJson, l.AfterStateJson, l.DetailsJson, l.CreatedAt
+                  FROM dbo.ea_game_action_logs l
+                  LEFT JOIN dbo.ea_players p ON p.PlayerKey = l.PlayerKey
+                  WHERE @Keyword = N''
+                     OR l.PlayerKey LIKE N'%' + @Keyword + N'%'
+                     OR ISNULL(p.Nickname, N'') LIKE N'%' + @Keyword + N'%'
+                     OR l.ActionType LIKE N'%' + @Keyword + N'%'
+                     OR l.Message LIKE N'%' + @Keyword + N'%'
+                  ORDER BY l.CreatedAt DESC", connection))
+            {
+                command.Parameters.Add("@Keyword", SqlDbType.NVarChar, 100).Value = (keyword ?? "").Trim();
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        rows.Add(new
+                        {
+                            id = reader.GetInt64(0),
+                            playerKey = reader.GetString(1),
+                            nickname = reader.GetString(2),
+                            actionType = reader.GetString(3),
+                            succeeded = reader.GetBoolean(4),
+                            message = reader.GetString(5),
+                            beforeStateJson = reader.GetString(6),
+                            afterStateJson = reader.GetString(7),
+                            detailsJson = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                            createdAt = reader.GetDateTimeOffset(9).ToString("u")
+                        });
+                    }
+                }
+            }
+            return rows;
+        }
+
         public void UpsertMonster(string operatorKey, Dictionary<string, object> body)
         {
             var id = IntValue(body, "id");
@@ -249,6 +293,37 @@ namespace EnhanceAddiction.WebForms.Data
             GameContentRepository.ClearCache();
         }
 
+        public void DeleteMonster(string operatorKey, Dictionary<string, object> body)
+        {
+            var id = IntValue(body, "id");
+            if (id <= 0) throw new InvalidOperationException("삭제할 도감 데이터가 필요합니다.");
+            using (var connection = OpenConnection())
+            using (var command = new SqlCommand(
+                @"DELETE FROM dbo.ea_monster_catalog WHERE Id = @Id", connection))
+            {
+                command.Parameters.Add("@Id", SqlDbType.BigInt).Value = id;
+                if (command.ExecuteNonQuery() == 0)
+                    throw new InvalidOperationException("삭제할 도감 데이터를 찾을 수 없습니다.");
+            }
+            AddAdminLog(operatorKey, "도감 데이터 삭제", null, body);
+            GameContentRepository.ClearCache();
+        }
+
+        public void DeleteWeapon(string operatorKey, Dictionary<string, object> body)
+        {
+            var id = IntValue(body, "id");
+            if (id <= 0) throw new InvalidOperationException("삭제할 무기 데이터가 필요합니다.");
+            using (var connection = OpenConnection())
+            using (var command = new SqlCommand(
+                @"DELETE FROM dbo.ea_weapon_catalog WHERE Id = @Id", connection))
+            {
+                command.Parameters.Add("@Id", SqlDbType.BigInt).Value = id;
+                if (command.ExecuteNonQuery() == 0)
+                    throw new InvalidOperationException("삭제할 무기 데이터를 찾을 수 없습니다.");
+            }
+            AddAdminLog(operatorKey, "무기 데이터 삭제", null, body);
+            GameContentRepository.ClearCache();
+        }
         public void UpsertEnhancementRule(string operatorKey, Dictionary<string, object> body)
         {
             var currentLevel = IntValue(body, "currentLevel");
@@ -308,6 +383,73 @@ namespace EnhanceAddiction.WebForms.Data
                     todayActionCount = reader.GetInt32(4)
                 };
             }
+        }
+
+        // 누적 강화 이력을 단계별로 집계해 실제 결과가 설정 확률에 가까워지는지 확인합니다.
+        private object GetEnhancementProof()
+        {
+            var rows = new List<object>();
+            long totalAttempts = 0;
+            long totalSuccess = 0;
+            long totalKeep = 0;
+            long totalDestroy = 0;
+
+            using (var connection = OpenConnection())
+            using (var command = new SqlCommand(
+                @"SELECT
+                    BeforeLevel,
+                    COUNT_BIG(1) AS Attempts,
+                    SUM(CASE WHEN Result = N'success' THEN 1 ELSE 0 END) AS SuccessCount,
+                    SUM(CASE WHEN Result = N'keep' THEN 1 ELSE 0 END) AS KeepCount,
+                    SUM(CASE WHEN Result = N'destroy' THEN 1 ELSE 0 END) AS DestroyCount,
+                    AVG(SuccessRate) AS ExpectedSuccessRate,
+                    AVG(KeepRate) AS ExpectedKeepRate,
+                    AVG(DestroyRate) AS ExpectedDestroyRate,
+                    MAX(AttemptedAt) AS LastAttemptedAt
+                  FROM dbo.ea_enhancement_attempts
+                  GROUP BY BeforeLevel
+                  ORDER BY BeforeLevel", connection))
+            using (var reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    var attempts = reader.GetInt64(1);
+                    var success = Convert.ToInt64(reader.GetValue(2));
+                    var keep = Convert.ToInt64(reader.GetValue(3));
+                    var destroy = Convert.ToInt64(reader.GetValue(4));
+                    totalAttempts += attempts;
+                    totalSuccess += success;
+                    totalKeep += keep;
+                    totalDestroy += destroy;
+                    rows.Add(new
+                    {
+                        beforeLevel = reader.GetInt32(0),
+                        attempts = attempts,
+                        successCount = success,
+                        keepCount = keep,
+                        destroyCount = destroy,
+                        expectedSuccessRate = reader.IsDBNull(5) ? 0 : reader.GetDouble(5),
+                        expectedKeepRate = reader.IsDBNull(6) ? 0 : reader.GetDouble(6),
+                        expectedDestroyRate = reader.IsDBNull(7) ? 0 : reader.GetDouble(7),
+                        actualSuccessRate = attempts == 0 ? 0 : success / (double)attempts,
+                        actualKeepRate = attempts == 0 ? 0 : keep / (double)attempts,
+                        actualDestroyRate = attempts == 0 ? 0 : destroy / (double)attempts,
+                        lastAttemptedAt = reader.GetDateTimeOffset(8).ToString("u")
+                    });
+                }
+            }
+
+            return new
+            {
+                totalAttempts = totalAttempts,
+                totalSuccess = totalSuccess,
+                totalKeep = totalKeep,
+                totalDestroy = totalDestroy,
+                totalSuccessRate = totalAttempts == 0 ? 0 : totalSuccess / (double)totalAttempts,
+                totalKeepRate = totalAttempts == 0 ? 0 : totalKeep / (double)totalAttempts,
+                totalDestroyRate = totalAttempts == 0 ? 0 : totalDestroy / (double)totalAttempts,
+                rows = rows
+            };
         }
 
         private object GetSuspiciousUsers()
@@ -420,7 +562,9 @@ namespace EnhanceAddiction.WebForms.Data
             using (var command = new SqlCommand(
                 @"SELECT TOP (200) Id, MonsterKey, AreaId, Grade, SlotNumber, Name, Description, ImagePath, SortOrder, IsVisible
                   FROM dbo.ea_monster_catalog
-                  ORDER BY AreaId, Grade, SlotNumber, SortOrder, Id", connection))
+                  ORDER BY AreaId, SlotNumber,
+                    CASE Grade WHEN N'normal' THEN 0 WHEN N'elite' THEN 1 WHEN N'golden' THEN 2 ELSE 9 END,
+                    SortOrder, Id", connection))
             using (var reader = command.ExecuteReader())
             {
                 while (reader.Read())
@@ -434,13 +578,18 @@ namespace EnhanceAddiction.WebForms.Data
                         slotNumber = reader.GetInt32(4),
                         name = reader.GetString(5),
                         description = reader.IsDBNull(6) ? "" : reader.GetString(6),
-                        imagePath = reader.IsDBNull(7) ? "" : reader.GetString(7),
+                        imagePath = SharedMonsterImagePath(reader.GetInt32(2), reader.GetInt32(4)),
                         sortOrder = reader.GetInt32(8),
                         isVisible = reader.GetBoolean(9)
                     });
                 }
             }
             return rows;
+        }
+
+        private static string SharedMonsterImagePath(int areaId, int slotNumber)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "Content/monsters/area-{0:D2}-{1:D2}.webp", areaId, slotNumber);
         }
 
         private object GetWeaponCatalog()

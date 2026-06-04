@@ -42,7 +42,7 @@ namespace EnhanceAddiction.WebForms.Game
                     canEnter = CanEnter(player, area)
                 }).ToArray();
             var enhancements = GameContentRepository.EnhancementRules(_catalog.Enhancements);
-            var weapon = GameContentRepository.ActiveWeapon();
+            var weapon = GameContentRepository.ActiveWeapon(player.WeaponLevel);
             var adjustedRule = player.WeaponLevel < enhancements.Count
                 ? AdjustEnhancement(enhancements[player.WeaponLevel], player.Stats.ArtisanTouch)
                 : null;
@@ -162,6 +162,7 @@ namespace EnhanceAddiction.WebForms.Game
                 StartedAtUtc = now,
                 RewardCapAtUtc = Min(now.Add(remaining), NextAutomaticHuntCycleStart(now))
             };
+            player.ManualHuntAreaId = area.Id;
             AddMessage(player, area.Name + "에서 자동 사냥을 시작했습니다.");
             return Success(player, "자동 사냥을 시작했습니다.", new { areaId = area.Id });
         }
@@ -371,9 +372,7 @@ namespace EnhanceAddiction.WebForms.Game
             MonsterCatalogEntry custom;
             monsterCatalog.TryGetValue(key, out custom);
             var name = custom == null ? CollectionMonsterName(area.Name, grade, number) : custom.Name;
-            var imagePath = custom == null || string.IsNullOrWhiteSpace(custom.ImagePath)
-                ? string.Format("Content/monsters/{0}.webp", key)
-                : custom.ImagePath;
+            var imagePath = CollectionImagePath(area.Id, number);
             var gold = Math.Max(
                 1,
                 (long)Math.Round(area.GoldPerHour * 1.5 / actionsPerHour * variance * multiplier * GoldMultiplier(player)));
@@ -507,9 +506,7 @@ namespace EnhanceAddiction.WebForms.Game
                                     grade = grade,
                                     name = custom == null ? CollectionMonsterName(area.Name, grade, number) : custom.Name,
                                     description = custom == null ? "" : custom.Description,
-                                    imagePath = custom == null || string.IsNullOrWhiteSpace(custom.ImagePath)
-                                        ? string.Format("Content/monsters/{0}.webp", key)
-                                        : custom.ImagePath,
+                                    imagePath = CollectionImagePath(area.Id, number),
                                     collected = player.CollectedMonsterKeys.Contains(key)
                                 };
                             })).ToArray()
@@ -521,6 +518,12 @@ namespace EnhanceAddiction.WebForms.Game
         private static string CollectionKey(int areaId, string grade, int number)
         {
             return string.Format("area-{0:D2}-{1}-{2:D2}", areaId, grade, number);
+        }
+
+        // 세 등급이 같은 몬스터 그림을 공유하도록 사냥터/순번 기준 공용 이미지 경로를 만듭니다.
+        private static string CollectionImagePath(int areaId, int number)
+        {
+            return string.Format("Content/monsters/area-{0:D2}-{1:D2}.webp", areaId, number);
         }
 
         // 이미지가 준비되기 전에도 구분 가능한 임시 도감 이름을 만듭니다.
