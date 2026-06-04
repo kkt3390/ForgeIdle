@@ -84,8 +84,8 @@ namespace EnhanceAddiction.WebForms.Api
                 BoolBody(body, "enabled"),
                 DoubleBody(body, "goldMultiplier", 1),
                 DoubleBody(body, "experienceMultiplier", 1),
-                StringBody(body, "startsAtUtc"),
-                StringBody(body, "endsAtUtc"));
+                StringBody(body, "startsAtKst", "startsAtUtc"),
+                StringBody(body, "endsAtKst", "endsAtUtc"));
             return new { ok = true, message = "핫타임 배율을 저장했습니다." };
         }
 
@@ -118,6 +118,12 @@ namespace EnhanceAddiction.WebForms.Api
         private static string StringBody(Dictionary<string, object> body, string key)
         {
             return body.ContainsKey(key) && body[key] != null ? body[key].ToString().Trim() : "";
+        }
+
+        private static string StringBody(Dictionary<string, object> body, string key, string fallbackKey)
+        {
+            var value = StringBody(body, key);
+            return string.IsNullOrWhiteSpace(value) ? StringBody(body, fallbackKey) : value;
         }
 
         private static bool BoolBody(Dictionary<string, object> body, string key)

@@ -12,6 +12,7 @@ namespace EnhanceAddiction.WebForms.Data
 {
     public sealed class AdminRepository
     {
+        private static readonly TimeZoneInfo KoreaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer();
 
         // 관리자 API는 매 요청마다 로그인 여부와 운영자 권한을 DB에서 다시 확인합니다.
@@ -82,27 +83,35 @@ namespace EnhanceAddiction.WebForms.Data
                 goldMultiplier = settings.GoldMultiplier,
                 experienceMultiplier = settings.ExperienceMultiplier,
                 startsAtUtc = settings.StartsAtUtc.HasValue ? Iso(settings.StartsAtUtc.Value) : "",
-                endsAtUtc = settings.EndsAtUtc.HasValue ? Iso(settings.EndsAtUtc.Value) : ""
+                endsAtUtc = settings.EndsAtUtc.HasValue ? Iso(settings.EndsAtUtc.Value) : "",
+                startsAtKst = settings.StartsAtUtc.HasValue ? KstLocalInput(settings.StartsAtUtc.Value) : "",
+                endsAtKst = settings.EndsAtUtc.HasValue ? KstLocalInput(settings.EndsAtUtc.Value) : "",
+                serverNowKst = KstLocalInput(DateTime.UtcNow)
             };
         }
 
-        public void SaveHotTime(string operatorKey, bool enabled, double goldMultiplier, double experienceMultiplier, string startsAtUtc, string endsAtUtc)
+        public void SaveHotTime(string operatorKey, bool enabled, double goldMultiplier, double experienceMultiplier, string startsAtKst, string endsAtKst)
         {
             goldMultiplier = Clamp(goldMultiplier, 0.1, 20);
             experienceMultiplier = Clamp(experienceMultiplier, 0.1, 20);
+            var normalizedStartsAtUtc = NormalizeKstToUtcIso(startsAtKst);
+            var normalizedEndsAtUtc = NormalizeKstToUtcIso(endsAtKst);
+            ValidateHotTimeRange(normalizedStartsAtUtc, normalizedEndsAtUtc);
             UpsertSetting("HotTimeEnabled", enabled ? "1" : "0", operatorKey);
             UpsertSetting("HotTimeGoldMultiplier", goldMultiplier.ToString(CultureInfo.InvariantCulture), operatorKey);
             UpsertSetting("HotTimeExperienceMultiplier", experienceMultiplier.ToString(CultureInfo.InvariantCulture), operatorKey);
-            UpsertSetting("HotTimeStartsAtUtc", NormalizeIso(startsAtUtc), operatorKey);
-            UpsertSetting("HotTimeEndsAtUtc", NormalizeIso(endsAtUtc), operatorKey);
+            UpsertSetting("HotTimeStartsAtUtc", normalizedStartsAtUtc, operatorKey);
+            UpsertSetting("HotTimeEndsAtUtc", normalizedEndsAtUtc, operatorKey);
             GameRewardSettings.ClearCache();
             AddAdminLog(operatorKey, "핫타임 배율 저장", null, new
             {
                 enabled = enabled,
                 goldMultiplier = goldMultiplier,
                 experienceMultiplier = experienceMultiplier,
-                startsAtUtc = startsAtUtc,
-                endsAtUtc = endsAtUtc
+                startsAtKst = startsAtKst,
+                endsAtKst = endsAtKst,
+                startsAtUtc = normalizedStartsAtUtc,
+                endsAtUtc = normalizedEndsAtUtc
             });
         }
 
@@ -527,13 +536,28 @@ namespace EnhanceAddiction.WebForms.Data
             command.Parameters.Add("@IsVisible", SqlDbType.Bit).Value = BoolValue(body, "isVisible", true);
         }
 
-        private static string NormalizeIso(string value)
+        private static string NormalizeKstToUtcIso(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return "";
             DateTime parsed;
-            if (!DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out parsed))
+            if (!DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed))
                 return "";
-            return parsed.ToString("o", CultureInfo.InvariantCulture);
+            var local = DateTime.SpecifyKind(parsed, DateTimeKind.Unspecified);
+            return TimeZoneInfo.ConvertTimeToUtc(local, KoreaTimeZone).ToString("o", CultureInfo.InvariantCulture);
+        }
+
+        private static void ValidateHotTimeRange(string startsAtUtc, string endsAtUtc)
+        {
+            if (string.IsNullOrWhiteSpace(startsAtUtc) || string.IsNullOrWhiteSpace(endsAtUtc)) return;
+            var start = DateTime.Parse(startsAtUtc, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            var end = DateTime.Parse(endsAtUtc, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            if (end <= start) throw new InvalidOperationException("핫타임 종료 시간은 시작 시간보다 뒤여야 합니다.");
+        }
+
+        private static string KstLocalInput(DateTime utcValue)
+        {
+            var utc = DateTime.SpecifyKind(utcValue, DateTimeKind.Utc);
+            return TimeZoneInfo.ConvertTimeFromUtc(utc, KoreaTimeZone).ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
         }
 
         private static string Iso(DateTime value)

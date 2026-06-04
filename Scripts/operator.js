@@ -1,4 +1,5 @@
 let adminState = null;
+
 const $ = selector => document.querySelector(selector);
 const number = value => Number(value || 0).toLocaleString("ko-KR");
 const percent = value => `${(Number(value || 0) * 100).toLocaleString("ko-KR", { maximumFractionDigits: 4 })}%`;
@@ -49,8 +50,9 @@ function renderHotTime() {
     $("#hot-enabled").value = String(Boolean(hot.enabled));
     $("#hot-gold").value = hot.goldMultiplier;
     $("#hot-exp").value = hot.experienceMultiplier;
-    $("#hot-start").value = hot.startsAtUtc || "";
-    $("#hot-end").value = hot.endsAtUtc || "";
+    $("#hot-start").value = hot.startsAtKst || "";
+    $("#hot-end").value = hot.endsAtKst || "";
+    updateHotTimeSummary();
 }
 
 function renderSuspicious() {
@@ -72,7 +74,7 @@ function renderUsers(rows) {
           <td>${escapeHtml(row.nickname || "(닉네임 없음)")}<br><small>${escapeHtml(row.playerKey)}</small></td>
           <td>
             ${row.isOperator ? '<span class="admin-badge warn">운영자</span>' : '<span class="admin-badge">일반</span>'}
-            ${row.isBanned ? '<span class="admin-badge danger">차단</span>' : ''}
+            ${row.isBanned ? '<span class="admin-badge danger">차단</span>' : ""}
           </td>
           <td>Lv. ${row.level}</td>
           <td>${number(row.gold)}</td>
@@ -108,7 +110,7 @@ function renderWeapons() {
 function renderEnhancements() {
     $("#enhancement-body").innerHTML = adminState.enhancementRules.map(row => `
         <tr>
-          <td>+${row.currentLevel} → +${row.currentLevel + 1}</td>
+          <td>+${row.currentLevel} -> +${row.currentLevel + 1}</td>
           <td>${number(row.cost)}</td>
           <td>${percent(row.successRate)}</td>
           <td>${percent(row.keepRate)}</td>
@@ -178,6 +180,74 @@ function editEnhancement(row) {
     $("#enhancement-enabled").value = String(row.isEnabled);
 }
 
+function setHotMultiplier(value) {
+    $("#hot-gold").value = value;
+    $("#hot-exp").value = value;
+    updateHotTimeSummary();
+}
+
+function setHotDuration(hours) {
+    const start = roundedKoreaNow();
+    const end = new Date(start.getTime() + hours * 60 * 60 * 1000);
+    $("#hot-enabled").value = "true";
+    $("#hot-start").value = toLocalInputValue(start);
+    $("#hot-end").value = toLocalInputValue(end);
+    updateHotTimeSummary();
+}
+
+function setHotTonight() {
+    const now = koreaNow();
+    const start = new Date(now);
+    start.setHours(20, 0, 0, 0);
+    const end = new Date(now);
+    end.setHours(22, 0, 0, 0);
+    if (end <= now) {
+        start.setDate(start.getDate() + 1);
+        end.setDate(end.getDate() + 1);
+    }
+    $("#hot-enabled").value = "true";
+    $("#hot-start").value = toLocalInputValue(start);
+    $("#hot-end").value = toLocalInputValue(end);
+    updateHotTimeSummary();
+}
+
+function updateHotTimeSummary() {
+    const enabled = $("#hot-enabled").value === "true";
+    const start = $("#hot-start").value;
+    const end = $("#hot-end").value;
+    const gold = $("#hot-gold").value || "1";
+    const exp = $("#hot-exp").value || "1";
+    $("#hot-time-summary").textContent = enabled
+        ? `한국시간 ${start || "(시작 미지정)"} ~ ${end || "(종료 미지정)"} / 골드 ${gold}배, 경험치 ${exp}배`
+        : "핫타임이 꺼져 있습니다.";
+}
+
+function koreaNow() {
+    const formatter = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    });
+    return new Date(formatter.format(new Date()).replace(" ", "T"));
+}
+
+function roundedKoreaNow() {
+    const now = koreaNow();
+    now.setMinutes(now.getMinutes() + 5);
+    now.setSeconds(0, 0);
+    return now;
+}
+
+function toLocalInputValue(date) {
+    const pad = value => String(value).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 function toast(message) {
     $("#toast").textContent = message;
     $("#toast").classList.add("show");
@@ -198,11 +268,17 @@ $("#hot-time-form").addEventListener("submit", async event => {
         enabled: $("#hot-enabled").value === "true",
         goldMultiplier: Number($("#hot-gold").value),
         experienceMultiplier: Number($("#hot-exp").value),
-        startsAtUtc: $("#hot-start").value,
-        endsAtUtc: $("#hot-end").value
+        startsAtKst: $("#hot-start").value,
+        endsAtKst: $("#hot-end").value
     });
     toast("핫타임 배율을 저장했습니다.");
     await loadAdmin();
+});
+
+["hot-enabled", "hot-gold", "hot-exp", "hot-start", "hot-end"].forEach(id => {
+    const element = $("#" + id);
+    element.addEventListener("input", updateHotTimeSummary);
+    element.addEventListener("change", updateHotTimeSummary);
 });
 
 $("#monster-form").addEventListener("submit", async event => {
