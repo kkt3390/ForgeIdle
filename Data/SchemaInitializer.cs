@@ -1,4 +1,7 @@
+using System;
 using System.Data.SqlClient;
+using System.Globalization;
+using System.IO;
 
 namespace EnhanceAddiction.WebForms.Data
 {
@@ -285,7 +288,106 @@ WHERE StateSchemaVersion = 0;";
                 {
                     backfillCommand.ExecuteNonQuery();
                 }
+
+                SeedMonsterCatalog(connection);
             }
+        }
+
+        // 원본 몬스터 120종을 일반/정예/황금 3등급 도감 항목으로 등록합니다.
+        private static void SeedMonsterCatalog(SqlConnection connection)
+        {
+            const string migrationKey = "monster-catalog-webp-v1";
+            using (var checkCommand = new SqlCommand(
+                "SELECT COUNT(1) FROM dbo.ea_legacy_migrations WHERE MigrationKey = @MigrationKey",
+                connection))
+            {
+                checkCommand.Parameters.AddWithValue("@MigrationKey", migrationKey);
+                if ((int)checkCommand.ExecuteScalar() > 0) return;
+            }
+
+            var manifestPath = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Content",
+                "monsters",
+                "monster-manifest.tsv");
+            if (!File.Exists(manifestPath)) return;
+
+            var grades = new[] { "normal", "elite", "golden" };
+            var now = DateTimeOffset.UtcNow;
+            foreach (var line in File.ReadAllLines(manifestPath))
+            {
+                if (string.IsNullOrWhiteSpace(line) || line.StartsWith("AreaId\t", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var parts = line.Split('\t');
+                if (parts.Length < 3) continue;
+                int areaId;
+                int slotNumber;
+                if (!int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out areaId)) continue;
+                if (!int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out slotNumber)) continue;
+
+                var name = parts[2].Trim();
+                foreach (var grade in grades)
+                {
+                    var monsterKey = string.Format(CultureInfo.InvariantCulture, "area-{0:D2}-{1}-{2:D2}", areaId, grade, slotNumber);
+                    var imagePath = string.Format(CultureInfo.InvariantCulture, "Content/monsters/{0}.webp", monsterKey);
+                    var sortOrder = areaId * 1000 + GradeSortOrder(grade) * 100 + slotNumber;
+                    using (var command = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM dbo.ea_monster_catalog WHERE MonsterKey = @MonsterKey)
+BEGIN
+    INSERT INTO dbo.ea_monster_catalog
+        (MonsterKey, AreaId, Grade, SlotNumber, Name, Description, ImagePath, SortOrder, IsVisible, UpdatedAt)
+    VALUES
+        (@MonsterKey, @AreaId, @Grade, @SlotNumber, @Name, @Description, @ImagePath, @SortOrder, 1, @UpdatedAt);
+END
+ELSE
+BEGIN
+    UPDATE dbo.ea_monster_catalog
+    SET ImagePath = CASE WHEN ImagePath IS NULL OR LTRIM(RTRIM(ImagePath)) = N'' THEN @ImagePath ELSE ImagePath END,
+        SortOrder = CASE WHEN SortOrder = 0 THEN @SortOrder ELSE SortOrder END
+    WHERE MonsterKey = @MonsterKey;
+END;", connection))
+                    {
+                        command.Parameters.AddWithValue("@MonsterKey", monsterKey);
+                        command.Parameters.AddWithValue("@AreaId", areaId);
+                        command.Parameters.AddWithValue("@Grade", grade);
+                        command.Parameters.AddWithValue("@SlotNumber", slotNumber);
+                        command.Parameters.AddWithValue("@Name", name);
+                        command.Parameters.AddWithValue("@Description", GradeDisplayName(grade) + " 등급 도감 몬스터");
+                        command.Parameters.AddWithValue("@ImagePath", imagePath);
+                        command.Parameters.AddWithValue("@SortOrder", sortOrder);
+                        command.Parameters.AddWithValue("@UpdatedAt", now);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+
+            using (var migrationCommand = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM dbo.ea_legacy_migrations WHERE MigrationKey = @MigrationKey)
+BEGIN
+    INSERT INTO dbo.ea_legacy_migrations (MigrationKey, MigratedAt)
+    VALUES (@MigrationKey, SYSDATETIMEOFFSET());
+END;", connection))
+            {
+                migrationCommand.Parameters.AddWithValue("@MigrationKey", migrationKey);
+                migrationCommand.ExecuteNonQuery();
+            }
+        }
+
+        // 등급별 정렬 순서를 고정해 도감과 관리자 화면이 같은 순서로 표시되게 합니다.
+        private static int GradeSortOrder(string grade)
+        {
+            if (grade == "elite") return 1;
+            if (grade == "golden") return 2;
+            return 0;
+        }
+
+        // DB 설명 문구에 사용할 등급명을 반환합니다.
+        private static string GradeDisplayName(string grade)
+        {
+            if (grade == "elite") return "정예";
+            if (grade == "golden") return "황금";
+            return "일반";
         }
     }
 }
