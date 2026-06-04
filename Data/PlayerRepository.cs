@@ -52,13 +52,16 @@ namespace EnhanceAddiction.WebForms.Data
                    ProtectionTickets, Level, Experience, DualWield, GoldGain, ExperienceGain,
                    ArtisanTouch, AutomaticHuntCycleStartedAtUtc, AutomaticHuntUsedSeconds,
                    HuntAreaId, HuntStartedAtUtc, HuntRewardCapAtUtc, LastManualHuntAtUtc,
-                   ManualHuntAreaId, CollectedMonsterKeysJson, StateJson, StateSchemaVersion, CreatedAt, UpdatedAt)
+                   ManualHuntAreaId, CollectedMonsterKeysJson, CollectedMonsterCount,
+                   LevelReachedAtUtc, HighestWeaponLevelReachedAtUtc, CollectionCountReachedAtUtc,
+                   StateJson, StateSchemaVersion, CreatedAt, UpdatedAt)
                   VALUES
                   (@PlayerKey, @Nickname, @Gold, @WeaponLevel, @HighestWeaponLevel, @HighestBossDefeated,
                    @ProtectionTickets, @Level, @Experience, @DualWield, @GoldGain, @ExperienceGain,
                    @ArtisanTouch, @AutomaticHuntCycleStartedAtUtc, @AutomaticHuntUsedSeconds,
                    @HuntAreaId, @HuntStartedAtUtc, @HuntRewardCapAtUtc, @LastManualHuntAtUtc,
-                   @ManualHuntAreaId, @CollectedMonsterKeysJson, @StateJson, 1,
+                   @ManualHuntAreaId, @CollectedMonsterKeysJson, @CollectedMonsterCount,
+                   SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET(), @StateJson, 1,
                    SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET())", connection))
             {
                 command.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = playerKey;
@@ -94,6 +97,22 @@ namespace EnhanceAddiction.WebForms.Data
                       LastManualHuntAtUtc = @LastManualHuntAtUtc,
                       ManualHuntAreaId = @ManualHuntAreaId,
                       CollectedMonsterKeysJson = @CollectedMonsterKeysJson,
+                      CollectedMonsterCount = @CollectedMonsterCount,
+                      LevelReachedAtUtc = CASE
+                          WHEN @Level > Level THEN SYSDATETIMEOFFSET()
+                          WHEN LevelReachedAtUtc IS NULL THEN CreatedAt
+                          ELSE LevelReachedAtUtc
+                      END,
+                      HighestWeaponLevelReachedAtUtc = CASE
+                          WHEN @HighestWeaponLevel > HighestWeaponLevel THEN SYSDATETIMEOFFSET()
+                          WHEN HighestWeaponLevelReachedAtUtc IS NULL THEN CreatedAt
+                          ELSE HighestWeaponLevelReachedAtUtc
+                      END,
+                      CollectionCountReachedAtUtc = CASE
+                          WHEN @CollectedMonsterCount > CollectedMonsterCount THEN SYSDATETIMEOFFSET()
+                          WHEN CollectionCountReachedAtUtc IS NULL THEN CreatedAt
+                          ELSE CollectionCountReachedAtUtc
+                      END,
                       StateJson = @StateJson,
                       StateSchemaVersion = 1,
                       UpdatedAt = SYSDATETIMEOFFSET()
@@ -124,17 +143,18 @@ namespace EnhanceAddiction.WebForms.Data
             }
         }
 
-        // 레벨과 강화도를 기준으로 DB에서 정렬한 상위 100명의 랭킹을 반환합니다.
-        public IList<object> GetRankings()
+        // 요청한 랭킹 종류별로 상위 100명을 반환합니다. 동률이면 먼저 달성한 사람이 위에 옵니다.
+        public object GetRankings(string category)
         {
+            category = NormalizeRankingCategory(category);
             var rankings = new List<object>();
+            var orderBy = RankingOrderBy(category);
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
                 @"SELECT TOP (100)
-                         Nickname, Level, WeaponLevel, HighestWeaponLevel
+                         Nickname, Level, WeaponLevel, HighestWeaponLevel, CollectedMonsterCount
                   FROM dbo.ea_players
-                  ORDER BY Level DESC, WeaponLevel DESC, HighestWeaponLevel DESC,
-                           ISNULL(Nickname, N'닉네임 미설정') ASC", connection))
+                  ORDER BY " + orderBy, connection))
             using (var reader = command.ExecuteReader())
             {
                 var rank = 1;
@@ -146,11 +166,34 @@ namespace EnhanceAddiction.WebForms.Data
                         nickname = reader.IsDBNull(0) ? "닉네임 미설정" : reader.GetString(0),
                         level = reader.GetInt32(1),
                         weaponLevel = reader.GetInt32(2),
-                        highestWeaponLevel = reader.GetInt32(3)
+                        highestWeaponLevel = reader.GetInt32(3),
+                        collectionCount = reader.GetInt32(4)
                     });
                 }
             }
-            return rankings;
+            return new
+            {
+                category = category,
+                rows = rankings
+            };
+        }
+
+        // 허용된 랭킹 종류만 사용해 SQL 정렬문 조립을 안전하게 유지합니다.
+        private static string NormalizeRankingCategory(string category)
+        {
+            category = (category ?? "level").Trim().ToLowerInvariant();
+            if (category == "enhancement" || category == "collection") return category;
+            return "level";
+        }
+
+        // 랭킹 종류별 정렬 기준을 반환합니다. 같은 수치라면 달성 시각이 빠른 사람이 우선입니다.
+        private static string RankingOrderBy(string category)
+        {
+            if (category == "enhancement")
+                return "HighestWeaponLevel DESC, ISNULL(HighestWeaponLevelReachedAtUtc, CreatedAt) ASC, Id ASC";
+            if (category == "collection")
+                return "CollectedMonsterCount DESC, ISNULL(CollectionCountReachedAtUtc, CreatedAt) ASC, Id ASC";
+            return "Level DESC, ISNULL(LevelReachedAtUtc, CreatedAt) ASC, Id ASC";
         }
 
         // 강화 확률 검증에 사용할 개별 강화 시도 이력을 저장합니다.
@@ -306,6 +349,8 @@ namespace EnhanceAddiction.WebForms.Data
             command.Parameters.Add("@LastManualHuntAtUtc", SqlDbType.DateTimeOffset).Value =
                 player.LastManualHuntAtUtc.HasValue ? (object)player.LastManualHuntAtUtc.Value : DBNull.Value;
             command.Parameters.Add("@ManualHuntAreaId", SqlDbType.Int).Value = player.ManualHuntAreaId;
+            command.Parameters.Add("@CollectedMonsterCount", SqlDbType.Int).Value =
+                player.CollectedMonsterKeys == null ? 0 : player.CollectedMonsterKeys.Count;
             command.Parameters.Add("@CollectedMonsterKeysJson", SqlDbType.NVarChar, -1).Value =
                 Json.Serialize(player.CollectedMonsterKeys ?? new List<string>());
             command.Parameters.Add("@StateJson", SqlDbType.NVarChar, -1).Value = Json.Serialize(player);

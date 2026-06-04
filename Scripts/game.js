@@ -6,6 +6,11 @@ let manualHuntRequestPending = false;
 let selectedCollectionAreaId = 0;
 let authentication;
 let serverTimeOffsetMs = 0;
+let collectionToastQueue = [];
+let collectionToastHideTimer;
+let collectionToastNextTimer;
+let collectionToastShowing = false;
+let selectedRankingCategory = "level";
 const $ = selector => document.querySelector(selector);
 const number = value => Number(value).toLocaleString("ko-KR");
 const experience = value => Number(value).toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -77,7 +82,11 @@ async function action(name, body = {}) {
         updateManualHuntButton();
         render();
         toast(result.Message || result.message);
-        if (isManualHunt) showCollectionRegistrations(result.Details || result.details);
+        if (isManualHunt) {
+            const details = result.Details || result.details;
+            showManualHuntResult(details);
+            showCollectionRegistrations(details);
+        }
     } catch (error) {
         if (isManualHunt) {
             manualHuntRequestPending = false;
@@ -244,9 +253,15 @@ function renderStats() {
 }
 
 // 서버에서 실시간 랭킹을 받아 랭킹 표를 갱신합니다.
-async function loadRankings() {
-    const rankings = await api("rankings");
-    $("#ranking-body").innerHTML = rankings
+async function loadRankings(category = selectedRankingCategory) {
+    selectedRankingCategory = category;
+    document.querySelectorAll(".ranking-tab").forEach(tab => {
+        tab.classList.toggle("active", tab.dataset.ranking === selectedRankingCategory);
+    });
+
+    const ranking = await api(`rankings&category=${encodeURIComponent(selectedRankingCategory)}`);
+    const rows = ranking.rows || ranking;
+    $("#ranking-body").innerHTML = rows
         .map(row => `
             <tr>
                 <td>${row.rank}</td>
@@ -254,6 +269,7 @@ async function loadRankings() {
                 <td>Lv. ${row.level}</td>
                 <td>+${row.weaponLevel}</td>
                 <td>+${row.highestWeaponLevel}</td>
+                <td>${number(row.collectionCount || 0)}</td>
             </tr>`)
         .join("");
 }
@@ -427,35 +443,80 @@ function toast(message) {
     setTimeout(() => $("#toast").classList.remove("show"), 2600);
 }
 
+// 직접 사냥으로 실제 처치한 몬스터를 화면 중앙에 크게 보여줍니다.
+function showManualHuntResult(details) {
+    const hunt = details?.first || details?.First;
+    if (!hunt) return;
+
+    const grade = hunt.Grade || hunt.grade || "normal";
+    const gradeName = grade === "golden" ? "황금" : grade === "elite" ? "정예" : "일반";
+    const monsterName = hunt.MonsterName || hunt.monsterName || "몬스터";
+    const imagePath = hunt.ImagePath || hunt.imagePath || `Content/monsters/${hunt.MonsterKey || hunt.monsterKey}.webp`;
+    const box = $("#manual-hunt-result");
+
+    box.className = `manual-hunt-result manual-hunt-result-${grade}`;
+    box.innerHTML = `
+        <div class="manual-hunt-result-card">
+            <span>${gradeName} 처치</span>
+            <img src="${escapeHtml(imagePath)}" alt="" onerror="this.hidden=true" />
+            <strong>${escapeHtml(monsterName)}</strong>
+        </div>`;
+    box.hidden = false;
+    box.classList.add("show");
+
+    clearTimeout(showManualHuntResult.hideTimer);
+    showManualHuntResult.hideTimer = setTimeout(() => {
+        box.classList.remove("show");
+        setTimeout(() => {
+            if (!box.classList.contains("show")) box.hidden = true;
+        }, 220);
+    }, 900);
+}
+
 // 직접 사냥에서 도감 판정이 성공하면 등록된 몬스터 이미지와 등급을 카드로 보여줍니다.
 function showCollectionRegistrations(details) {
     const registrations = (details?.registrations || [])
         .filter(registration => registration.Registered || registration.registered);
     if (!registrations.length) return;
 
-    const registration = registrations[0];
+    collectionToastQueue.push(...registrations);
+    showNextCollectionToast();
+}
+
+// 도감 등록 알림을 하나씩 순서대로 보여줍니다. 연속 등록 시 이전 타이머가 새 알림을 지우지 않게 분리합니다.
+function showNextCollectionToast() {
+    if (collectionToastShowing || !collectionToastQueue.length) return;
+    collectionToastShowing = true;
+
+    const registration = collectionToastQueue.shift();
     const duplicate = registration.Duplicate ?? registration.duplicate;
     const grade = registration.Grade || registration.grade || "normal";
     const gradeName = grade === "golden" ? "황금" : grade === "elite" ? "정예" : "일반";
     const monsterName = registration.MonsterName || registration.monsterName || "도감 몬스터";
     const imagePath = registration.ImagePath || registration.imagePath || `Content/monsters/${registration.MonsterKey || registration.monsterKey}.webp`;
-    const extraCount = registrations.length > 1 ? `<p>추가 등록 판정 ${registrations.length - 1}건이 더 발생했습니다.</p>` : "";
+    const remainCount = collectionToastQueue.length
+        ? `<p>대기 중인 도감 알림 ${collectionToastQueue.length}건</p>`
+        : "";
 
     const box = $("#collection-toast");
+    clearTimeout(collectionToastHideTimer);
+    clearTimeout(collectionToastNextTimer);
     box.innerHTML = `
         <img src="${escapeHtml(imagePath)}" alt="" onerror="this.hidden=true" />
         <div>
             <strong>${duplicate ? "도감 중복 등록" : "도감 신규 등록!"}</strong>
             <span class="collection-grade-${grade}">${gradeName}</span>
             <p>${escapeHtml(monsterName)}</p>
-            ${extraCount}
+            ${remainCount}
         </div>`;
     box.hidden = false;
     box.classList.add("show");
-    setTimeout(() => box.classList.remove("show"), 4200);
-    setTimeout(() => {
+    collectionToastHideTimer = setTimeout(() => box.classList.remove("show"), 3600);
+    collectionToastNextTimer = setTimeout(() => {
         if (!box.classList.contains("show")) box.hidden = true;
-    }, 4500);
+        collectionToastShowing = false;
+        showNextCollectionToast();
+    }, 3950);
 }
 
 // 닉네임처럼 사용자 입력이 HTML로 해석되지 않도록 안전하게 변환합니다.
@@ -490,6 +551,9 @@ document.querySelectorAll(".tab").forEach(tab => {
         $(`#${tab.dataset.tab}-panel`).classList.add("active");
         if (tab.dataset.tab === "ranking") loadRankings();
     });
+});
+document.querySelectorAll(".ranking-tab").forEach(tab => {
+    tab.addEventListener("click", () => loadRankings(tab.dataset.ranking));
 });
 setInterval(() => {
     updateTimer();

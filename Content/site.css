@@ -150,6 +150,25 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
 .table-wrap { overflow-x: auto; } table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { border-bottom: 1px solid #ffffff10; padding: 9px 6px; text-align: right; white-space: nowrap; }
 th:first-child, td:first-child { text-align: left; }
+.ranking-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+.ranking-tab {
+  flex: 0 0 auto;
+  padding: 9px 13px;
+  color: #b7aa9d;
+  background: #ffffff0b;
+  border: 1px solid #ffffff10;
+  font-size: 13px;
+}
+.ranking-tab.active {
+  color: #281b0c;
+  background: linear-gradient(135deg, #f7c86a, #e6aa45);
+  border-color: #ffe2a0;
+}
 .log ul { margin-bottom: 0; padding-left: 19px; color: #c4b8aa; font-size: 13px; }
 .toast {
   position: fixed;
@@ -165,6 +184,54 @@ th:first-child, td:first-child { text-align: left; }
   transition: .25s;
 }
 .toast.show { opacity: 1; transform: translateX(-50%); }
+.manual-hunt-result {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(.96);
+  transition: .18s ease;
+}
+.manual-hunt-result.show {
+  opacity: 1;
+  transform: scale(1);
+}
+.manual-hunt-result-card {
+  width: min(280px, 72vw);
+  padding: 18px;
+  border: 5px solid #f4f0e8;
+  border-radius: 26px;
+  text-align: center;
+  background: linear-gradient(145deg, #211a2d, #11131a);
+  box-shadow: 0 24px 80px #000000b0;
+}
+.manual-hunt-result-card span,
+.manual-hunt-result-card strong {
+  display: block;
+}
+.manual-hunt-result-card span {
+  color: #d9c8ff;
+  font-size: 14px;
+  font-weight: 900;
+}
+.manual-hunt-result-card img {
+  width: min(190px, 52vw);
+  height: min(190px, 52vw);
+  margin: 10px auto;
+  object-fit: contain;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 38%, #ffffff, #efe5d0 70%, #d7c09b);
+}
+.manual-hunt-result-card strong {
+  color: #fff8e8;
+  font-size: 20px;
+}
+.manual-hunt-result-normal .manual-hunt-result-card { border-color: #f4f0e8; }
+.manual-hunt-result-elite .manual-hunt-result-card { border-color: #a875ff; box-shadow: 0 24px 80px #7d4dff70; }
+.manual-hunt-result-golden .manual-hunt-result-card { border-color: #ffd15f; box-shadow: 0 24px 90px #e3a84e80; }
 .collection-toast {
   position: fixed;
   right: 22px;

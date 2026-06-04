@@ -149,12 +149,17 @@
       <section class="panel" id="ranking-panel">
         <div class="section-title">
           <h2>실시간 랭킹</h2>
-          <span>레벨 우선 · 현재 강화도 순</span>
+          <span>동률이면 먼저 달성한 유저가 상위 순위입니다.</span>
+        </div>
+        <div class="ranking-tabs">
+          <button class="ranking-tab active" data-ranking="level">레벨</button>
+          <button class="ranking-tab" data-ranking="enhancement">최대 강화</button>
+          <button class="ranking-tab" data-ranking="collection">도감 등록수</button>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>순위</th><th>닉네임</th><th>레벨</th><th>현재 강화</th><th>최고 강화</th></tr>
+              <tr><th>순위</th><th>닉네임</th><th>레벨</th><th>현재 강화</th><th>최대 강화</th><th>도감 등록수</th></tr>
             </thead>
             <tbody id="ranking-body"></tbody>
           </table>
@@ -240,8 +245,9 @@
       </section>
     </section>
   </main>
+  <div class="manual-hunt-result" id="manual-hunt-result" hidden></div>
   <div class="collection-toast" id="collection-toast" hidden></div>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260604-1"></script>
+  <script src="Scripts/game.js?v=20260604-2"></script>
 </body>
 </html>

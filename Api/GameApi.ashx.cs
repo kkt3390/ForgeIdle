@@ -33,7 +33,7 @@ namespace EnhanceAddiction.WebForms.Api
                     case "auth": result = Auth(context); break;
                     case "catalog": result = Game.CatalogSnapshot(); break;
                     case "state": result = State(context); break;
-                    case "rankings": result = new PlayerRepository().GetRankings(); break;
+                    case "rankings": result = new PlayerRepository().GetRankings(context.Request.QueryString["category"]); break;
                     case "nickname": result = Nickname(context); break;
                     case "hunt-start":
                         result = Execute(context, "AutomaticHuntStart",

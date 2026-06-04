@@ -13,9 +13,7 @@ namespace EnhanceAddiction.WebForms.Game
         private static readonly TimeSpan AutomaticHuntDurationPerBoss = TimeSpan.FromMinutes(30);
         private static readonly TimeZoneInfo KoreaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
         private const int MonstersPerCollectionGrade = 10;
-        private const double NormalCollectionRate = .0001;
-        private const double EliteCollectionRate = .001;
-        private const double GoldenCollectionRate = .10;
+        private const double CollectionRegistrationRate = .10;
         private readonly GameCatalog _catalog;
 
         // 게임 규칙 카탈로그를 받아 서비스에서 재사용합니다.
@@ -135,9 +133,9 @@ namespace EnhanceAddiction.WebForms.Game
                         goldenRate = .001,
                         collectionRates = new
                         {
-                            normal = NormalCollectionRate,
-                            elite = EliteCollectionRate,
-                            golden = GoldenCollectionRate
+                            normal = CollectionRegistrationRate,
+                            elite = CollectionRegistrationRate,
+                            golden = CollectionRegistrationRate
                         },
                         monstersPerGrade = MonstersPerCollectionGrade
                     }
@@ -204,8 +202,8 @@ namespace EnhanceAddiction.WebForms.Game
             var registrations = GameFeatureSettings.CollectionEnabled
                 ? new[]
                 {
-                    RollCollectionRegistration(player, area, first.Grade),
-                    dualWield ? RollCollectionRegistration(player, area, second.Grade) : null
+                    RollCollectionRegistration(player, first),
+                    dualWield ? RollCollectionRegistration(player, second) : null
                 }.Where(registration => registration != null).ToArray()
                 : new CollectionRegistration[0];
             var collectionMessage = CollectionRegistrationMessage(registrations);
@@ -366,14 +364,22 @@ namespace EnhanceAddiction.WebForms.Game
             var roll = RandomInt(0, 1000);
             var multiplier = roll == 0 ? 30 : roll < 21 ? 5 : 1;
             var grade = multiplier == 30 ? "golden" : multiplier == 5 ? "elite" : "normal";
-            var name = grade == "golden" ? "황금 몬스터" : grade == "elite" ? "정예 몬스터" : "몬스터";
+            var number = RandomInt(1, MonstersPerCollectionGrade + 1);
+            var key = CollectionKey(area.Id, grade, number);
+            var monsterCatalog = GameContentRepository.MonsterMap();
+            MonsterCatalogEntry custom;
+            monsterCatalog.TryGetValue(key, out custom);
+            var name = custom == null ? CollectionMonsterName(area.Name, grade, number) : custom.Name;
+            var imagePath = custom == null || string.IsNullOrWhiteSpace(custom.ImagePath)
+                ? string.Format("Content/monsters/{0}.webp", key)
+                : custom.ImagePath;
             var gold = Math.Max(
                 1,
                 (long)Math.Round(area.GoldPerHour * 1.5 / actionsPerHour * variance * multiplier * GoldMultiplier(player)));
             var experience = Math.Max(
                 .01,
                 area.ExperiencePerHour * 1.25 / actionsPerHour * variance * multiplier * ExperienceMultiplier(player));
-            return new ManualHuntReward(name, gold, experience, grade);
+            return new ManualHuntReward(name, gold, experience, grade, key, imagePath);
         }
 
         // 경험치를 지급하고 필요한 만큼 연속 레벨업을 처리합니다.
@@ -444,32 +450,21 @@ namespace EnhanceAddiction.WebForms.Game
         }
 
         // 처치한 등급의 등록 확률에 따라 도감 항목 하나를 뽑고 중복 여부를 기록합니다.
-        private static CollectionRegistration RollCollectionRegistration(PlayerState player, HuntingArea area, string grade)
+        private static CollectionRegistration RollCollectionRegistration(PlayerState player, ManualHuntReward reward)
         {
-            var rate = grade == "golden"
-                ? GoldenCollectionRate
-                : grade == "elite"
-                    ? EliteCollectionRate
-                    : NormalCollectionRate;
-            if (!Roll(rate)) return new CollectionRegistration();
+            if (!Roll(CollectionRegistrationRate)) return new CollectionRegistration();
 
-            var number = RandomInt(1, MonstersPerCollectionGrade + 1);
-            var key = CollectionKey(area.Id, grade, number);
+            var key = reward.MonsterKey;
             var duplicate = player.CollectedMonsterKeys.Contains(key);
             if (!duplicate) player.CollectedMonsterKeys.Add(key);
-            var monsterCatalog = GameContentRepository.MonsterMap();
-            MonsterCatalogEntry custom;
-            monsterCatalog.TryGetValue(key, out custom);
             return new CollectionRegistration
             {
                 Registered = true,
                 Duplicate = duplicate,
                 MonsterKey = key,
-                MonsterName = custom == null ? CollectionMonsterName(area.Name, grade, number) : custom.Name,
-                Grade = grade,
-                ImagePath = custom == null || string.IsNullOrWhiteSpace(custom.ImagePath)
-                    ? string.Format("Content/monsters/{0}.webp", key)
-                    : custom.ImagePath
+                MonsterName = reward.MonsterName,
+                Grade = reward.Grade,
+                ImagePath = reward.ImagePath
             };
         }
 
@@ -590,14 +585,55 @@ namespace EnhanceAddiction.WebForms.Game
         }
 
         // 한국 시간 자정을 기준으로 일일 자동 사냥 사용량을 초기화합니다.
-        private static void NormalizeAutomaticHuntCycle(PlayerState player, DateTime now)
+        private void NormalizeAutomaticHuntCycle(PlayerState player, DateTime now)
         {
-            var cycleStart = CurrentAutomaticHuntCycleStart(now);
-            if (!player.AutomaticHuntCycleStartedAtUtc.HasValue || player.AutomaticHuntCycleStartedAtUtc.Value < cycleStart)
+            var currentCycleStart = CurrentAutomaticHuntCycleStart(now);
+            if (!player.AutomaticHuntCycleStartedAtUtc.HasValue)
             {
-                player.AutomaticHuntCycleStartedAtUtc = cycleStart;
+                player.AutomaticHuntCycleStartedAtUtc = currentCycleStart;
+                return;
+            }
+
+            while (player.AutomaticHuntCycleStartedAtUtc.Value < currentCycleStart)
+            {
+                var nextCycleStart = player.AutomaticHuntCycleStartedAtUtc.Value.AddDays(1);
+                var carriedAreaId = player.Hunt == null ? -1 : player.Hunt.AreaId;
+                if (player.Hunt != null)
+                {
+                    var carriedReward = ClaimAutomaticHuntReward(player, nextCycleStart);
+                    if (carriedReward.Gold > 0 || carriedReward.Experience > 0)
+                    {
+                        AddMessage(player, string.Format(
+                            "자정 자동 정산: {0:N0} 골드, 경험치 {1:N2}를 획득했습니다.",
+                            carriedReward.Gold,
+                            carriedReward.Experience));
+                    }
+                }
+
+                player.AutomaticHuntCycleStartedAtUtc = nextCycleStart;
                 player.AutomaticHuntUsedSeconds = 0;
-                if (player.Hunt != null && player.Hunt.RewardCapAtUtc <= cycleStart) player.Hunt = null;
+
+                if (carriedAreaId < 0)
+                {
+                    player.AutomaticHuntCycleStartedAtUtc = currentCycleStart;
+                    break;
+                }
+
+                var area = _catalog.Areas.ElementAtOrDefault(carriedAreaId);
+                var remaining = RemainingAutomaticHuntDuration(player);
+                if (area != null && CanEnter(player, area) && remaining > TimeSpan.Zero)
+                {
+                    player.Hunt = new HuntSession
+                    {
+                        AreaId = area.Id,
+                        StartedAtUtc = nextCycleStart,
+                        RewardCapAtUtc = Min(nextCycleStart.Add(remaining), nextCycleStart.AddDays(1))
+                    };
+                }
+                else
+                {
+                    player.Hunt = null;
+                }
             }
         }
 
@@ -674,9 +710,17 @@ namespace EnhanceAddiction.WebForms.Game
             Experience = experience;
             Grade = grade;
         }
+        public ManualHuntReward(string monsterName, long gold, double experience, string grade, string monsterKey, string imagePath)
+            : this(monsterName, gold, experience, grade)
+        {
+            MonsterKey = monsterKey;
+            ImagePath = imagePath;
+        }
         public string MonsterName { get; private set; }
         public long Gold { get; private set; }
         public double Experience { get; private set; }
         public string Grade { get; private set; }
+        public string MonsterKey { get; private set; }
+        public string ImagePath { get; private set; }
     }
 }
