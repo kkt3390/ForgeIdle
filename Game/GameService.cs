@@ -218,7 +218,9 @@ namespace EnhanceAddiction.WebForms.Game
             var prefix = claimed.Gold > 0 || claimed.Experience > 0
                 ? string.Format("자동 사냥 {0:N0} 골드, 경험치 {1:N2}를 먼저 정산했습니다. ", claimed.Gold, claimed.Experience)
                 : "";
-            var dualMessage = dualWield ? " 이도류 발동! " + second.MonsterName + "도 처치했습니다." : "";
+            var firstName = HuntLogMonsterName(first);
+            var secondName = HuntLogMonsterName(second);
+            var dualMessage = dualWield ? " 이도류 발동! " + secondName + "도 처치했습니다." : "";
             var registrations = GameFeatureSettings.CollectionEnabled
                 ? new[]
                 {
@@ -228,7 +230,7 @@ namespace EnhanceAddiction.WebForms.Game
                 : new CollectionRegistration[0];
             var collectionMessage = CollectionRegistrationMessage(registrations);
             var message = string.Format("{0}{1} 처치! {2:N0} 골드, 경험치 {3:N2} 획득.{4}{5}",
-                prefix, first.MonsterName, totalGold, totalExperience, dualMessage, collectionMessage);
+                prefix, firstName, totalGold, totalExperience, dualMessage, collectionMessage);
             AddMessage(player, message);
             return Success(player, message, new
             {
@@ -494,6 +496,20 @@ namespace EnhanceAddiction.WebForms.Game
                 .Select(registration => " 도감 등록: " + registration.MonsterName + "!")
                 .ToArray();
             return string.Join("", messages);
+        }
+
+        // 최근 기록에서 알아보기 쉽도록 몬스터 이름 앞에 등급 표기를 붙입니다.
+        private static string HuntLogMonsterName(ManualHuntReward reward)
+        {
+            if (reward == null || string.IsNullOrWhiteSpace(reward.MonsterName)) return "몬스터";
+            return "[" + GradeDisplayName(reward.Grade) + "] " + reward.MonsterName;
+        }
+
+        private static string GradeDisplayName(string grade)
+        {
+            if (grade == "elite") return "정예";
+            if (grade == "golden") return "황금";
+            return "일반";
         }
 
         // 도감 화면에 필요한 전체 항목과 사용자 등록 여부를 반환합니다.

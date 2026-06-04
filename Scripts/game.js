@@ -159,8 +159,15 @@ function render() {
     renderStats();
     renderCollection();
     $("#messages").innerHTML = state.recentMessages
-        .map(message => `<li>${escapeHtml(message)}</li>`)
+        .map(message => `<li>${formatLogMessage(message)}</li>`)
         .join("");
+}
+
+function formatLogMessage(message) {
+    return escapeHtml(message).replace(/\[(일반|정예|황금)\]/g, (match, gradeName) => {
+        const grade = gradeName === "황금" ? "golden" : gradeName === "정예" ? "elite" : "normal";
+        return `<span class="log-grade log-grade-${grade}">[${gradeName}]</span>`;
+    });
 }
 
 function renderWeaponImage() {

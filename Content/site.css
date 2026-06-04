@@ -393,6 +393,10 @@ th:first-child, td:first-child { text-align: left; }
   border-color: #ffe2a0;
 }
 .log ul { margin-bottom: 0; padding-left: 19px; color: #c4b8aa; font-size: 13px; }
+.log-grade { font-weight: 900; }
+.log-grade-normal { color: #f1eee8; }
+.log-grade-elite { color: #c59cff; }
+.log-grade-golden { color: #f6c56f; }
 .toast {
   position: fixed;
   bottom: 24px;
