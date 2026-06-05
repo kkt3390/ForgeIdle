@@ -10,7 +10,7 @@ namespace EnhanceAddiction.WebForms.Game
     {
         private static readonly TimeSpan ManualHuntCooldown = TimeSpan.FromSeconds(1); 
         private static readonly TimeSpan BaseAutomaticHuntDuration = TimeSpan.FromHours(6);
-        private static readonly TimeSpan AutomaticHuntDurationPerBoss = TimeSpan.FromMinutes(30);
+        private static readonly TimeSpan AutomaticHuntDurationPerBoss = TimeSpan.FromMinutes(10);
         private static readonly TimeZoneInfo KoreaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
         private const int MonstersPerCollectionGrade = 10;
         private const double NormalCollectionRegistrationRate = 1.00;
