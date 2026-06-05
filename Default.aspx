@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>강화중독</title>
-  <link rel="stylesheet" href="Content/site.css?v=20260605-6" />
+  <link rel="stylesheet" href="Content/site.css?v=20260605-7" />
 </head>
 <body>
   <main class="shell">

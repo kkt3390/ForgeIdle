@@ -139,8 +139,8 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
 .weapon-frame {
   position: relative;
   display: grid;
-  width: min(228px, 60vw);
-  height: min(228px, 60vw);
+  width: min(238px, 63vw);
+  height: min(238px, 63vw);
   place-items: center;
   border: 0;
   border-radius: 30px;
@@ -169,7 +169,7 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
 .weapon-frame::after {
   inset: -1px;
   z-index: 5;
-  border: 5px solid var(--weapon-border, #d7d4cf);
+  border: 6px solid var(--weapon-border, #d7d4cf);
   border-radius: 32px;
   box-shadow:
     inset 0 0 18px #ffffff42,
@@ -279,6 +279,9 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
   animation: weaponRainbow 3.2s linear infinite;
   box-shadow: 0 20px 70px #00000090, 0 0 48px #ff375f85, inset 0 0 26px #ffffff26;
 }
+.weapon-tier-rainbow::after {
+  animation: weaponRainbowBorder 3.2s linear infinite;
+}
 @keyframes weaponBlueAura {
   0%, 100% { box-shadow: 0 20px 70px #00000090, 0 0 24px #208dff65, inset 0 0 18px #45adff28; }
   50% { box-shadow: 0 20px 70px #00000090, 0 0 48px #39b8ffbb, inset 0 0 26px #45adff44; }
@@ -293,11 +296,33 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
   70% { filter: brightness(1.05); }
 }
 @keyframes weaponRainbow {
-  0% { border-color: #ff4f6f; box-shadow: 0 20px 70px #00000090, 0 0 44px #ff375f85, inset 0 0 24px #ffffff22; }
-  25% { border-color: #ffd15f; box-shadow: 0 20px 70px #00000090, 0 0 48px #ffd15f88, inset 0 0 24px #ffffff24; }
-  50% { border-color: #55b7ff; box-shadow: 0 20px 70px #00000090, 0 0 50px #55b7ff85, inset 0 0 24px #ffffff24; }
-  75% { border-color: #a875ff; box-shadow: 0 20px 70px #00000090, 0 0 50px #a875ff85, inset 0 0 24px #ffffff24; }
-  100% { border-color: #ff4f6f; box-shadow: 0 20px 70px #00000090, 0 0 44px #ff375f85, inset 0 0 24px #ffffff22; }
+  0% { box-shadow: 0 20px 70px #00000090, 0 0 44px #ff375f85, inset 0 0 24px #ffffff22; }
+  25% { box-shadow: 0 20px 70px #00000090, 0 0 48px #ffd15f88, inset 0 0 24px #ffffff24; }
+  50% { box-shadow: 0 20px 70px #00000090, 0 0 50px #55b7ff85, inset 0 0 24px #ffffff24; }
+  75% { box-shadow: 0 20px 70px #00000090, 0 0 50px #a875ff85, inset 0 0 24px #ffffff24; }
+  100% { box-shadow: 0 20px 70px #00000090, 0 0 44px #ff375f85, inset 0 0 24px #ffffff22; }
+}
+@keyframes weaponRainbowBorder {
+  0% {
+    border-color: #ff4f6f;
+    box-shadow: inset 0 0 20px #ffffff42, 0 0 22px #ff375f99;
+  }
+  25% {
+    border-color: #ffd15f;
+    box-shadow: inset 0 0 20px #ffffff46, 0 0 24px #ffd15faa;
+  }
+  50% {
+    border-color: #55b7ff;
+    box-shadow: inset 0 0 20px #ffffff46, 0 0 26px #55b7ffaa;
+  }
+  75% {
+    border-color: #a875ff;
+    box-shadow: inset 0 0 20px #ffffff46, 0 0 26px #a875ffaa;
+  }
+  100% {
+    border-color: #ff4f6f;
+    box-shadow: inset 0 0 20px #ffffff42, 0 0 22px #ff375f99;
+  }
 }
 .status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
 .status-grid article, .card { border: 1px solid #ffffff10; border-radius: 14px; padding: 14px 12px; background: #11131a; }
