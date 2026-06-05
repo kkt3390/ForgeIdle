@@ -184,7 +184,7 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
   background: var(--weapon-holo, linear-gradient(105deg, transparent 38%, #ffffffcc 46%, transparent 56%));
   background-size: 180% 180%;
   background-position: 100%;
-  mix-blend-mode: color-dodge;
+  mix-blend-mode: screen;
   opacity: 0;
   pointer-events: none;
   transition: opacity .12s ease, background-position .12s ease;
@@ -232,7 +232,7 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
   --weapon-bg:
     radial-gradient(circle at 48% 36%, #ffffff 0, #eef3ff 36%, #c7cedd 72%, #8f98aa 100%);
   --weapon-holo:
-    linear-gradient(105deg, transparent 35%, #ffffffee 45%, #b9c2d8cc 50%, transparent 58%);
+    linear-gradient(105deg, transparent 32%, #dfe7ff70 38%, #f5f8ffee 46%, #9faecfcc 52%, #f5f8ff70 58%, transparent 66%);
   box-shadow: 0 20px 70px #00000090, inset 0 0 28px #ffffff66, 0 0 30px #edf4ff80;
 }
 .weapon-tier-blue {
@@ -242,7 +242,7 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
   --weapon-bg:
     radial-gradient(circle at 45% 35%, #d9f5ff 0, #3387ff 44%, #113b8c 76%, #071b48 100%);
   --weapon-holo:
-    linear-gradient(105deg, transparent 34%, #c4efffcc 43%, #47b8ffcc 50%, transparent 60%);
+    linear-gradient(105deg, transparent 31%, #63c4ff66 38%, #9ee7ffdd 45%, #26a7ffdd 52%, #63c4ff75 60%, transparent 68%);
   animation: weaponBlueAura 2.8s ease-in-out infinite;
   box-shadow: 0 20px 70px #00000090, 0 0 34px #208dff80, inset 0 0 20px #45adff2f;
 }
@@ -253,7 +253,7 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
   --weapon-bg:
     radial-gradient(circle at 48% 34%, #f0dfff 0, #8d5bff 42%, #3d197c 76%, #1c0d38 100%);
   --weapon-holo:
-    linear-gradient(105deg, transparent 36%, #f0d6ffb5 45%, #9b6dffc2 51%, transparent 60%);
+    linear-gradient(105deg, transparent 32%, #b98bff66 39%, #e6c9ffdd 46%, #9b6dffdd 53%, #b98bff75 61%, transparent 68%);
   animation: weaponSoftPulse 3.6s ease-in-out infinite;
   box-shadow: 0 20px 70px #00000090, 0 0 34px #8b5cff65, inset 0 0 22px #ba8cff26;
 }
@@ -264,7 +264,7 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
   --weapon-bg:
     radial-gradient(circle at 48% 34%, #fff7cd 0, #f3bd3d 42%, #8e5814 78%, #3a2108 100%);
   --weapon-holo:
-    linear-gradient(105deg, transparent 33%, #fff4a8f0 42%, #ffcf5dcc 48%, #ffffffcc 52%, transparent 60%);
+    linear-gradient(105deg, transparent 30%, #ffe28a75 38%, #fff4a8f0 44%, #ffcf5ddd 51%, #ffe28a88 59%, transparent 67%);
   animation: weaponGoldSparkle 1.9s ease-in-out infinite;
   box-shadow: 0 20px 70px #00000090, 0 0 44px #e3a84e90, inset 0 0 24px #ffd15f38;
 }
@@ -275,7 +275,7 @@ select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; colo
   --weapon-bg:
     radial-gradient(circle at 48% 35%, #fff0f3 0, #ff406d 26%, #7b2cff 48%, #1e8dff 68%, #17101e 100%);
   --weapon-holo:
-    linear-gradient(105deg, transparent 30%, #ffd15fd6 40%, #ff4f6fcc 46%, #7b5cffcc 52%, #4fd7ffcc 58%, transparent 66%);
+    linear-gradient(105deg, transparent 26%, #ff5b6685 34%, #ffd15fd6 42%, #ff4f6fe0 49%, #a875ffe0 56%, #4fd7ffe0 63%, transparent 72%);
   animation: weaponRainbow 3.2s linear infinite;
   box-shadow: 0 20px 70px #00000090, 0 0 48px #ff375f85, inset 0 0 26px #ffffff26;
 }
