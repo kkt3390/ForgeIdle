@@ -185,7 +185,7 @@ namespace EnhanceAddiction.WebForms.Data
                             isOperator = reader.GetBoolean(6),
                             isBanned = reader.GetBoolean(7),
                             banReason = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                            updatedAt = reader.GetDateTimeOffset(9).ToString("u")
+                            updatedAt = KstDateTime(reader.GetDateTimeOffset(9))
                         });
                     }
                 }
@@ -242,7 +242,7 @@ namespace EnhanceAddiction.WebForms.Data
                             beforeStateJson = reader.GetString(6),
                             afterStateJson = reader.GetString(7),
                             detailsJson = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                            createdAt = reader.GetDateTimeOffset(9).ToString("u")
+                            createdAt = KstDateTime(reader.GetDateTimeOffset(9))
                         });
                     }
                 }
@@ -449,7 +449,7 @@ namespace EnhanceAddiction.WebForms.Data
                         actualSuccessRate = attempts == 0 ? 0 : success / (double)attempts,
                         actualKeepRate = attempts == 0 ? 0 : keep / (double)attempts,
                         actualDestroyRate = attempts == 0 ? 0 : destroy / (double)attempts,
-                        lastAttemptedAt = reader.GetDateTimeOffset(8).ToString("u")
+                        lastAttemptedAt = KstDateTime(reader.GetDateTimeOffset(8))
                     });
                 }
             }
@@ -531,7 +531,7 @@ namespace EnhanceAddiction.WebForms.Data
                         nickname = reader.GetString(1),
                         actionType = reader.GetString(2),
                         message = reader.GetString(3),
-                        createdAt = reader.GetDateTimeOffset(4).ToString("u"),
+                        createdAt = KstDateTime(reader.GetDateTimeOffset(4)),
                         reason = reason,
                         isBanned = !reader.IsDBNull(11) && reader.GetBoolean(11)
                     });
@@ -583,7 +583,7 @@ namespace EnhanceAddiction.WebForms.Data
                         actionType = reader.GetString(1),
                         targetPlayerKey = reader.IsDBNull(2) ? "" : reader.GetString(2),
                         detailsJson = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                        createdAt = reader.GetDateTimeOffset(4).ToString("u")
+                        createdAt = KstDateTime(reader.GetDateTimeOffset(4))
                     });
                 }
             }
@@ -745,6 +745,11 @@ namespace EnhanceAddiction.WebForms.Data
         {
             var utc = DateTime.SpecifyKind(utcValue, DateTimeKind.Utc);
             return TimeZoneInfo.ConvertTimeFromUtc(utc, KoreaTimeZone).ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
+        }
+
+        private static string KstDateTime(DateTimeOffset value)
+        {
+            return TimeZoneInfo.ConvertTime(value, KoreaTimeZone).ToString("yyyy-MM-dd HH:mm:ss 'KST'", CultureInfo.InvariantCulture);
         }
 
         private static string Iso(DateTime value)
