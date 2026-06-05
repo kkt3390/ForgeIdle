@@ -28,7 +28,7 @@ namespace EnhanceAddiction.WebForms.Data
                          ProtectionTickets, Level, Experience, DualWield, GoldGain, ExperienceGain,
                          ArtisanTouch, AutomaticHuntCycleStartedAtUtc, AutomaticHuntUsedSeconds,
                          HuntAreaId, HuntStartedAtUtc, HuntRewardCapAtUtc, LastManualHuntAtUtc,
-                         ManualHuntAreaId, CollectedMonsterKeysJson, StateSchemaVersion, StateJson
+                         ManualHuntAreaId, ManualHuntCount, CollectedMonsterKeysJson, StateSchemaVersion, StateJson
                   FROM dbo.ea_players
                   WHERE PlayerKey = @PlayerKey", connection))
             {
@@ -52,16 +52,17 @@ namespace EnhanceAddiction.WebForms.Data
                    ProtectionTickets, Level, Experience, DualWield, GoldGain, ExperienceGain,
                    ArtisanTouch, AutomaticHuntCycleStartedAtUtc, AutomaticHuntUsedSeconds,
                    HuntAreaId, HuntStartedAtUtc, HuntRewardCapAtUtc, LastManualHuntAtUtc,
-                   ManualHuntAreaId, CollectedMonsterKeysJson, CollectedMonsterCount,
+                   ManualHuntAreaId, ManualHuntCount, CollectedMonsterKeysJson, CollectedMonsterCount,
                    LevelReachedAtUtc, HighestWeaponLevelReachedAtUtc, CollectionCountReachedAtUtc,
-                   StateJson, StateSchemaVersion, CreatedAt, UpdatedAt)
+                   ManualHuntCountReachedAtUtc, StateJson, StateSchemaVersion, CreatedAt, UpdatedAt)
                   VALUES
                   (@PlayerKey, @Nickname, @Gold, @WeaponLevel, @HighestWeaponLevel, @HighestBossDefeated,
                    @ProtectionTickets, @Level, @Experience, @DualWield, @GoldGain, @ExperienceGain,
                    @ArtisanTouch, @AutomaticHuntCycleStartedAtUtc, @AutomaticHuntUsedSeconds,
                    @HuntAreaId, @HuntStartedAtUtc, @HuntRewardCapAtUtc, @LastManualHuntAtUtc,
-                   @ManualHuntAreaId, @CollectedMonsterKeysJson, @CollectedMonsterCount,
-                   SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET(), @StateJson, 1,
+                   @ManualHuntAreaId, @ManualHuntCount, @CollectedMonsterKeysJson, @CollectedMonsterCount,
+                   SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET(),
+                   SYSDATETIMEOFFSET(), @StateJson, 1,
                    SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET())", connection))
             {
                 command.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = playerKey;
@@ -96,6 +97,7 @@ namespace EnhanceAddiction.WebForms.Data
                       HuntRewardCapAtUtc = @HuntRewardCapAtUtc,
                       LastManualHuntAtUtc = @LastManualHuntAtUtc,
                       ManualHuntAreaId = @ManualHuntAreaId,
+                      ManualHuntCount = @ManualHuntCount,
                       CollectedMonsterKeysJson = @CollectedMonsterKeysJson,
                       CollectedMonsterCount = @CollectedMonsterCount,
                       LevelReachedAtUtc = CASE
@@ -112,6 +114,11 @@ namespace EnhanceAddiction.WebForms.Data
                           WHEN @CollectedMonsterCount > CollectedMonsterCount THEN SYSDATETIMEOFFSET()
                           WHEN CollectionCountReachedAtUtc IS NULL THEN CreatedAt
                           ELSE CollectionCountReachedAtUtc
+                      END,
+                      ManualHuntCountReachedAtUtc = CASE
+                          WHEN @ManualHuntCount > ManualHuntCount THEN SYSDATETIMEOFFSET()
+                          WHEN ManualHuntCountReachedAtUtc IS NULL THEN CreatedAt
+                          ELSE ManualHuntCountReachedAtUtc
                       END,
                       StateJson = @StateJson,
                       StateSchemaVersion = 1,
@@ -205,7 +212,7 @@ namespace EnhanceAddiction.WebForms.Data
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
                 @"SELECT TOP (100)
-                         Nickname, Level, WeaponLevel, HighestWeaponLevel, CollectedMonsterCount
+                         Nickname, Level, WeaponLevel, HighestWeaponLevel, CollectedMonsterCount, ManualHuntCount
                   FROM dbo.ea_players
                   ORDER BY " + orderBy, connection))
             using (var reader = command.ExecuteReader())
@@ -220,7 +227,8 @@ namespace EnhanceAddiction.WebForms.Data
                         level = reader.GetInt32(1),
                         weaponLevel = reader.GetInt32(2),
                         highestWeaponLevel = reader.GetInt32(3),
-                        collectionCount = reader.GetInt32(4)
+                        collectionCount = reader.GetInt32(4),
+                        manualHuntCount = reader.GetInt32(5)
                     });
                 }
             }
@@ -235,7 +243,7 @@ namespace EnhanceAddiction.WebForms.Data
         private static string NormalizeRankingCategory(string category)
         {
             category = (category ?? "level").Trim().ToLowerInvariant();
-            if (category == "enhancement" || category == "collection") return category;
+            if (category == "enhancement" || category == "collection" || category == "manualhunt") return category;
             return "level";
         }
 
@@ -246,6 +254,8 @@ namespace EnhanceAddiction.WebForms.Data
                 return "HighestWeaponLevel DESC, ISNULL(HighestWeaponLevelReachedAtUtc, CreatedAt) ASC, Id ASC";
             if (category == "collection")
                 return "CollectedMonsterCount DESC, ISNULL(CollectionCountReachedAtUtc, CreatedAt) ASC, Id ASC";
+            if (category == "manualhunt")
+                return "ManualHuntCount DESC, ISNULL(ManualHuntCountReachedAtUtc, CreatedAt) ASC, Id ASC";
             return "Level DESC, ISNULL(LevelReachedAtUtc, CreatedAt) ASC, Id ASC";
         }
 
@@ -336,8 +346,8 @@ namespace EnhanceAddiction.WebForms.Data
         // DB에서 읽은 일반 컬럼을 게임에서 사용하는 플레이어 상태 객체로 조립합니다.
         private static PlayerState ReadPlayer(SqlDataReader reader, out bool requiresColumnSync)
         {
-            var stateSchemaVersion = reader.GetInt32(20);
-            var stateJson = reader.IsDBNull(21) ? null : reader.GetString(21);
+            var stateSchemaVersion = reader.GetInt32(21);
+            var stateJson = reader.IsDBNull(22) ? null : reader.GetString(22);
             var player = string.IsNullOrWhiteSpace(stateJson)
                 ? new PlayerState()
                 : Json.Deserialize<PlayerState>(stateJson);
@@ -364,9 +374,10 @@ namespace EnhanceAddiction.WebForms.Data
             player.Hunt = ReadHuntSession(reader, 14, 15, 16);
             player.LastManualHuntAtUtc = ReadNullableDateTime(reader, 17);
             player.ManualHuntAreaId = reader.GetInt32(18);
-            player.CollectedMonsterKeys = reader.IsDBNull(19)
+            player.ManualHuntCount = reader.GetInt32(19);
+            player.CollectedMonsterKeys = reader.IsDBNull(20)
                 ? new List<string>()
-                : Json.Deserialize<List<string>>(reader.GetString(19));
+                : Json.Deserialize<List<string>>(reader.GetString(20));
             return player;
         }
 
@@ -402,6 +413,7 @@ namespace EnhanceAddiction.WebForms.Data
             command.Parameters.Add("@LastManualHuntAtUtc", SqlDbType.DateTimeOffset).Value =
                 player.LastManualHuntAtUtc.HasValue ? (object)player.LastManualHuntAtUtc.Value : DBNull.Value;
             command.Parameters.Add("@ManualHuntAreaId", SqlDbType.Int).Value = player.ManualHuntAreaId;
+            command.Parameters.Add("@ManualHuntCount", SqlDbType.Int).Value = player.ManualHuntCount;
             command.Parameters.Add("@CollectedMonsterCount", SqlDbType.Int).Value =
                 player.CollectedMonsterKeys == null ? 0 : player.CollectedMonsterKeys.Count;
             command.Parameters.Add("@CollectedMonsterKeysJson", SqlDbType.NVarChar, -1).Value =

@@ -17,6 +17,7 @@ SELECT
     AutomaticHuntUsedSeconds,
     HuntAreaId,
     ManualHuntAreaId,
+    ManualHuntCount,
     CollectedMonsterKeysJson,
     StateSchemaVersion,
     UpdatedAt

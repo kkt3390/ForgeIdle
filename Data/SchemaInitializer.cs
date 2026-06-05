@@ -35,11 +35,13 @@ BEGIN
         HuntRewardCapAtUtc datetimeoffset NULL,
         LastManualHuntAtUtc datetimeoffset NULL,
         ManualHuntAreaId int NOT NULL CONSTRAINT DF_ea_players_ManualHuntAreaId DEFAULT (0),
+        ManualHuntCount int NOT NULL CONSTRAINT DF_ea_players_ManualHuntCount DEFAULT (0),
         CollectedMonsterKeysJson nvarchar(max) NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterKeysJson DEFAULT (N'[]'),
         CollectedMonsterCount int NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterCount DEFAULT (0),
         LevelReachedAtUtc datetimeoffset NULL,
         HighestWeaponLevelReachedAtUtc datetimeoffset NULL,
         CollectionCountReachedAtUtc datetimeoffset NULL,
+        ManualHuntCountReachedAtUtc datetimeoffset NULL,
         IsOperator bit NOT NULL CONSTRAINT DF_ea_players_IsOperator DEFAULT (0),
         IsBanned bit NOT NULL CONSTRAINT DF_ea_players_IsBanned DEFAULT (0),
         BanReason nvarchar(500) NULL,
@@ -108,6 +110,8 @@ IF COL_LENGTH(N'dbo.ea_players', N'LastManualHuntAtUtc') IS NULL
     ALTER TABLE dbo.ea_players ADD LastManualHuntAtUtc datetimeoffset NULL;
 IF COL_LENGTH(N'dbo.ea_players', N'ManualHuntAreaId') IS NULL
     ALTER TABLE dbo.ea_players ADD ManualHuntAreaId int NOT NULL CONSTRAINT DF_ea_players_ManualHuntAreaId DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'ManualHuntCount') IS NULL
+    ALTER TABLE dbo.ea_players ADD ManualHuntCount int NOT NULL CONSTRAINT DF_ea_players_ManualHuntCount DEFAULT (0) WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'CollectedMonsterKeysJson') IS NULL
     ALTER TABLE dbo.ea_players ADD CollectedMonsterKeysJson nvarchar(max) NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterKeysJson DEFAULT (N'[]') WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'CollectedMonsterCount') IS NULL
@@ -118,6 +122,8 @@ IF COL_LENGTH(N'dbo.ea_players', N'HighestWeaponLevelReachedAtUtc') IS NULL
     ALTER TABLE dbo.ea_players ADD HighestWeaponLevelReachedAtUtc datetimeoffset NULL;
 IF COL_LENGTH(N'dbo.ea_players', N'CollectionCountReachedAtUtc') IS NULL
     ALTER TABLE dbo.ea_players ADD CollectionCountReachedAtUtc datetimeoffset NULL;
+IF COL_LENGTH(N'dbo.ea_players', N'ManualHuntCountReachedAtUtc') IS NULL
+    ALTER TABLE dbo.ea_players ADD ManualHuntCountReachedAtUtc datetimeoffset NULL;
 IF COL_LENGTH(N'dbo.ea_players', N'IsOperator') IS NULL
     ALTER TABLE dbo.ea_players ADD IsOperator bit NOT NULL CONSTRAINT DF_ea_players_IsOperator DEFAULT (0) WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'IsBanned') IS NULL
@@ -294,6 +300,7 @@ SET Nickname = JSON_VALUE(StateJson, N'$.Nickname'),
     GoldGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.GoldGain')), GoldGain),
     ExperienceGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ExperienceGain')), ExperienceGain),
     ArtisanTouch = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ArtisanTouch')), ArtisanTouch),
+    ManualHuntCount = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.ManualHuntCount')), ManualHuntCount),
     CollectedMonsterKeysJson = COALESCE(JSON_QUERY(StateJson, N'$.CollectedMonsterKeys'), CollectedMonsterKeysJson)
 WHERE StateSchemaVersion = 0;";
             const string rankingBackfillSql = @"
@@ -302,14 +309,29 @@ WHERE StateSchemaVersion = 0;";
     FROM dbo.ea_players p
     OUTER APPLY OPENJSON(CASE WHEN ISJSON(p.CollectedMonsterKeysJson) = 1 THEN p.CollectedMonsterKeysJson ELSE N'[]' END) j
     GROUP BY p.Id
+), ManualCounts AS (
+    SELECT p.Id, COUNT(l.Id) AS TotalCount, MAX(l.CreatedAt) AS LastReachedAt
+    FROM dbo.ea_players p
+    LEFT JOIN dbo.ea_game_action_logs l
+      ON l.PlayerKey = p.PlayerKey
+     AND l.ActionType = N'ManualHunt'
+     AND l.Succeeded = 1
+    GROUP BY p.Id
 )
 UPDATE p
 SET CollectedMonsterCount = c.TotalCount,
+    ManualHuntCount = CASE WHEN p.ManualHuntCount < m.TotalCount THEN m.TotalCount ELSE p.ManualHuntCount END,
     LevelReachedAtUtc = ISNULL(p.LevelReachedAtUtc, p.CreatedAt),
     HighestWeaponLevelReachedAtUtc = ISNULL(p.HighestWeaponLevelReachedAtUtc, p.CreatedAt),
-    CollectionCountReachedAtUtc = ISNULL(p.CollectionCountReachedAtUtc, p.CreatedAt)
+    CollectionCountReachedAtUtc = ISNULL(p.CollectionCountReachedAtUtc, p.CreatedAt),
+    ManualHuntCountReachedAtUtc = CASE
+        WHEN p.ManualHuntCountReachedAtUtc IS NULL THEN ISNULL(m.LastReachedAt, p.CreatedAt)
+        WHEN p.ManualHuntCount < m.TotalCount THEN ISNULL(m.LastReachedAt, p.ManualHuntCountReachedAtUtc)
+        ELSE p.ManualHuntCountReachedAtUtc
+    END
 FROM dbo.ea_players p
-INNER JOIN CollectionCounts c ON c.Id = p.Id;";
+INNER JOIN CollectionCounts c ON c.Id = p.Id
+INNER JOIN ManualCounts m ON m.Id = p.Id;";
             using (var connection = new SqlConnection(ConnectionSettings.Value))
             {
                 connection.Open();

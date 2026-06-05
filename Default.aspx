@@ -168,11 +168,12 @@
           <button class="ranking-tab active" data-ranking="level">레벨</button>
           <button class="ranking-tab" data-ranking="enhancement">최대 강화</button>
           <button class="ranking-tab" data-ranking="collection">도감 등록수</button>
+          <button class="ranking-tab" data-ranking="manualhunt">직접 사냥</button>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>순위</th><th>닉네임</th><th>레벨</th><th>현재 강화</th><th>최대 강화</th><th>도감 등록수</th></tr>
+              <tr><th>순위</th><th>닉네임</th><th>레벨</th><th>현재 강화</th><th>최대 강화</th><th>도감 등록수</th><th>직접 사냥</th></tr>
             </thead>
             <tbody id="ranking-body"></tbody>
           </table>
@@ -262,6 +263,6 @@
   <div class="collection-modal" id="collection-modal" hidden></div>
   <div class="collection-toast" id="collection-toast" hidden></div>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260605-5"></script>
+  <script src="Scripts/game.js?v=20260605-6"></script>
 </body>
 </html>

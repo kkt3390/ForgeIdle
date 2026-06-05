@@ -214,6 +214,7 @@ namespace EnhanceAddiction.WebForms.Game
             player.Gold += totalGold;
             GrantExperience(player, totalExperience);
             player.LastManualHuntAtUtc = now;
+            player.ManualHuntCount++;
 
             var prefix = claimed.Gold > 0 || claimed.Experience > 0
                 ? string.Format("자동 사냥 {0:N0} 골드, 경험치 {1:N2}를 먼저 정산했습니다. ", claimed.Gold, claimed.Experience)

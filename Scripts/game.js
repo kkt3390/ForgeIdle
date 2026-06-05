@@ -533,6 +533,7 @@ async function loadRankings(category = selectedRankingCategory) {
                 <td>+${row.weaponLevel}</td>
                 <td>+${row.highestWeaponLevel}</td>
                 <td>${number(row.collectionCount || 0)}</td>
+                <td>${number(row.manualHuntCount || 0)}</td>
             </tr>`)
         .join("");
 }
