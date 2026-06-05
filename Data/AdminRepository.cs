@@ -399,9 +399,9 @@ namespace EnhanceAddiction.WebForms.Data
                 @"SELECT
                     BeforeLevel,
                     COUNT_BIG(1) AS Attempts,
-                    SUM(CASE WHEN Result = N'success' THEN 1 ELSE 0 END) AS SuccessCount,
-                    SUM(CASE WHEN Result = N'keep' THEN 1 ELSE 0 END) AS KeepCount,
-                    SUM(CASE WHEN Result = N'destroy' THEN 1 ELSE 0 END) AS DestroyCount,
+                    SUM(CASE WHEN LOWER(Result) = N'success' THEN 1 ELSE 0 END) AS SuccessCount,
+                    SUM(CASE WHEN LOWER(Result) = N'keep' THEN 1 ELSE 0 END) AS KeepCount,
+                    SUM(CASE WHEN LOWER(Result) IN (N'destroy', N'destroyed') THEN 1 ELSE 0 END) AS DestroyCount,
                     AVG(SuccessRate) AS ExpectedSuccessRate,
                     AVG(KeepRate) AS ExpectedKeepRate,
                     AVG(DestroyRate) AS ExpectedDestroyRate,
