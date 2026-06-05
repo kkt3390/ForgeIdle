@@ -63,12 +63,6 @@ namespace EnhanceAddiction.WebForms.Api
                     case "profile-monster":
                         result = Execute(context, "ProfileMonster", player => Game.SetProfileMonster(player, StringBody(context, "monsterKey")));
                         break;
-                    case "rift-hit":
-                        result = Execute(context, "RiftHit", player => Game.HitRiftBoss(player));
-                        break;
-                    case "rift-buy":
-                        result = Execute(context, "RiftShopBuy", player => Game.BuyRiftShopItem(player, StringBody(context, "itemKey")));
-                        break;
                     default:
                         context.Response.StatusCode = 404;
                         result = new { message = "알 수 없는 요청입니다." };

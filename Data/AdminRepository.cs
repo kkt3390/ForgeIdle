@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -71,7 +71,6 @@ namespace EnhanceAddiction.WebForms.Data
                 recentAdminLogs = GetAdminLogs("", 1, 100),
                 recentActionLogs = SearchGameActionLogs("", 1, 100),
                 enhancementProof = GetEnhancementProof(),
-                rift = GetRiftState(),
                 monsterCatalog = GetMonsterCatalog(),
                 weaponCatalog = GetWeaponCatalog(),
                 enhancementRules = GetEnhancementRules()
@@ -87,8 +86,6 @@ namespace EnhanceAddiction.WebForms.Data
                 active = settings.IsActive(DateTime.UtcNow),
                 goldMultiplier = settings.GoldMultiplier,
                 experienceMultiplier = settings.ExperienceMultiplier,
-                baseGoldMultiplier = settings.BaseGoldMultiplier,
-                baseExperienceMultiplier = settings.BaseExperienceMultiplier,
                 startsAtUtc = settings.StartsAtUtc.HasValue ? Iso(settings.StartsAtUtc.Value) : "",
                 endsAtUtc = settings.EndsAtUtc.HasValue ? Iso(settings.EndsAtUtc.Value) : "",
                 startsAtKst = settings.StartsAtUtc.HasValue ? KstLocalInput(settings.StartsAtUtc.Value) : "",
@@ -97,20 +94,16 @@ namespace EnhanceAddiction.WebForms.Data
             };
         }
 
-        public void SaveHotTime(string operatorKey, bool enabled, double goldMultiplier, double experienceMultiplier, double baseGoldMultiplier, double baseExperienceMultiplier, string startsAtKst, string endsAtKst)
+        public void SaveHotTime(string operatorKey, bool enabled, double goldMultiplier, double experienceMultiplier, string startsAtKst, string endsAtKst)
         {
             goldMultiplier = Clamp(goldMultiplier, 0.1, 20);
             experienceMultiplier = Clamp(experienceMultiplier, 0.1, 20);
-            baseGoldMultiplier = Clamp(baseGoldMultiplier, 0.1, 20);
-            baseExperienceMultiplier = Clamp(baseExperienceMultiplier, 0.1, 20);
             var normalizedStartsAtUtc = NormalizeKstToUtcIso(startsAtKst);
             var normalizedEndsAtUtc = NormalizeKstToUtcIso(endsAtKst);
             ValidateHotTimeRange(normalizedStartsAtUtc, normalizedEndsAtUtc);
             UpsertSetting("HotTimeEnabled", enabled ? "1" : "0", operatorKey);
             UpsertSetting("HotTimeGoldMultiplier", goldMultiplier.ToString(CultureInfo.InvariantCulture), operatorKey);
             UpsertSetting("HotTimeExperienceMultiplier", experienceMultiplier.ToString(CultureInfo.InvariantCulture), operatorKey);
-            UpsertSetting("BaseGoldMultiplier", baseGoldMultiplier.ToString(CultureInfo.InvariantCulture), operatorKey);
-            UpsertSetting("BaseExperienceMultiplier", baseExperienceMultiplier.ToString(CultureInfo.InvariantCulture), operatorKey);
             UpsertSetting("HotTimeStartsAtUtc", normalizedStartsAtUtc, operatorKey);
             UpsertSetting("HotTimeEndsAtUtc", normalizedEndsAtUtc, operatorKey);
             GameRewardSettings.ClearCache();
@@ -119,182 +112,11 @@ namespace EnhanceAddiction.WebForms.Data
                 enabled = enabled,
                 goldMultiplier = goldMultiplier,
                 experienceMultiplier = experienceMultiplier,
-                baseGoldMultiplier = baseGoldMultiplier,
-                baseExperienceMultiplier = baseExperienceMultiplier,
                 startsAtKst = startsAtKst,
                 endsAtKst = endsAtKst,
                 startsAtUtc = normalizedStartsAtUtc,
                 endsAtUtc = normalizedEndsAtUtc
             });
-        }
-
-        public object GetRiftState()
-        {
-            var settings = RiftSettings.Current();
-            var now = DateTime.UtcNow;
-            var season = settings.CurrentSeason(now);
-            return new
-            {
-                enabled = settings.Enabled,
-                shopEnabled = settings.ShopEnabled,
-                mode = settings.Mode,
-                manualSeasonName = settings.ManualSeasonName,
-                manualStartsAtKst = settings.ManualStartsAtUtc.HasValue ? KstLocalInput(settings.ManualStartsAtUtc.Value) : "",
-                manualEndsAtKst = settings.ManualEndsAtUtc.HasValue ? KstLocalInput(settings.ManualEndsAtUtc.Value) : "",
-                manualSettlementEndsAtKst = settings.ManualSettlementEndsAtUtc.HasValue ? KstLocalInput(settings.ManualSettlementEndsAtUtc.Value) : "",
-                manualBossAreaId = settings.ManualBossAreaId,
-                season = new
-                {
-                    seasonKey = season.SeasonKey,
-                    seasonName = season.SeasonName,
-                    mode = season.Mode,
-                    bossAreaId = season.BossAreaId,
-                    startsAtKst = KstDateTime(new DateTimeOffset(season.StartsAtUtc)),
-                    endsAtKst = KstDateTime(new DateTimeOffset(season.EndsAtUtc)),
-                    settlementEndsAtKst = KstDateTime(new DateTimeOffset(season.SettlementEndsAtUtc)),
-                    active = settings.Enabled && season.IsActive(now),
-                    settling = settings.Enabled && season.IsSettlement(now)
-                },
-                rankings = GetRiftRankings(season.SeasonKey)
-            };
-        }
-
-        public void SaveRiftSettings(string operatorKey, Dictionary<string, object> body)
-        {
-            var enabled = BoolValue(body, "enabled", false);
-            var shopEnabled = BoolValue(body, "shopEnabled", false);
-            var mode = TextValue(body, "mode", 20, "auto") == "manual" ? "manual" : "auto";
-            var seasonName = TextValue(body, "manualSeasonName", 100, "테스트 균열");
-            var startsAtUtc = NormalizeKstToUtcIso(TextValue(body, "manualStartsAtKst", 30));
-            var endsAtUtc = NormalizeKstToUtcIso(TextValue(body, "manualEndsAtKst", 30));
-            var settlementEndsAtUtc = NormalizeKstToUtcIso(TextValue(body, "manualSettlementEndsAtKst", 30));
-            var bossAreaId = Math.Min(11, Math.Max(0, IntValue(body, "manualBossAreaId")));
-
-            if (mode == "manual")
-            {
-                ValidateRiftManualRange(startsAtUtc, endsAtUtc, settlementEndsAtUtc);
-            }
-
-            UpsertSetting("RiftEnabled", enabled ? "1" : "0", operatorKey);
-            UpsertSetting("RiftShopEnabled", shopEnabled ? "1" : "0", operatorKey);
-            UpsertSetting("RiftMode", mode, operatorKey);
-            UpsertSetting("RiftManualSeasonName", seasonName, operatorKey);
-            UpsertSetting("RiftManualStartsAtUtc", startsAtUtc, operatorKey);
-            UpsertSetting("RiftManualEndsAtUtc", endsAtUtc, operatorKey);
-            UpsertSetting("RiftManualSettlementEndsAtUtc", settlementEndsAtUtc, operatorKey);
-            UpsertSetting("RiftManualBossAreaId", bossAreaId.ToString(CultureInfo.InvariantCulture), operatorKey);
-            RiftSettings.ClearCache();
-            AddAdminLog(operatorKey, "주간 균열 설정 저장", null, body);
-        }
-
-        public void ResetCurrentRiftSeason(string operatorKey)
-        {
-            var season = RiftSettings.Current().CurrentSeason(DateTime.UtcNow);
-            using (var connection = OpenConnection())
-            using (var command = new SqlCommand(
-                @"UPDATE dbo.ea_players
-                  SET RiftWeeklyManualHuntCount = 0,
-                      RiftDailyManualHuntProgress = 0,
-                      RiftTickets = 0,
-                      RiftDailyTicketsEarned = 0,
-                      RiftDamage = 0,
-                      RiftLastDamageAtUtc = NULL,
-                      UpdatedAt = SYSDATETIMEOFFSET()
-                  WHERE RiftSeasonKey = @SeasonKey", connection))
-            {
-                command.Parameters.Add("@SeasonKey", SqlDbType.NVarChar, 40).Value = season.SeasonKey;
-                command.ExecuteNonQuery();
-            }
-            AddAdminLog(operatorKey, "주간 균열 시즌 데이터 초기화", null, new { seasonKey = season.SeasonKey });
-        }
-
-        public void SettleCurrentRiftSeason(string operatorKey)
-        {
-            var settings = RiftSettings.Current();
-            var season = settings.CurrentSeason(DateTime.UtcNow);
-            var rankings = LoadRiftRankingRows(season.SeasonKey);
-            if (!rankings.Any()) throw new InvalidOperationException("정산할 균열 참여 기록이 없습니다.");
-
-            using (var connection = OpenConnection())
-            using (var transaction = connection.BeginTransaction())
-            {
-                using (var exists = new SqlCommand(
-                    "SELECT COUNT(1) FROM dbo.ea_rift_season_results WHERE SeasonKey = @SeasonKey",
-                    connection, transaction))
-                {
-                    exists.Parameters.Add("@SeasonKey", SqlDbType.NVarChar, 40).Value = season.SeasonKey;
-                    if ((int)exists.ExecuteScalar() > 0)
-                        throw new InvalidOperationException("이미 정산된 시즌입니다.");
-                }
-
-                var totalDamage = rankings.Sum(row => row.Damage);
-                using (var resultCommand = new SqlCommand(@"
-INSERT INTO dbo.ea_rift_season_results
-    (SeasonKey, SeasonName, Mode, BossAreaId, StartsAtUtc, EndsAtUtc, SettlementEndsAtUtc,
-     SettledAtUtc, TotalParticipants, TotalDamage, DetailsJson)
-VALUES
-    (@SeasonKey, @SeasonName, @Mode, @BossAreaId, @StartsAtUtc, @EndsAtUtc, @SettlementEndsAtUtc,
-     SYSDATETIMEOFFSET(), @TotalParticipants, @TotalDamage, @DetailsJson)", connection, transaction))
-                {
-                    resultCommand.Parameters.Add("@SeasonKey", SqlDbType.NVarChar, 40).Value = season.SeasonKey;
-                    resultCommand.Parameters.Add("@SeasonName", SqlDbType.NVarChar, 100).Value = season.SeasonName;
-                    resultCommand.Parameters.Add("@Mode", SqlDbType.NVarChar, 20).Value = season.Mode;
-                    resultCommand.Parameters.Add("@BossAreaId", SqlDbType.Int).Value = season.BossAreaId;
-                    resultCommand.Parameters.Add("@StartsAtUtc", SqlDbType.DateTimeOffset).Value = season.StartsAtUtc;
-                    resultCommand.Parameters.Add("@EndsAtUtc", SqlDbType.DateTimeOffset).Value = season.EndsAtUtc;
-                    resultCommand.Parameters.Add("@SettlementEndsAtUtc", SqlDbType.DateTimeOffset).Value = season.SettlementEndsAtUtc;
-                    resultCommand.Parameters.Add("@TotalParticipants", SqlDbType.Int).Value = rankings.Count;
-                    resultCommand.Parameters.Add("@TotalDamage", SqlDbType.BigInt).Value = totalDamage;
-                    resultCommand.Parameters.Add("@DetailsJson", SqlDbType.NVarChar, -1).Value = Json.Serialize(new { rewards = "주간 균열 1차 보상표" });
-                    resultCommand.ExecuteNonQuery();
-                }
-
-                var topThirtyCut = Math.Max(1, (int)Math.Ceiling(rankings.Count * .30));
-                for (var index = 0; index < rankings.Count; index++)
-                {
-                    var rank = index + 1;
-                    var reward = RiftRewardForRank(rank, topThirtyCut);
-                    using (var update = new SqlCommand(@"
-UPDATE dbo.ea_players
-SET RiftCoins = RiftCoins + @RewardCoins,
-    ActiveTitleKey = CASE WHEN @TitleKey <> N'' THEN @TitleKey ELSE ActiveTitleKey END,
-    RiftRankBadge = @Badge,
-    RiftRankGlow = @Glow,
-    RiftRankRewardExpiresAtUtc = CASE WHEN @Badge <> N'' THEN DATEADD(day, 7, SYSUTCDATETIME()) ELSE RiftRankRewardExpiresAtUtc END,
-    UpdatedAt = SYSDATETIMEOFFSET()
-WHERE PlayerKey = @PlayerKey", connection, transaction))
-                    {
-                        update.Parameters.Add("@RewardCoins", SqlDbType.Int).Value = reward.Coins;
-                        update.Parameters.Add("@TitleKey", SqlDbType.NVarChar, 80).Value = reward.TitleKey;
-                        update.Parameters.Add("@Badge", SqlDbType.NVarChar, 20).Value = reward.Badge;
-                        update.Parameters.Add("@Glow", SqlDbType.NVarChar, 20).Value = reward.Glow;
-                        update.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = rankings[index].PlayerKey;
-                        update.ExecuteNonQuery();
-                    }
-
-                    using (var snapshot = new SqlCommand(@"
-INSERT INTO dbo.ea_rift_ranking_snapshots
-    (SeasonKey, PlayerKey, RankNo, Damage, RewardCoins, RewardTitleKey, RewardBadge, RewardGlow, SnapshotAtUtc)
-VALUES
-    (@SeasonKey, @PlayerKey, @RankNo, @Damage, @RewardCoins, @RewardTitleKey, @RewardBadge, @RewardGlow, SYSDATETIMEOFFSET())",
-                        connection, transaction))
-                    {
-                        snapshot.Parameters.Add("@SeasonKey", SqlDbType.NVarChar, 40).Value = season.SeasonKey;
-                        snapshot.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = rankings[index].PlayerKey;
-                        snapshot.Parameters.Add("@RankNo", SqlDbType.Int).Value = rank;
-                        snapshot.Parameters.Add("@Damage", SqlDbType.BigInt).Value = rankings[index].Damage;
-                        snapshot.Parameters.Add("@RewardCoins", SqlDbType.Int).Value = reward.Coins;
-                        snapshot.Parameters.Add("@RewardTitleKey", SqlDbType.NVarChar, 80).Value = reward.TitleKey;
-                        snapshot.Parameters.Add("@RewardBadge", SqlDbType.NVarChar, 20).Value = reward.Badge;
-                        snapshot.Parameters.Add("@RewardGlow", SqlDbType.NVarChar, 20).Value = reward.Glow;
-                        snapshot.ExecuteNonQuery();
-                    }
-                }
-
-                transaction.Commit();
-            }
-
-            AddAdminLog(operatorKey, "주간 균열 강제 정산", null, new { seasonKey = season.SeasonKey, participants = rankings.Count });
         }
 
         public void SetOperator(string operatorKey, string targetPlayerKey, bool isOperator)
@@ -849,87 +671,6 @@ VALUES
                 .ToArray();
         }
 
-        private object GetRiftRankings(string seasonKey)
-        {
-            return LoadRiftRankingRows(seasonKey)
-                .Take(100)
-                .Select((row, index) => new
-                {
-                    rank = index + 1,
-                    playerKey = row.PlayerKey,
-                    nickname = row.Nickname,
-                    level = row.Level,
-                    weaponLevel = row.WeaponLevel,
-                    highestWeaponLevel = row.HighestWeaponLevel,
-                    collectionCount = row.CollectionCount,
-                    weeklyManualHuntCount = row.WeeklyManualHuntCount,
-                    tickets = row.Tickets,
-                    damage = row.Damage,
-                    lastDamageAt = row.LastDamageAtUtc.HasValue ? KstDateTime(new DateTimeOffset(row.LastDamageAtUtc.Value)) : ""
-                })
-                .ToArray();
-        }
-
-        private List<RiftRankingRow> LoadRiftRankingRows(string seasonKey)
-        {
-            var rows = new List<RiftRankingRow>();
-            using (var connection = OpenConnection())
-            using (var command = new SqlCommand(
-                @"SELECT PlayerKey, ISNULL(Nickname, N''), Level, WeaponLevel, HighestWeaponLevel,
-                         CollectedMonsterCount, RiftWeeklyManualHuntCount, RiftTickets, RiftDamage, RiftLastDamageAtUtc
-                  FROM dbo.ea_players
-                  WHERE RiftSeasonKey = @SeasonKey
-                    AND RiftDamage > 0
-                  ORDER BY RiftDamage DESC, ISNULL(RiftLastDamageAtUtc, CreatedAt) ASC, Id ASC", connection))
-            {
-                command.Parameters.Add("@SeasonKey", SqlDbType.NVarChar, 40).Value = seasonKey;
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        rows.Add(new RiftRankingRow
-                        {
-                            PlayerKey = reader.GetString(0),
-                            Nickname = reader.GetString(1),
-                            Level = reader.GetInt32(2),
-                            WeaponLevel = reader.GetInt32(3),
-                            HighestWeaponLevel = reader.GetInt32(4),
-                            CollectionCount = reader.GetInt32(5),
-                            WeeklyManualHuntCount = reader.GetInt32(6),
-                            Tickets = reader.GetInt32(7),
-                            Damage = reader.GetInt64(8),
-                            LastDamageAtUtc = reader.IsDBNull(9) ? (DateTime?)null : reader.GetDateTimeOffset(9).UtcDateTime
-                        });
-                    }
-                }
-            }
-            return rows;
-        }
-
-        private static RiftReward RiftRewardForRank(int rank, int topThirtyCut)
-        {
-            if (rank == 1) return new RiftReward(120, "title-rift-ruler", "Ⅰ", "gold");
-            if (rank == 2) return new RiftReward(100, "title-rift-conqueror", "Ⅱ", "silver");
-            if (rank == 3) return new RiftReward(80, "title-rift-chaser", "Ⅲ", "bronze");
-            if (rank <= 10) return new RiftReward(60, "title-rift-challenger", "", "");
-            if (rank <= topThirtyCut) return new RiftReward(35, "", "", "");
-            return new RiftReward(15, "", "", "");
-        }
-
-        private static void ValidateRiftManualRange(string startsAtUtc, string endsAtUtc, string settlementEndsAtUtc)
-        {
-            if (string.IsNullOrWhiteSpace(startsAtUtc)
-                || string.IsNullOrWhiteSpace(endsAtUtc)
-                || string.IsNullOrWhiteSpace(settlementEndsAtUtc))
-                throw new InvalidOperationException("수동 테스트 시즌은 시작, 종료, 정산 종료 시간이 모두 필요합니다.");
-
-            var start = DateTime.Parse(startsAtUtc, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
-            var end = DateTime.Parse(endsAtUtc, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
-            var settleEnd = DateTime.Parse(settlementEndsAtUtc, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
-            if (end <= start) throw new InvalidOperationException("균열 종료 시간은 시작 시간보다 뒤여야 합니다.");
-            if (settleEnd <= end) throw new InvalidOperationException("정산 종료 시간은 균열 종료 시간보다 뒤여야 합니다.");
-        }
-
         private void UpsertSetting(string key, string value, string operatorKey)
         {
             using (var connection = OpenConnection())
@@ -1065,36 +806,6 @@ VALUES
             var connection = new SqlConnection(ConnectionSettings.Value);
             connection.Open();
             return connection;
-        }
-
-        private sealed class RiftRankingRow
-        {
-            public string PlayerKey { get; set; }
-            public string Nickname { get; set; }
-            public int Level { get; set; }
-            public int WeaponLevel { get; set; }
-            public int HighestWeaponLevel { get; set; }
-            public int CollectionCount { get; set; }
-            public int WeeklyManualHuntCount { get; set; }
-            public int Tickets { get; set; }
-            public long Damage { get; set; }
-            public DateTime? LastDamageAtUtc { get; set; }
-        }
-
-        private sealed class RiftReward
-        {
-            public RiftReward(int coins, string titleKey, string badge, string glow)
-            {
-                Coins = coins;
-                TitleKey = titleKey;
-                Badge = badge;
-                Glow = glow;
-            }
-
-            public int Coins { get; private set; }
-            public string TitleKey { get; private set; }
-            public string Badge { get; private set; }
-            public string Glow { get; private set; }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿let state;
+let state;
 let catalog;
 let manualHuntAvailableAt;
 let manualHuntUnlockTimer;
@@ -55,67 +55,6 @@ function serverNowMs() {
     return Date.now() + serverTimeOffsetMs;
 }
 
-function SessionExpiredError(message) {
-    this.name = "SessionExpiredError";
-    this.message = message || "로그인 세션이 만료되었습니다. 다시 로그인해주세요.";
-}
-SessionExpiredError.prototype = Object.create(Error.prototype);
-SessionExpiredError.prototype.constructor = SessionExpiredError;
-
-// 세션이 끊기거나 다른 기기 로그인으로 현재 접속이 종료되면 로그인 화면으로 되돌립니다.
-function redirectToLogin(message) {
-    state = null;
-    authentication = {
-        authenticated: false,
-        allowDevelopmentLogin: location.hostname === "localhost" || location.hostname === "127.0.0.1"
-    };
-    manualHuntRequestPending = false;
-    manualHuntAvailableAt = null;
-    $("#login-panel").hidden = false;
-    $("#development-login").hidden = !authentication.allowDevelopmentLogin;
-    $("#nickname-panel").hidden = true;
-    $("#game").hidden = true;
-    $("#admin-link").hidden = true;
-    toast(message || "로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
-}
-
-// ?? ??? ?? ??? ??? ? ???? ?? ?? ??? ?????.
-function mergeState(nextState) {
-    if (!nextState) return state;
-    if (state?.collection && !nextState.collection) nextState.collection = state.collection;
-    if (state?.collectionEnabled !== undefined && nextState.collectionEnabled === undefined) {
-        nextState.collectionEnabled = state.collectionEnabled;
-    }
-    return nextState;
-}
-
-// ?? ?? ??? ??? ?? ?? ??? ?? ??? ?????.
-function applyCollectionRegistrations(nextState, details) {
-    const collection = nextState?.collection;
-    const registrations = details?.registrations || [];
-    if (!collection || !registrations.length) return;
-
-    for (const registration of registrations) {
-        const registered = registration.Registered ?? registration.registered;
-        const duplicate = registration.Duplicate ?? registration.duplicate;
-        const monsterKey = registration.MonsterKey || registration.monsterKey;
-        if (!registered || duplicate || !monsterKey) continue;
-
-        for (const area of collection.areas || []) {
-            const monster = (area.monsters || []).find(candidate => candidate.key === monsterKey);
-            if (!monster || monster.collected) continue;
-            monster.collected = true;
-            collection.collectedCount = Number(collection.collectedCount || 0) + 1;
-            break;
-        }
-    }
-}
-
-function adjustedArea(areaId) {
-    return (state?.manualHunt?.availableAreas || state?.availableAreas || catalog?.areas || [])
-        .find(candidate => candidate.id === areaId);
-}
-
 // 서버 기능을 추가할 때는 Api/GameApi.ashx.cs의 action과 이 함수를 함께 확인하세요.
 // 지정한 게임 API를 호출하고 실패 응답은 사용자용 오류로 바꿉니다.
 async function api(actionName, body) {
@@ -124,8 +63,7 @@ async function api(actionName, body) {
         headers: body === undefined ? {} : { "Content-Type": "application/json" },
         body: body === undefined ? undefined : JSON.stringify(body)
     });
-    const result = await response.json().catch(() => ({}));
-    if (response.status === 401) throw new SessionExpiredError(result.message);
+    const result = await response.json();
     if (!response.ok) throw new Error(result.message || "요청을 처리하지 못했습니다.");
     return result;
 }
@@ -142,7 +80,6 @@ async function load() {
     syncServerClock(state);
     $("#admin-link").hidden = !authentication.isOperator;
     $("#collection-tab").hidden = !state.collectionEnabled;
-    $("#rift-tab").hidden = !state.rift?.enabled;
     $("#collection-guide").hidden = !state.collectionEnabled;
     renderRates();
     renderGuide();
@@ -164,10 +101,7 @@ async function action(name, body = {}) {
 
         const result = await api(name, body);
 
-        const details = result.Details || result.details;
-        const nextState = mergeState(result.State || result.state);
-        if (isManualHunt) applyCollectionRegistrations(nextState, details);
-        state = nextState;
+        state = result.State || result.state;
         syncServerClock(state);
         manualHuntAvailableAt = state.manualHunt.availableAt;
         if (isManualHunt) {
@@ -178,21 +112,18 @@ async function action(name, body = {}) {
         render();
         toast(result.Message || result.message);
         if (isManualHunt) {
+            const details = result.Details || result.details;
             showManualHuntResult(details);
             showCollectionRegistrations(details);
         }
     } catch (error) {
-        if (error instanceof SessionExpiredError) {
-            redirectToLogin(error.message);
-            return;
-        }
         if (isManualHunt) {
             manualHuntRequestPending = false;
             manualHuntAvailableAt = state?.manualHunt?.availableAt;
             scheduleManualHuntButtonUpdate();
         }
         toast(error.message);
-        if (state) render();
+        render();
     }
 }
 
@@ -225,7 +156,6 @@ function render() {
     renderHunt();
     renderEnhance();
     renderBoss();
-    renderRift();
     renderStats();
     renderCollection();
     $("#messages").innerHTML = state.recentMessages
@@ -523,7 +453,7 @@ function renderHunt() {
 // 자동 사냥 선택값에 맞춰 시간당 보상과 입장 조건을 보여줍니다.
 function updateAutoHuntDetails() {
     const areaId = Number($("#auto-hunt-area").value || selectedAutoHuntAreaId || state.manualHunt.areaId);
-    const area = adjustedArea(areaId);
+    const area = catalog.areas.find(candidate => candidate.id === areaId);
     if (!area) return;
 
     selectedAutoHuntAreaId = area.id;
@@ -535,13 +465,13 @@ function updateAutoHuntDetails() {
 
 function updateManualHuntDetails() {
     const areaId = Number($("#manual-hunt-area").value || state.manualHunt.areaId);
-    const area = adjustedArea(areaId);
+    const area = catalog.areas.find(candidate => candidate.id === areaId);
     if (!area) return;
 
     $("#manual-hunt-details").textContent =
         `${area.name} 기준 · 평균 시간당 `
-        + `${number(area.manualGoldPerHour ?? area.goldPerHour * 1.5)} 골드 · 경험치 `
-        + `${experience(area.manualExperiencePerHour ?? area.experiencePerHour * 1.25)}`;
+        + `${number(area.goldPerHour * 1.5)} 골드 · 경험치 `
+        + `${experience(area.experiencePerHour * 1.25)}`;
 }
 
 // 현재 강화 비용과 성공·유지·파괴 확률을 표시합니다.
@@ -611,63 +541,6 @@ function renderStats() {
     $("#reset-stats").textContent = `스탯 초기화 · ${number(state.statResetCost)} 골드`;
 }
 
-function renderRift() {
-    const rift = state.rift;
-    const tab = $("#rift-tab");
-    if (tab) tab.hidden = !rift?.enabled;
-    if (!rift || !rift.enabled) return;
-
-    const statusText = rift.active ? "진행 중" : rift.settling ? "정산 중" : "대기 중";
-    $("#rift-period").textContent = `${rift.startsAtKst} ~ ${rift.endsAtKst} · ${statusText}`;
-    const imagePath = monsterImagePath(rift.bossImagePath, `area-${String(rift.bossAreaId).padStart(2, "0")}-normal-10`);
-    $("#rift-hero").innerHTML = `
-        <div class="rift-boss-card">
-            <img src="${escapeHtml(imagePath)}" alt="" onerror="useFallbackImage(this)" />
-            <div>
-                <strong>${escapeHtml(rift.bossName)}</strong>
-                <p>${escapeHtml(rift.seasonName)}</p>
-                <span>보정 전투력 ${number(rift.combatPower)} · 1회 피해량 ${number(Math.floor(rift.combatPower * .85))}~${number(Math.ceil(rift.combatPower * 1.15))}</span>
-            </div>
-        </div>`;
-    $("#rift-stats").innerHTML = [
-        ["보유 타격권", `${number(rift.tickets)}개`],
-        ["오늘 획득", `${number(rift.dailyTicketsEarned)} / ${number(rift.dailyTicketLimit)}`],
-        ["다음 타격권", `${number(Math.max(0, rift.huntsPerTicket - rift.nextTicketProgress))}회`],
-        ["누적 피해", number(rift.damage)],
-        ["주간 직접사냥", number(rift.weeklyManualHuntCount)],
-        ["균열 파편", number(rift.coins)]
-    ].map(item => `<article><span>${item[0]}</span><strong>${item[1]}</strong></article>`).join("");
-    $("#rift-hit-button").disabled = !rift.active || rift.tickets <= 0;
-    $("#rift-hit-button").textContent = rift.active ? "균열 타격" : rift.settling ? "정산 중" : "타격 대기";
-    renderRiftShop();
-}
-
-function renderRiftShop() {
-    const rift = state.rift;
-    const shop = $("#rift-shop");
-    if (!rift?.shopEnabled) {
-        shop.hidden = true;
-        return;
-    }
-
-    $("#rift-coins").textContent = `보유 ${number(rift.coins)} 균열 파편`;
-    $("#rift-shop-list").innerHTML = (rift.shopItems || []).map(item => `
-        <article class="rift-shop-item">
-            <div>
-                <strong>${escapeHtml(item.name)}</strong>
-                <span>${item.type === "color" ? "닉네임 색상 7일" : "영구 칭호"}</span>
-            </div>
-            <button onclick="buyRiftItem('${escapeHtml(item.key)}')" ${rift.coins < item.cost ? "disabled" : ""}>
-                ${number(item.cost)}개
-            </button>
-        </article>`).join("");
-    shop.hidden = false;
-}
-
-async function buyRiftItem(itemKey) {
-    await action("rift-buy", { itemKey });
-}
-
 // 서버에서 실시간 랭킹을 받아 랭킹 표를 갱신합니다.
 async function loadRankings(category = selectedRankingCategory) {
     selectedRankingCategory = category;
@@ -686,7 +559,7 @@ async function loadRankings(category = selectedRankingCategory) {
                 <td>+${row.weaponLevel}</td>
                 <td>+${row.highestWeaponLevel}</td>
                 <td>${number(row.collectionCount || 0)}</td>
-                <td>${selectedRankingCategory === "rift" ? number(row.riftDamage || 0) : number(row.manualHuntCount || 0)}</td>
+                <td>${number(row.manualHuntCount || 0)}</td>
             </tr>`)
         .join("");
 }
@@ -838,16 +711,12 @@ function openProfileMonsterModal(monsterKey) {
 async function setProfileMonster(monsterKey) {
     try {
         const result = await api("profile-monster", { monsterKey });
-        state = mergeState(result.State || result.state);
+        state = result.State || result.state;
         syncServerClock(state);
         render();
         toast(result.Message || result.message);
         openCollectionModal(monsterKey);
     } catch (error) {
-        if (error instanceof SessionExpiredError) {
-            redirectToLogin(error.message);
-            return;
-        }
         toast(error.message);
     }
 }
@@ -889,9 +758,12 @@ function updateTimer() {
     const remainingMs = Math.max(0, rewardCapAt - now);
 
     const elapsedHours = elapsedMs / (1000 * 60 * 60);
-    const area = adjustedArea(state.hunt.areaId) || catalog.areas.find(a => a.id === state.hunt.areaId);
-    const currentGold = Math.floor((area.autoGoldPerHour ?? area.goldPerHour) * elapsedHours);
-    const currentExp = Math.floor((area.autoExperiencePerHour ?? area.experiencePerHour) * elapsedHours);
+    const area = catalog.areas.find(a => a.id === state.hunt.areaId);
+    const goldMultiplier = 1 + (state.stats.goldGain * 0.01);
+    const expMultiplier = 1 + (state.stats.experienceGain * 0.01);
+
+    const currentGold = Math.floor(area.goldPerHour * elapsedHours * goldMultiplier);
+    const currentExp = Math.floor(area.experiencePerHour * elapsedHours * expMultiplier);
 
     $("#hunt-timer").textContent = `${formatDuration(Math.floor(elapsedMs / 1000))} 누적`;
     $("#hunt-rewards").textContent = `획득 중: ${number(currentGold)} 골드 / ${number(currentExp)} EXP`;
@@ -1043,15 +915,11 @@ $("#nickname-form").addEventListener("submit", async event => {
     event.preventDefault();
     try {
         const result = await api("nickname", { nickname: $("#nickname-input").value });
-        state = mergeState(result.State || result.state);
+        state = result.State || result.state;
         showPlayerOrNickname();
         render();
         toast(result.Message || result.message);
     } catch (error) {
-        if (error instanceof SessionExpiredError) {
-            redirectToLogin(error.message);
-            return;
-        }
         toast(error.message);
     }
 });
@@ -1065,7 +933,6 @@ $("#manual-hunt-button").addEventListener("click", () => action("hunt-manual", {
     areaId: Number($("#manual-hunt-area").value)
 }));
 $("#reset-stats").addEventListener("click", () => action("stats-reset"));
-$("#rift-hit-button").addEventListener("click", () => action("rift-hit"));
 document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => {
         document.querySelectorAll(".tab, .panel").forEach(item => item.classList.remove("active"));
@@ -1082,10 +949,4 @@ setInterval(() => {
     updateAutomaticHuntBudget();
     updateManualHuntButton();
 }, 250);
-load().catch(error => {
-    if (error instanceof SessionExpiredError) {
-        redirectToLogin(error.message);
-        return;
-    }
-    toast(error.message);
-});
+load().catch(error => toast(error.message));

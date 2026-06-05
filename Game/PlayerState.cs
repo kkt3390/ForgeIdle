@@ -12,12 +12,6 @@ namespace EnhanceAddiction.WebForms.Game
         public PlayerState()
         {
             Gold = 5000;
-            RiftSeasonKey = "";
-            RiftDailyTicketDate = "";
-            ActiveTitleKey = "";
-            ActiveNicknameColorKey = "";
-            RiftRankBadge = "";
-            RiftRankGlow = "";
             HighestBossDefeated = -1;
             ProtectionTickets = 3;
             Level = 1;
@@ -38,21 +32,6 @@ namespace EnhanceAddiction.WebForms.Game
         public int ManualHuntAreaId { get; set; }
         public int ManualHuntCount { get; set; }
         public string ProfileMonsterKey { get; set; }
-        public string RiftSeasonKey { get; set; }
-        public int RiftWeeklyManualHuntCount { get; set; }
-        public int RiftDailyManualHuntProgress { get; set; }
-        public int RiftTickets { get; set; }
-        public string RiftDailyTicketDate { get; set; }
-        public int RiftDailyTicketsEarned { get; set; }
-        public long RiftDamage { get; set; }
-        public DateTime? RiftLastDamageAtUtc { get; set; }
-        public int RiftCoins { get; set; }
-        public string ActiveTitleKey { get; set; }
-        public string ActiveNicknameColorKey { get; set; }
-        public DateTime? NicknameColorExpiresAtUtc { get; set; }
-        public string RiftRankBadge { get; set; }
-        public string RiftRankGlow { get; set; }
-        public DateTime? RiftRankRewardExpiresAtUtc { get; set; }
         public List<string> CollectedMonsterKeys { get; set; }
         public DateTime? AutomaticHuntCycleStartedAtUtc { get; set; }
         public double AutomaticHuntUsedSeconds { get; set; }

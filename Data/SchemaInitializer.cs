@@ -37,21 +37,6 @@ BEGIN
         ManualHuntAreaId int NOT NULL CONSTRAINT DF_ea_players_ManualHuntAreaId DEFAULT (0),
         ManualHuntCount int NOT NULL CONSTRAINT DF_ea_players_ManualHuntCount DEFAULT (0),
         ProfileMonsterKey nvarchar(120) NULL,
-        RiftSeasonKey nvarchar(40) NOT NULL CONSTRAINT DF_ea_players_RiftSeasonKey DEFAULT (N''),
-        RiftWeeklyManualHuntCount int NOT NULL CONSTRAINT DF_ea_players_RiftWeeklyManualHuntCount DEFAULT (0),
-        RiftDailyManualHuntProgress int NOT NULL CONSTRAINT DF_ea_players_RiftDailyManualHuntProgress DEFAULT (0),
-        RiftTickets int NOT NULL CONSTRAINT DF_ea_players_RiftTickets DEFAULT (0),
-        RiftDailyTicketDate nvarchar(10) NOT NULL CONSTRAINT DF_ea_players_RiftDailyTicketDate DEFAULT (N''),
-        RiftDailyTicketsEarned int NOT NULL CONSTRAINT DF_ea_players_RiftDailyTicketsEarned DEFAULT (0),
-        RiftDamage bigint NOT NULL CONSTRAINT DF_ea_players_RiftDamage DEFAULT (0),
-        RiftLastDamageAtUtc datetimeoffset NULL,
-        RiftCoins int NOT NULL CONSTRAINT DF_ea_players_RiftCoins DEFAULT (0),
-        ActiveTitleKey nvarchar(80) NOT NULL CONSTRAINT DF_ea_players_ActiveTitleKey DEFAULT (N''),
-        ActiveNicknameColorKey nvarchar(80) NOT NULL CONSTRAINT DF_ea_players_ActiveNicknameColorKey DEFAULT (N''),
-        NicknameColorExpiresAtUtc datetimeoffset NULL,
-        RiftRankBadge nvarchar(20) NOT NULL CONSTRAINT DF_ea_players_RiftRankBadge DEFAULT (N''),
-        RiftRankGlow nvarchar(20) NOT NULL CONSTRAINT DF_ea_players_RiftRankGlow DEFAULT (N''),
-        RiftRankRewardExpiresAtUtc datetimeoffset NULL,
         CollectedMonsterKeysJson nvarchar(max) NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterKeysJson DEFAULT (N'[]'),
         CollectedMonsterCount int NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterCount DEFAULT (0),
         LevelReachedAtUtc datetimeoffset NULL,
@@ -130,36 +115,6 @@ IF COL_LENGTH(N'dbo.ea_players', N'ManualHuntCount') IS NULL
     ALTER TABLE dbo.ea_players ADD ManualHuntCount int NOT NULL CONSTRAINT DF_ea_players_ManualHuntCount DEFAULT (0) WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'ProfileMonsterKey') IS NULL
     ALTER TABLE dbo.ea_players ADD ProfileMonsterKey nvarchar(120) NULL;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftSeasonKey') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftSeasonKey nvarchar(40) NOT NULL CONSTRAINT DF_ea_players_RiftSeasonKey DEFAULT (N'') WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftWeeklyManualHuntCount') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftWeeklyManualHuntCount int NOT NULL CONSTRAINT DF_ea_players_RiftWeeklyManualHuntCount DEFAULT (0) WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftDailyManualHuntProgress') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftDailyManualHuntProgress int NOT NULL CONSTRAINT DF_ea_players_RiftDailyManualHuntProgress DEFAULT (0) WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftTickets') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftTickets int NOT NULL CONSTRAINT DF_ea_players_RiftTickets DEFAULT (0) WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftDailyTicketDate') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftDailyTicketDate nvarchar(10) NOT NULL CONSTRAINT DF_ea_players_RiftDailyTicketDate DEFAULT (N'') WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftDailyTicketsEarned') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftDailyTicketsEarned int NOT NULL CONSTRAINT DF_ea_players_RiftDailyTicketsEarned DEFAULT (0) WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftDamage') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftDamage bigint NOT NULL CONSTRAINT DF_ea_players_RiftDamage DEFAULT (0) WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftLastDamageAtUtc') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftLastDamageAtUtc datetimeoffset NULL;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftCoins') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftCoins int NOT NULL CONSTRAINT DF_ea_players_RiftCoins DEFAULT (0) WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'ActiveTitleKey') IS NULL
-    ALTER TABLE dbo.ea_players ADD ActiveTitleKey nvarchar(80) NOT NULL CONSTRAINT DF_ea_players_ActiveTitleKey DEFAULT (N'') WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'ActiveNicknameColorKey') IS NULL
-    ALTER TABLE dbo.ea_players ADD ActiveNicknameColorKey nvarchar(80) NOT NULL CONSTRAINT DF_ea_players_ActiveNicknameColorKey DEFAULT (N'') WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'NicknameColorExpiresAtUtc') IS NULL
-    ALTER TABLE dbo.ea_players ADD NicknameColorExpiresAtUtc datetimeoffset NULL;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftRankBadge') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftRankBadge nvarchar(20) NOT NULL CONSTRAINT DF_ea_players_RiftRankBadge DEFAULT (N'') WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftRankGlow') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftRankGlow nvarchar(20) NOT NULL CONSTRAINT DF_ea_players_RiftRankGlow DEFAULT (N'') WITH VALUES;
-IF COL_LENGTH(N'dbo.ea_players', N'RiftRankRewardExpiresAtUtc') IS NULL
-    ALTER TABLE dbo.ea_players ADD RiftRankRewardExpiresAtUtc datetimeoffset NULL;
 IF COL_LENGTH(N'dbo.ea_players', N'CollectedMonsterKeysJson') IS NULL
     ALTER TABLE dbo.ea_players ADD CollectedMonsterKeysJson nvarchar(max) NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterKeysJson DEFAULT (N'[]') WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'CollectedMonsterCount') IS NULL
@@ -244,52 +199,6 @@ BEGIN
         UpdatedByPlayerKey nvarchar(100) NULL,
         UpdatedAt datetimeoffset NOT NULL
     );
-END;
-IF OBJECT_ID(N'dbo.ea_rift_season_results', N'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.ea_rift_season_results (
-        Id bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_ea_rift_season_results PRIMARY KEY,
-        SeasonKey nvarchar(40) NOT NULL,
-        SeasonName nvarchar(100) NOT NULL,
-        Mode nvarchar(20) NOT NULL,
-        BossAreaId int NOT NULL,
-        StartsAtUtc datetimeoffset NOT NULL,
-        EndsAtUtc datetimeoffset NOT NULL,
-        SettlementEndsAtUtc datetimeoffset NOT NULL,
-        SettledAtUtc datetimeoffset NOT NULL,
-        TotalParticipants int NOT NULL,
-        TotalDamage bigint NOT NULL,
-        DetailsJson nvarchar(max) NULL
-    );
-    CREATE UNIQUE INDEX IX_ea_rift_season_results_SeasonKey ON dbo.ea_rift_season_results (SeasonKey);
-END;
-IF OBJECT_ID(N'dbo.ea_rift_ranking_snapshots', N'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.ea_rift_ranking_snapshots (
-        Id bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_ea_rift_ranking_snapshots PRIMARY KEY,
-        SeasonKey nvarchar(40) NOT NULL,
-        PlayerKey nvarchar(100) NOT NULL,
-        RankNo int NOT NULL,
-        Damage bigint NOT NULL,
-        RewardCoins int NOT NULL,
-        RewardTitleKey nvarchar(80) NULL,
-        RewardBadge nvarchar(20) NULL,
-        RewardGlow nvarchar(20) NULL,
-        SnapshotAtUtc datetimeoffset NOT NULL
-    );
-    CREATE INDEX IX_ea_rift_ranking_snapshots_Season_Rank ON dbo.ea_rift_ranking_snapshots (SeasonKey, RankNo);
-END;
-IF OBJECT_ID(N'dbo.ea_player_cosmetics', N'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.ea_player_cosmetics (
-        Id bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_ea_player_cosmetics PRIMARY KEY,
-        PlayerKey nvarchar(100) NOT NULL,
-        ItemKey nvarchar(80) NOT NULL,
-        ItemType nvarchar(30) NOT NULL,
-        ExpiresAtUtc datetimeoffset NULL,
-        PurchasedAtUtc datetimeoffset NOT NULL
-    );
-    CREATE UNIQUE INDEX IX_ea_player_cosmetics_Player_Item ON dbo.ea_player_cosmetics (PlayerKey, ItemKey);
 END;
 IF OBJECT_ID(N'dbo.ea_monster_catalog', N'U') IS NULL
 BEGIN

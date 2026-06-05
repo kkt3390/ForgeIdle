@@ -7,8 +7,6 @@ namespace EnhanceAddiction.WebForms.Data
 {
     public sealed class RewardMultiplierSettings
     {
-        public double BaseGoldMultiplier { get; set; }
-        public double BaseExperienceMultiplier { get; set; }
         public double GoldMultiplier { get; set; }
         public double ExperienceMultiplier { get; set; }
         public bool Enabled { get; set; }
@@ -55,8 +53,6 @@ namespace EnhanceAddiction.WebForms.Data
         {
             var settings = new RewardMultiplierSettings
             {
-                BaseGoldMultiplier = 1,
-                BaseExperienceMultiplier = 1,
                 GoldMultiplier = 1,
                 ExperienceMultiplier = 1,
                 Enabled = false
@@ -69,8 +65,7 @@ namespace EnhanceAddiction.WebForms.Data
                     @"SELECT SettingKey, SettingValue
                       FROM dbo.ea_game_settings
                       WHERE SettingKey IN
-                      (N'BaseGoldMultiplier', N'BaseExperienceMultiplier',
-                       N'HotTimeEnabled', N'HotTimeGoldMultiplier', N'HotTimeExperienceMultiplier', N'HotTimeStartsAtUtc', N'HotTimeEndsAtUtc')",
+                      (N'HotTimeEnabled', N'HotTimeGoldMultiplier', N'HotTimeExperienceMultiplier', N'HotTimeStartsAtUtc', N'HotTimeEndsAtUtc')",
                     connection))
                 using (var reader = command.ExecuteReader())
                 {
@@ -78,8 +73,6 @@ namespace EnhanceAddiction.WebForms.Data
                     {
                         var key = reader.GetString(0);
                         var value = reader.GetString(1);
-                        if (key == "BaseGoldMultiplier") settings.BaseGoldMultiplier = ParseDouble(value, 1);
-                        if (key == "BaseExperienceMultiplier") settings.BaseExperienceMultiplier = ParseDouble(value, 1);
                         if (key == "HotTimeEnabled") settings.Enabled = value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase);
                         if (key == "HotTimeGoldMultiplier") settings.GoldMultiplier = ParseDouble(value, 1);
                         if (key == "HotTimeExperienceMultiplier") settings.ExperienceMultiplier = ParseDouble(value, 1);
@@ -89,8 +82,6 @@ namespace EnhanceAddiction.WebForms.Data
                 }
             }
 
-            settings.BaseGoldMultiplier = Clamp(settings.BaseGoldMultiplier, 0.1, 20);
-            settings.BaseExperienceMultiplier = Clamp(settings.BaseExperienceMultiplier, 0.1, 20);
             settings.GoldMultiplier = Clamp(settings.GoldMultiplier, 0.1, 20);
             settings.ExperienceMultiplier = Clamp(settings.ExperienceMultiplier, 0.1, 20);
             return settings;

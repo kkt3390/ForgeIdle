@@ -1,4 +1,4 @@
-﻿let adminState = null;
+let adminState = null;
 const logPageSize = 100;
 let actionLogPage = 1;
 let adminLogPage = 1;
@@ -83,7 +83,6 @@ async function loadAdmin() {
     adminState = await adminApi("state");
     renderDashboard();
     renderHotTime();
-    renderRift();
     renderSuspicious();
     renderUsers(adminState.operators);
     renderEnhancements();
@@ -92,41 +91,6 @@ async function loadAdmin() {
     renderWeapons();
     renderActionLogs(adminState.recentActionLogs || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize });
     renderAdminLogs(adminState.recentAdminLogs || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize });
-}
-
-function renderRift() {
-    const rift = adminState.rift;
-    if (!rift) return;
-    $("#rift-enabled").value = String(Boolean(rift.enabled));
-    $("#rift-shop-enabled").value = String(Boolean(rift.shopEnabled));
-    $("#rift-mode").value = rift.mode || "auto";
-    $("#rift-season-name").value = rift.manualSeasonName || "테스트 균열";
-    $("#rift-start").value = rift.manualStartsAtKst || "";
-    $("#rift-end").value = rift.manualEndsAtKst || "";
-    $("#rift-settle-end").value = rift.manualSettlementEndsAtKst || "";
-    $("#rift-boss-area").value = rift.manualBossAreaId || 0;
-    updateRiftSummary();
-
-    const season = rift.season || {};
-    $("#rift-admin-summary").innerHTML = [
-        ["시즌", season.seasonName || "-"],
-        ["상태", season.active ? "진행 중" : season.settling ? "정산 중" : "대기"],
-        ["보스", `사냥터 ${season.bossAreaId ?? 0}`],
-        ["시즌 키", season.seasonKey || "-"]
-    ].map(item => `<article class="admin-card"><span>${item[0]}</span><strong>${escapeHtml(item[1])}</strong></article>`).join("");
-
-    const rows = rift.rankings || [];
-    $("#rift-ranking-body").innerHTML = rows.length
-        ? rows.map(row => `
-          <tr>
-            <td>${row.rank}</td>
-            <td>${escapeHtml(row.nickname || row.playerKey)}<br><small>${escapeHtml(row.playerKey)}</small></td>
-            <td>${number(row.damage)}</td>
-            <td>${number(row.tickets)}</td>
-            <td>${number(row.weeklyManualHuntCount)}</td>
-            <td>${escapeHtml(row.lastDamageAt || "")}</td>
-          </tr>`).join("")
-        : `<tr><td colspan="6">현재 시즌 균열 타격 기록이 없습니다.</td></tr>`;
 }
 
 function renderDashboard() {
@@ -147,8 +111,6 @@ function renderHotTime() {
     $("#hot-enabled").value = String(Boolean(hot.enabled));
     $("#hot-gold").value = hot.goldMultiplier;
     $("#hot-exp").value = hot.experienceMultiplier;
-    $("#base-gold").value = hot.baseGoldMultiplier || 1;
-    $("#base-exp").value = hot.baseExperienceMultiplier || 1;
     $("#hot-start").value = hot.startsAtKst || "";
     $("#hot-end").value = hot.endsAtKst || "";
     updateHotTimeSummary();
@@ -436,53 +398,9 @@ function updateHotTimeSummary() {
     const end = $("#hot-end").value;
     const gold = $("#hot-gold").value || "1";
     const exp = $("#hot-exp").value || "1";
-    const baseGold = $("#base-gold").value || "1";
-    const baseExp = $("#base-exp").value || "1";
-    const hotSummary = enabled
-        ? `??? ???? ${start || "(?? ???)"} ~ ${end || "(?? ???)"} / ?? ${gold}?, ??? ${exp}?`
-        : "???? ?? ????.";
-    $("#hot-time-summary").textContent = `?? ?? ${baseGold}? ? ?? ??? ${baseExp}? / ${hotSummary}`;
-}
-
-function setRiftTestDuration(minutes) {
-    const start = roundedKoreaNow();
-    const end = new Date(start.getTime() + minutes * 60 * 1000);
-    const settleEnd = new Date(end.getTime() + 5 * 60 * 1000);
-    $("#rift-mode").value = "manual";
-    $("#rift-enabled").value = "true";
-    $("#rift-start").value = toLocalInputValue(start);
-    $("#rift-end").value = toLocalInputValue(end);
-    $("#rift-settle-end").value = toLocalInputValue(settleEnd);
-    updateRiftSummary();
-}
-
-function updateRiftSummary() {
-    const enabled = $("#rift-enabled")?.value === "true";
-    const shopEnabled = $("#rift-shop-enabled")?.value === "true";
-    const mode = $("#rift-mode")?.value || "auto";
-    const start = $("#rift-start")?.value || "";
-    const end = $("#rift-end")?.value || "";
-    const settleEnd = $("#rift-settle-end")?.value || "";
-    const boss = $("#rift-boss-area")?.value || "0";
-    const summary = $("#rift-summary");
-    if (!summary) return;
-    summary.textContent = mode === "auto"
-        ? `자동 주간 시즌 · 콘텐츠 ${enabled ? "ON" : "OFF"} · 상점 ${shopEnabled ? "ON" : "OFF"}`
-        : `수동 테스트 · 사냥터 ${boss} 보스 · ${start || "시작 미정"} ~ ${end || "종료 미정"} · 정산 종료 ${settleEnd || "미정"}`;
-}
-
-async function settleRift() {
-    if (!confirm("현재 주간 균열 시즌을 강제 정산할까요? 이미 정산된 시즌은 다시 정산할 수 없습니다.")) return;
-    await adminApi("settle-rift", {});
-    toast("현재 주간 균열 시즌을 정산했습니다.");
-    await loadAdmin();
-}
-
-async function resetRift() {
-    if (!confirm("현재 시즌의 유저 균열 데이터(피해량, 타격권, 주간 직접사냥)를 초기화할까요?")) return;
-    await adminApi("reset-rift", {});
-    toast("현재 주간 균열 유저 데이터를 초기화했습니다.");
-    await loadAdmin();
+    $("#hot-time-summary").textContent = enabled
+        ? `한국시간 ${start || "(시작 미지정)"} ~ ${end || "(종료 미지정)"} / 골드 ${gold}배, 경험치 ${exp}배`
+        : "핫타임이 꺼져 있습니다.";
 }
 
 function koreaNow() {
@@ -530,8 +448,6 @@ $("#hot-time-form").addEventListener("submit", async event => {
         enabled: $("#hot-enabled").value === "true",
         goldMultiplier: Number($("#hot-gold").value),
         experienceMultiplier: Number($("#hot-exp").value),
-        baseGoldMultiplier: Number($("#base-gold").value),
-        baseExperienceMultiplier: Number($("#base-exp").value),
         startsAtKst: $("#hot-start").value,
         endsAtKst: $("#hot-end").value
     });
@@ -539,33 +455,10 @@ $("#hot-time-form").addEventListener("submit", async event => {
     await loadAdmin();
 });
 
-$("#rift-form").addEventListener("submit", async event => {
-    event.preventDefault();
-    await adminApi("save-rift", {
-        enabled: $("#rift-enabled").value === "true",
-        shopEnabled: $("#rift-shop-enabled").value === "true",
-        mode: $("#rift-mode").value,
-        manualSeasonName: $("#rift-season-name").value,
-        manualStartsAtKst: $("#rift-start").value,
-        manualEndsAtKst: $("#rift-end").value,
-        manualSettlementEndsAtKst: $("#rift-settle-end").value,
-        manualBossAreaId: Number($("#rift-boss-area").value || 0)
-    });
-    toast("주간 균열 설정을 저장했습니다.");
-    await loadAdmin();
-});
-
-["hot-enabled", "hot-gold", "hot-exp", "base-gold", "base-exp", "hot-start", "hot-end"].forEach(id => {
+["hot-enabled", "hot-gold", "hot-exp", "hot-start", "hot-end"].forEach(id => {
     const element = $("#" + id);
     element.addEventListener("input", updateHotTimeSummary);
     element.addEventListener("change", updateHotTimeSummary);
-});
-
-["rift-enabled", "rift-shop-enabled", "rift-mode", "rift-season-name", "rift-start", "rift-end", "rift-settle-end", "rift-boss-area"].forEach(id => {
-    const element = $("#" + id);
-    if (!element) return;
-    element.addEventListener("input", updateRiftSummary);
-    element.addEventListener("change", updateRiftSummary);
 });
 
 [

@@ -28,12 +28,7 @@ namespace EnhanceAddiction.WebForms.Data
                          ProtectionTickets, Level, Experience, DualWield, GoldGain, ExperienceGain,
                          ArtisanTouch, AutomaticHuntCycleStartedAtUtc, AutomaticHuntUsedSeconds,
                          HuntAreaId, HuntStartedAtUtc, HuntRewardCapAtUtc, LastManualHuntAtUtc,
-                         ManualHuntAreaId, ManualHuntCount, CollectedMonsterKeysJson, ProfileMonsterKey,
-                         RiftSeasonKey, RiftWeeklyManualHuntCount, RiftDailyManualHuntProgress, RiftTickets,
-                         RiftDailyTicketDate, RiftDailyTicketsEarned, RiftDamage, RiftLastDamageAtUtc, RiftCoins,
-                         ActiveTitleKey, ActiveNicknameColorKey, NicknameColorExpiresAtUtc,
-                         RiftRankBadge, RiftRankGlow, RiftRankRewardExpiresAtUtc,
-                         StateSchemaVersion, StateJson
+                         ManualHuntAreaId, ManualHuntCount, CollectedMonsterKeysJson, ProfileMonsterKey, StateSchemaVersion, StateJson
                   FROM dbo.ea_players
                   WHERE PlayerKey = @PlayerKey", connection))
             {
@@ -58,11 +53,7 @@ namespace EnhanceAddiction.WebForms.Data
                    ArtisanTouch, AutomaticHuntCycleStartedAtUtc, AutomaticHuntUsedSeconds,
                    HuntAreaId, HuntStartedAtUtc, HuntRewardCapAtUtc, LastManualHuntAtUtc,
                    ManualHuntAreaId, ManualHuntCount, CollectedMonsterKeysJson, CollectedMonsterCount,
-                   ProfileMonsterKey, RiftSeasonKey, RiftWeeklyManualHuntCount, RiftDailyManualHuntProgress, RiftTickets,
-                   RiftDailyTicketDate, RiftDailyTicketsEarned, RiftDamage, RiftLastDamageAtUtc, RiftCoins,
-                   ActiveTitleKey, ActiveNicknameColorKey, NicknameColorExpiresAtUtc,
-                   RiftRankBadge, RiftRankGlow, RiftRankRewardExpiresAtUtc,
-                   LevelReachedAtUtc, HighestWeaponLevelReachedAtUtc, CollectionCountReachedAtUtc,
+                   ProfileMonsterKey, LevelReachedAtUtc, HighestWeaponLevelReachedAtUtc, CollectionCountReachedAtUtc,
                    ManualHuntCountReachedAtUtc, StateJson, StateSchemaVersion, CreatedAt, UpdatedAt)
                   VALUES
                   (@PlayerKey, @Nickname, @Gold, @WeaponLevel, @HighestWeaponLevel, @HighestBossDefeated,
@@ -70,11 +61,7 @@ namespace EnhanceAddiction.WebForms.Data
                    @ArtisanTouch, @AutomaticHuntCycleStartedAtUtc, @AutomaticHuntUsedSeconds,
                    @HuntAreaId, @HuntStartedAtUtc, @HuntRewardCapAtUtc, @LastManualHuntAtUtc,
                    @ManualHuntAreaId, @ManualHuntCount, @CollectedMonsterKeysJson, @CollectedMonsterCount,
-                   @ProfileMonsterKey, @RiftSeasonKey, @RiftWeeklyManualHuntCount, @RiftDailyManualHuntProgress, @RiftTickets,
-                   @RiftDailyTicketDate, @RiftDailyTicketsEarned, @RiftDamage, @RiftLastDamageAtUtc, @RiftCoins,
-                   @ActiveTitleKey, @ActiveNicknameColorKey, @NicknameColorExpiresAtUtc,
-                   @RiftRankBadge, @RiftRankGlow, @RiftRankRewardExpiresAtUtc,
-                   SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET(),
+                   @ProfileMonsterKey, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET(),
                    SYSDATETIMEOFFSET(), @StateJson, 1,
                    SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET())", connection))
             {
@@ -114,21 +101,6 @@ namespace EnhanceAddiction.WebForms.Data
                       CollectedMonsterKeysJson = @CollectedMonsterKeysJson,
                       CollectedMonsterCount = @CollectedMonsterCount,
                       ProfileMonsterKey = @ProfileMonsterKey,
-                      RiftSeasonKey = @RiftSeasonKey,
-                      RiftWeeklyManualHuntCount = @RiftWeeklyManualHuntCount,
-                      RiftDailyManualHuntProgress = @RiftDailyManualHuntProgress,
-                      RiftTickets = @RiftTickets,
-                      RiftDailyTicketDate = @RiftDailyTicketDate,
-                      RiftDailyTicketsEarned = @RiftDailyTicketsEarned,
-                      RiftDamage = @RiftDamage,
-                      RiftLastDamageAtUtc = @RiftLastDamageAtUtc,
-                      RiftCoins = @RiftCoins,
-                      ActiveTitleKey = @ActiveTitleKey,
-                      ActiveNicknameColorKey = @ActiveNicknameColorKey,
-                      NicknameColorExpiresAtUtc = @NicknameColorExpiresAtUtc,
-                      RiftRankBadge = @RiftRankBadge,
-                      RiftRankGlow = @RiftRankGlow,
-                      RiftRankRewardExpiresAtUtc = @RiftRankRewardExpiresAtUtc,
                       LevelReachedAtUtc = CASE
                           WHEN @Level > Level THEN SYSDATETIMEOFFSET()
                           WHEN LevelReachedAtUtc IS NULL THEN CreatedAt
@@ -242,17 +214,12 @@ namespace EnhanceAddiction.WebForms.Data
             using (var command = new SqlCommand(
                 @"SELECT TOP (100)
                          p.Nickname, p.Level, p.WeaponLevel, p.HighestWeaponLevel, p.CollectedMonsterCount, p.ManualHuntCount,
-                         p.ProfileMonsterKey, m.Name, m.ImagePath, p.RiftDamage, p.RiftRankBadge, p.RiftRankGlow,
-                         p.RiftRankRewardExpiresAtUtc, p.ActiveTitleKey, p.ActiveNicknameColorKey, p.NicknameColorExpiresAtUtc
+                         p.ProfileMonsterKey, m.Name, m.ImagePath
                   FROM dbo.ea_players p
                   LEFT JOIN dbo.ea_monster_catalog m ON m.MonsterKey = p.ProfileMonsterKey
-                  WHERE @RiftSeasonKey = N'' OR p.RiftSeasonKey = @RiftSeasonKey
                   ORDER BY " + orderBy, connection))
+            using (var reader = command.ExecuteReader())
             {
-                command.Parameters.Add("@RiftSeasonKey", SqlDbType.NVarChar, 40).Value =
-                    category == "rift" ? RiftSettings.Current().CurrentSeason(DateTime.UtcNow).SeasonKey : "";
-                using (var reader = command.ExecuteReader())
-                {
                 var rank = 1;
                 while (reader.Read())
                 {
@@ -267,14 +234,8 @@ namespace EnhanceAddiction.WebForms.Data
                         manualHuntCount = reader.GetInt32(5),
                         profileMonsterKey = reader.IsDBNull(6) ? "" : reader.GetString(6),
                         profileMonsterName = reader.IsDBNull(7) ? "" : reader.GetString(7),
-                        profileMonsterImagePath = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                        riftDamage = reader.GetInt64(9),
-                        riftRankBadge = ActiveUntil(reader, 12) ? (reader.IsDBNull(10) ? "" : reader.GetString(10)) : "",
-                        riftRankGlow = ActiveUntil(reader, 12) ? (reader.IsDBNull(11) ? "" : reader.GetString(11)) : "",
-                        titleKey = reader.IsDBNull(13) ? "" : reader.GetString(13),
-                        nicknameColor = ActiveUntil(reader, 15) ? (reader.IsDBNull(14) ? "" : reader.GetString(14)) : ""
+                        profileMonsterImagePath = reader.IsDBNull(8) ? "" : reader.GetString(8)
                     });
-                }
                 }
             }
             return new
@@ -288,7 +249,7 @@ namespace EnhanceAddiction.WebForms.Data
         private static string NormalizeRankingCategory(string category)
         {
             category = (category ?? "level").Trim().ToLowerInvariant();
-            if (category == "enhancement" || category == "collection" || category == "manualhunt" || category == "rift") return category;
+            if (category == "enhancement" || category == "collection" || category == "manualhunt") return category;
             return "level";
         }
 
@@ -301,8 +262,6 @@ namespace EnhanceAddiction.WebForms.Data
                 return "p.CollectedMonsterCount DESC, ISNULL(p.CollectionCountReachedAtUtc, p.CreatedAt) ASC, p.Id ASC";
             if (category == "manualhunt")
                 return "p.ManualHuntCount DESC, ISNULL(p.ManualHuntCountReachedAtUtc, p.CreatedAt) ASC, p.Id ASC";
-            if (category == "rift")
-                return "p.RiftDamage DESC, ISNULL(p.RiftLastDamageAtUtc, p.CreatedAt) ASC, p.Id ASC";
             return "p.Level DESC, ISNULL(p.LevelReachedAtUtc, p.CreatedAt) ASC, p.Id ASC";
         }
 
@@ -393,8 +352,8 @@ namespace EnhanceAddiction.WebForms.Data
         // DB에서 읽은 일반 컬럼을 게임에서 사용하는 플레이어 상태 객체로 조립합니다.
         private static PlayerState ReadPlayer(SqlDataReader reader, out bool requiresColumnSync)
         {
-            var stateSchemaVersion = reader.GetInt32(37);
-            var stateJson = reader.IsDBNull(38) ? null : reader.GetString(38);
+            var stateSchemaVersion = reader.GetInt32(22);
+            var stateJson = reader.IsDBNull(23) ? null : reader.GetString(23);
             var player = string.IsNullOrWhiteSpace(stateJson)
                 ? new PlayerState()
                 : Json.Deserialize<PlayerState>(stateJson);
@@ -426,21 +385,6 @@ namespace EnhanceAddiction.WebForms.Data
                 ? new List<string>()
                 : Json.Deserialize<List<string>>(reader.GetString(20));
             player.ProfileMonsterKey = reader.IsDBNull(21) ? null : reader.GetString(21);
-            player.RiftSeasonKey = reader.IsDBNull(22) ? "" : reader.GetString(22);
-            player.RiftWeeklyManualHuntCount = reader.GetInt32(23);
-            player.RiftDailyManualHuntProgress = reader.GetInt32(24);
-            player.RiftTickets = reader.GetInt32(25);
-            player.RiftDailyTicketDate = reader.IsDBNull(26) ? "" : reader.GetString(26);
-            player.RiftDailyTicketsEarned = reader.GetInt32(27);
-            player.RiftDamage = reader.GetInt64(28);
-            player.RiftLastDamageAtUtc = ReadNullableDateTime(reader, 29);
-            player.RiftCoins = reader.GetInt32(30);
-            player.ActiveTitleKey = reader.IsDBNull(31) ? "" : reader.GetString(31);
-            player.ActiveNicknameColorKey = reader.IsDBNull(32) ? "" : reader.GetString(32);
-            player.NicknameColorExpiresAtUtc = ReadNullableDateTime(reader, 33);
-            player.RiftRankBadge = reader.IsDBNull(34) ? "" : reader.GetString(34);
-            player.RiftRankGlow = reader.IsDBNull(35) ? "" : reader.GetString(35);
-            player.RiftRankRewardExpiresAtUtc = ReadNullableDateTime(reader, 36);
             return player;
         }
 
@@ -483,39 +427,10 @@ namespace EnhanceAddiction.WebForms.Data
                 Json.Serialize(player.CollectedMonsterKeys ?? new List<string>());
             command.Parameters.Add("@ProfileMonsterKey", SqlDbType.NVarChar, 120).Value =
                 string.IsNullOrWhiteSpace(player.ProfileMonsterKey) ? (object)DBNull.Value : player.ProfileMonsterKey;
-            command.Parameters.Add("@RiftSeasonKey", SqlDbType.NVarChar, 40).Value =
-                string.IsNullOrWhiteSpace(player.RiftSeasonKey) ? "" : player.RiftSeasonKey;
-            command.Parameters.Add("@RiftWeeklyManualHuntCount", SqlDbType.Int).Value = player.RiftWeeklyManualHuntCount;
-            command.Parameters.Add("@RiftDailyManualHuntProgress", SqlDbType.Int).Value = player.RiftDailyManualHuntProgress;
-            command.Parameters.Add("@RiftTickets", SqlDbType.Int).Value = player.RiftTickets;
-            command.Parameters.Add("@RiftDailyTicketDate", SqlDbType.NVarChar, 10).Value =
-                string.IsNullOrWhiteSpace(player.RiftDailyTicketDate) ? "" : player.RiftDailyTicketDate;
-            command.Parameters.Add("@RiftDailyTicketsEarned", SqlDbType.Int).Value = player.RiftDailyTicketsEarned;
-            command.Parameters.Add("@RiftDamage", SqlDbType.BigInt).Value = player.RiftDamage;
-            command.Parameters.Add("@RiftLastDamageAtUtc", SqlDbType.DateTimeOffset).Value =
-                player.RiftLastDamageAtUtc.HasValue ? (object)player.RiftLastDamageAtUtc.Value : DBNull.Value;
-            command.Parameters.Add("@RiftCoins", SqlDbType.Int).Value = player.RiftCoins;
-            command.Parameters.Add("@ActiveTitleKey", SqlDbType.NVarChar, 80).Value =
-                string.IsNullOrWhiteSpace(player.ActiveTitleKey) ? "" : player.ActiveTitleKey;
-            command.Parameters.Add("@ActiveNicknameColorKey", SqlDbType.NVarChar, 80).Value =
-                string.IsNullOrWhiteSpace(player.ActiveNicknameColorKey) ? "" : player.ActiveNicknameColorKey;
-            command.Parameters.Add("@NicknameColorExpiresAtUtc", SqlDbType.DateTimeOffset).Value =
-                player.NicknameColorExpiresAtUtc.HasValue ? (object)player.NicknameColorExpiresAtUtc.Value : DBNull.Value;
-            command.Parameters.Add("@RiftRankBadge", SqlDbType.NVarChar, 20).Value =
-                string.IsNullOrWhiteSpace(player.RiftRankBadge) ? "" : player.RiftRankBadge;
-            command.Parameters.Add("@RiftRankGlow", SqlDbType.NVarChar, 20).Value =
-                string.IsNullOrWhiteSpace(player.RiftRankGlow) ? "" : player.RiftRankGlow;
-            command.Parameters.Add("@RiftRankRewardExpiresAtUtc", SqlDbType.DateTimeOffset).Value =
-                player.RiftRankRewardExpiresAtUtc.HasValue ? (object)player.RiftRankRewardExpiresAtUtc.Value : DBNull.Value;
             command.Parameters.Add("@StateJson", SqlDbType.NVarChar, -1).Value = Json.Serialize(player);
         }
 
         // DB의 NULL 가능 시간 컬럼을 플레이어 상태에서 사용하는 값으로 읽습니다.
-        private static bool ActiveUntil(SqlDataReader reader, int ordinal)
-        {
-            return !reader.IsDBNull(ordinal) && reader.GetDateTimeOffset(ordinal).UtcDateTime > DateTime.UtcNow;
-        }
-
         private static DateTime? ReadNullableDateTime(SqlDataReader reader, int ordinal)
         {
             return reader.IsDBNull(ordinal) ? (DateTime?)null : reader.GetDateTimeOffset(ordinal).UtcDateTime;
