@@ -18,6 +18,7 @@ SELECT
     HuntAreaId,
     ManualHuntAreaId,
     ManualHuntCount,
+    ProfileMonsterKey,
     CollectedMonsterKeysJson,
     StateSchemaVersion,
     UpdatedAt

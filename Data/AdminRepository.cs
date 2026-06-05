@@ -162,7 +162,7 @@ namespace EnhanceAddiction.WebForms.Data
             var rows = new List<object>();
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                @"SELECT TOP (50) PlayerKey, Nickname, Level, Gold, Experience, WeaponLevel, IsOperator, IsBanned, BanReason, UpdatedAt
+                @"SELECT PlayerKey, Nickname, Level, Gold, Experience, WeaponLevel, IsOperator, IsBanned, BanReason, UpdatedAt
                   FROM dbo.ea_players
                   WHERE @Keyword = N''
                      OR PlayerKey LIKE N'%' + @Keyword + N'%'
@@ -199,7 +199,7 @@ namespace EnhanceAddiction.WebForms.Data
             var rows = new List<object>();
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                @"SELECT TOP (200)
+                @"SELECT
                     l.Id, l.PlayerKey, ISNULL(p.Nickname, N'') AS Nickname, l.ActionType,
                     l.Succeeded, l.Message, l.BeforeStateJson, l.AfterStateJson, l.DetailsJson, l.CreatedAt
                   FROM dbo.ea_game_action_logs l
@@ -457,7 +457,7 @@ namespace EnhanceAddiction.WebForms.Data
             var rows = new List<object>();
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                @"SELECT TOP (100)
+                @"SELECT
                     l.PlayerKey,
                     ISNULL(p.Nickname, N'') AS Nickname,
                     l.ActionType,
@@ -535,7 +535,7 @@ namespace EnhanceAddiction.WebForms.Data
             var rows = new List<object>();
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                @"SELECT TOP (30) OperatorPlayerKey, ActionType, TargetPlayerKey, DetailsJson, CreatedAt
+                @"SELECT OperatorPlayerKey, ActionType, TargetPlayerKey, DetailsJson, CreatedAt
                   FROM dbo.ea_admin_action_logs
                   ORDER BY CreatedAt DESC", connection))
             using (var reader = command.ExecuteReader())
@@ -560,7 +560,7 @@ namespace EnhanceAddiction.WebForms.Data
             var rows = new List<object>();
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                @"SELECT TOP (200) Id, MonsterKey, AreaId, Grade, SlotNumber, Name, Description, ImagePath, SortOrder, IsVisible
+                @"SELECT Id, MonsterKey, AreaId, Grade, SlotNumber, Name, Description, ImagePath, SortOrder, IsVisible
                   FROM dbo.ea_monster_catalog
                   ORDER BY AreaId, SlotNumber,
                     CASE Grade WHEN N'normal' THEN 0 WHEN N'elite' THEN 1 WHEN N'golden' THEN 2 ELSE 9 END,
@@ -597,7 +597,7 @@ namespace EnhanceAddiction.WebForms.Data
             var rows = new List<object>();
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                @"SELECT TOP (200) Id, WeaponKey, Name, Description, ImagePath, SortOrder, IsVisible
+                @"SELECT Id, WeaponKey, Name, Description, ImagePath, SortOrder, IsVisible
                   FROM dbo.ea_weapon_catalog
                   ORDER BY SortOrder, Id", connection))
             using (var reader = command.ExecuteReader())

@@ -137,7 +137,7 @@ function showPlayerOrNickname() {
 // 사용자 상태를 공통 상단 정보와 각 게임 패널에 반영합니다.
 function render() {
     if (!state) return;
-    $("#player-name").textContent = state.nickname ? `${state.nickname} 님의 대장간` : "";
+    $("#player-name").innerHTML = state.nickname ? nicknameProfileHtml(`${state.nickname} 님의 대장간`, state.profileMonster?.monsterKey) : "";
     renderHotTimeBanner();
     $("#gold").textContent = number(state.gold);
     $("#weapon").textContent = `+${state.weaponLevel} ${state.weaponName || "검"}`;
@@ -163,6 +163,32 @@ function render() {
         .join("");
 }
 
+function safeMonsterKey(value) {
+    const key = String(value || "");
+    return /^area-\d{2}-(normal|elite|golden)-\d{2}$/i.test(key) ? key : "";
+}
+
+function profileGradeFromKey(monsterKey) {
+    const key = safeMonsterKey(monsterKey);
+    const match = key.match(/^area-\d{2}-(normal|elite|golden)-\d{2}$/i);
+    return match ? match[1].toLowerCase() : "normal";
+}
+
+function profileBadgeHtml(monsterKey) {
+    const key = safeMonsterKey(monsterKey);
+    if (!key) return "";
+    const monster = findCollectionMonster(key) || { key, grade: profileGradeFromKey(key), name: "프로필 몬스터", imagePath: "" };
+    const imagePath = monsterImagePath(monster.imagePath, key);
+    const fallbackPath = monsterImagePath("", key);
+    return `
+        <button class="profile-badge profile-badge-${monster.grade}" type="button" title="프로필 크게 보기" onclick="openProfileMonsterModal('${key}')">
+            <img src="${escapeHtml(imagePath)}" data-fallback="${escapeHtml(fallbackPath)}" alt="" onerror="useFallbackImage(this)" />
+        </button>`;
+}
+
+function nicknameProfileHtml(nickname, monsterKey) {
+    return `<span class="nickname-with-profile">${profileBadgeHtml(monsterKey)}<span>${escapeHtml(nickname)}</span></span>`;
+}
 function formatLogMessage(message) {
     return escapeHtml(message).replace(/\[(일반|정예|황금)\]/g, (match, gradeName) => {
         const grade = gradeName === "황금" ? "golden" : gradeName === "정예" ? "elite" : "normal";
@@ -528,7 +554,7 @@ async function loadRankings(category = selectedRankingCategory) {
         .map(row => `
             <tr>
                 <td>${row.rank}</td>
-                <td>${escapeHtml(row.nickname)}</td>
+                <td class="nickname-cell">${nicknameProfileHtml(row.nickname, row.profileMonsterKey)}</td>
                 <td>Lv. ${row.level}</td>
                 <td>+${row.weaponLevel}</td>
                 <td>+${row.highestWeaponLevel}</td>
@@ -643,6 +669,11 @@ function openCollectionModal(monsterKey) {
             <span class="collection-grade-${monster.grade}">${gradeName}</span>
             <img src="${escapeHtml(imagePath)}" data-fallback="${escapeHtml(fallbackPath)}" alt="" onerror="useFallbackImage(this)" />
             <h3>${escapeHtml(monster.name)}</h3>
+            <div class="collection-modal-actions">
+                <button class="profile-set-button" type="button" onclick="setProfileMonster('${monster.key}')" ${state.profileMonster?.monsterKey === monster.key ? "disabled" : ""}>
+                    ${state.profileMonster?.monsterKey === monster.key ? "프로필 지정됨" : "프로필로 지정"}
+                </button>
+            </div>
             <p>${escapeHtml(monster.description || "아직 설명이 등록되지 않은 몬스터입니다.")}</p>
         </article>`;
     modal.hidden = false;
@@ -650,6 +681,45 @@ function openCollectionModal(monsterKey) {
 }
 
 // 도감 정보카드를 닫습니다.
+function openProfileMonsterModal(monsterKey) {
+    const key = safeMonsterKey(monsterKey);
+    if (!key) return;
+    const monster = findCollectionMonster(key) || {
+        key,
+        grade: profileGradeFromKey(key),
+        name: "프로필 몬스터",
+        description: "다른 유저가 지정한 프로필 몬스터입니다.",
+        imagePath: ""
+    };
+    const gradeName = monster.grade === "golden" ? "황금" : monster.grade === "elite" ? "정예" : "일반";
+    const imagePath = monsterImagePath(monster.imagePath, key);
+    const fallbackPath = monsterImagePath("", key);
+    const modal = $("#collection-modal");
+    modal.className = `collection-modal collection-modal-${monster.grade}`;
+    modal.innerHTML = `
+        <div class="collection-modal-backdrop" onclick="closeCollectionModal()"></div>
+        <article class="collection-modal-card">
+            <span class="collection-grade-${monster.grade}">${gradeName} 프로필</span>
+            <img src="${escapeHtml(imagePath)}" data-fallback="${escapeHtml(fallbackPath)}" alt="" onerror="useFallbackImage(this)" />
+            <h3>${escapeHtml(monster.name)}</h3>
+            <p>${escapeHtml(monster.description || "프로필 몬스터입니다.")}</p>
+        </article>`;
+    modal.hidden = false;
+    requestAnimationFrame(() => modal.classList.add("show"));
+}
+
+async function setProfileMonster(monsterKey) {
+    try {
+        const result = await api("profile-monster", { monsterKey });
+        state = result.State || result.state;
+        syncServerClock(state);
+        render();
+        toast(result.Message || result.message);
+        openCollectionModal(monsterKey);
+    } catch (error) {
+        toast(error.message);
+    }
+}
 function closeCollectionModal() {
     const modal = $("#collection-modal");
     modal.classList.remove("show");

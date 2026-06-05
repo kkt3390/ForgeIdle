@@ -47,6 +47,37 @@ input { min-width: 0; border: 1px solid #ffffff26; border-radius: 11px; padding:
 select { border: 1px solid #ffffff26; border-radius: 8px; padding: 7px 9px; color: #fff; background: #11131a; }
 .level-card > div:first-child { color: #f6c56f; }
 .player-name { color: #f6c56f; font-size: 14px; font-weight: 800; }
+.nickname-with-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  vertical-align: middle;
+}
+.profile-badge {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid #f4f0e8;
+  border-radius: 50%;
+  padding: 0;
+  background: radial-gradient(circle at 50% 38%, #fffdf5, #e8d5b4 72%, #6f5530);
+  box-shadow: 0 0 14px #00000060;
+}
+.profile-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.profile-badge-normal { border-color: #f4f0e8; }
+.profile-badge-elite { border-color: #a875ff; box-shadow: 0 0 16px #7d4dff85; }
+.profile-badge-golden { border-color: #ffd15f; box-shadow: 0 0 18px #e3a84e95; }
+.nickname-cell { text-align: left; }
+.ranking-profile {
+  width: 26px;
+  height: 26px;
+}
 .exp-track { height: 8px; margin-top: 10px; overflow: hidden; border-radius: 8px; background: #11131a; }
 .exp-fill { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #7655cf, #c59cff); transition: width .25s; }
 .level-card small { display: block; margin-top: 8px; color: #a99e92; }
@@ -542,6 +573,17 @@ th:first-child, td:first-child { text-align: left; }
   margin: 0;
   color: #c4b8aa;
   line-height: 1.55;
+}
+.collection-modal-actions {
+  display: flex;
+  justify-content: center;
+  margin: -2px 0 12px;
+}
+.profile-set-button {
+  padding: 9px 13px;
+  color: #26190b;
+  background: linear-gradient(135deg, #f6c56f, #e3a84e);
+  font-size: 12px;
 }
 .collection-modal-close {
   position: absolute;

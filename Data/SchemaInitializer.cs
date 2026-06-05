@@ -36,6 +36,7 @@ BEGIN
         LastManualHuntAtUtc datetimeoffset NULL,
         ManualHuntAreaId int NOT NULL CONSTRAINT DF_ea_players_ManualHuntAreaId DEFAULT (0),
         ManualHuntCount int NOT NULL CONSTRAINT DF_ea_players_ManualHuntCount DEFAULT (0),
+        ProfileMonsterKey nvarchar(120) NULL,
         CollectedMonsterKeysJson nvarchar(max) NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterKeysJson DEFAULT (N'[]'),
         CollectedMonsterCount int NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterCount DEFAULT (0),
         LevelReachedAtUtc datetimeoffset NULL,
@@ -112,6 +113,8 @@ IF COL_LENGTH(N'dbo.ea_players', N'ManualHuntAreaId') IS NULL
     ALTER TABLE dbo.ea_players ADD ManualHuntAreaId int NOT NULL CONSTRAINT DF_ea_players_ManualHuntAreaId DEFAULT (0) WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'ManualHuntCount') IS NULL
     ALTER TABLE dbo.ea_players ADD ManualHuntCount int NOT NULL CONSTRAINT DF_ea_players_ManualHuntCount DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'ProfileMonsterKey') IS NULL
+    ALTER TABLE dbo.ea_players ADD ProfileMonsterKey nvarchar(120) NULL;
 IF COL_LENGTH(N'dbo.ea_players', N'CollectedMonsterKeysJson') IS NULL
     ALTER TABLE dbo.ea_players ADD CollectedMonsterKeysJson nvarchar(max) NOT NULL CONSTRAINT DF_ea_players_CollectedMonsterKeysJson DEFAULT (N'[]') WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'CollectedMonsterCount') IS NULL
@@ -301,6 +304,7 @@ SET Nickname = JSON_VALUE(StateJson, N'$.Nickname'),
     ExperienceGain = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ExperienceGain')), ExperienceGain),
     ArtisanTouch = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.Stats.ArtisanTouch')), ArtisanTouch),
     ManualHuntCount = COALESCE(TRY_CONVERT(int, JSON_VALUE(StateJson, N'$.ManualHuntCount')), ManualHuntCount),
+    ProfileMonsterKey = COALESCE(JSON_VALUE(StateJson, N'$.ProfileMonsterKey'), ProfileMonsterKey),
     CollectedMonsterKeysJson = COALESCE(JSON_QUERY(StateJson, N'$.CollectedMonsterKeys'), CollectedMonsterKeysJson)
 WHERE StateSchemaVersion = 0;";
             const string rankingBackfillSql = @"

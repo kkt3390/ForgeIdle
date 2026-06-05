@@ -31,6 +31,7 @@ namespace EnhanceAddiction.WebForms.Game
         public PlayerStats Stats { get; set; }
         public int ManualHuntAreaId { get; set; }
         public int ManualHuntCount { get; set; }
+        public string ProfileMonsterKey { get; set; }
         public List<string> CollectedMonsterKeys { get; set; }
         public DateTime? AutomaticHuntCycleStartedAtUtc { get; set; }
         public double AutomaticHuntUsedSeconds { get; set; }

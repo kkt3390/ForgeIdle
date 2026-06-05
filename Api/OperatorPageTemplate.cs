@@ -40,6 +40,8 @@ namespace EnhanceAddiction.WebForms.Api
         .admin-muted { color: #7f756d; font-size: 12px; }
     .admin-table-wrap details { max-width: 360px; }
     .admin-table-wrap pre { overflow: auto; max-height: 220px; white-space: pre-wrap; color: #d7c8bb; }
+    .admin-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0 0; color: #c4b8aa; font-size: 12px; }
+    .admin-pagination button { padding: 7px 10px; font-size: 12px; }
     .admin-badge { display: inline-block; border-radius: 999px; padding: 3px 7px; background: #ffffff12; font-size: 11px; }
     .admin-badge.warn { color: #25190a; background: #f0b85c; }
     .admin-badge.danger { color: #fff; background: #9f3636; }
@@ -169,19 +171,21 @@ namespace EnhanceAddiction.WebForms.Api
           <p class=""collection-description"">강화, 사냥, 스탯, 닉네임 등 게임 데이터에 영향을 준 행동의 전후 상태와 상세 정보를 확인합니다.</p>
           <div class=""admin-actions""><input id=""action-log-search"" placeholder=""닉네임, PlayerKey, 행동, 메시지 검색"" /><button onclick=""searchActionLogs()"">검색</button></div>
           <div class=""admin-table-wrap""><table><thead><tr><th>유저</th><th>행동</th><th>결과</th><th>메시지</th><th>상세</th><th>시간</th></tr></thead><tbody id=""action-log-body""></tbody></table></div>
+          <div class=""admin-pagination"" id=""action-log-pagination""></div>
         </section>
 
         <section class=""panel admin-panel"" id=""logs-panel"">
           <div class=""section-title""><h2>관리자 행동 로그</h2><span>권한/배율/콘텐츠 변경 기록</span></div>
           <div class=""admin-actions""><input id=""admin-log-search"" placeholder=""운영자, 행동, 대상 검색"" /></div>
           <div class=""admin-table-wrap""><table><thead><tr><th>운영자</th><th>행동</th><th>대상</th><th>시간</th></tr></thead><tbody id=""admin-log-body""></tbody></table></div>
+          <div class=""admin-pagination"" id=""admin-log-pagination""></div>
         </section>
       </div>
     </section>
   </main>
 
   <div class=""toast"" id=""toast""></div>
-  <script src=""/Scripts/operator.js?v=20260605-1""></script>
+  <script src=""/Scripts/operator.js?v=20260605-2""></script>
 </body>
 </html>";
     }

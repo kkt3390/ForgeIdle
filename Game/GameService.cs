@@ -51,6 +51,7 @@ namespace EnhanceAddiction.WebForms.Game
             return new
             {
                 nickname = player.Nickname,
+                profileMonster = ProfileMonsterSnapshot(player),
                 serverNow = Iso(now),
                 hotTime = HotTimeSnapshot(now),
                 gold = player.Gold,
@@ -244,6 +245,25 @@ namespace EnhanceAddiction.WebForms.Game
         }
 
         // 골드를 소모해 강화를 시도하고 성공·유지·보호·파괴 결과를 처리합니다.
+        public GameResult SetProfileMonster(PlayerState player, string monsterKey)
+        {
+            NormalizePlayer(player);
+            var key = (monsterKey ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                player.ProfileMonsterKey = null;
+                AddMessage(player, "프로필 몬스터를 해제했습니다.");
+                return Success(player, "프로필 몬스터를 해제했습니다.", null);
+            }
+
+            if (!player.CollectedMonsterKeys.Contains(key))
+                return Failure(player, "수집한 몬스터만 프로필로 지정할 수 있습니다.");
+
+            player.ProfileMonsterKey = key;
+            AddMessage(player, MonsterNameForProfile(key) + "을(를) 프로필 몬스터로 지정했습니다.");
+            return Success(player, "프로필 몬스터를 지정했습니다.", new { monsterKey = key });
+        }
+
         public GameResult Enhance(PlayerState player, bool useProtection)
         {
             if (player.Hunt != null) return Failure(player, "자동 사냥을 종료하고 정산한 뒤 강화할 수 있습니다.");
@@ -442,6 +462,8 @@ namespace EnhanceAddiction.WebForms.Game
         {
             if (player.Stats == null) player.Stats = new PlayerStats();
             if (player.CollectedMonsterKeys == null) player.CollectedMonsterKeys = new List<string>();
+            if (!string.IsNullOrWhiteSpace(player.ProfileMonsterKey) && !player.CollectedMonsterKeys.Contains(player.ProfileMonsterKey))
+                player.ProfileMonsterKey = null;
             if (player.RecentMessages == null) player.RecentMessages = new List<string>();
             if (player.Level <= 0) player.Level = 1;
             if (player.ManualHuntAreaId < 0 || player.ManualHuntAreaId >= 12) player.ManualHuntAreaId = 0;
@@ -514,6 +536,31 @@ namespace EnhanceAddiction.WebForms.Game
         }
 
         // 도감 화면에 필요한 전체 항목과 사용자 등록 여부를 반환합니다.
+        private object ProfileMonsterSnapshot(PlayerState player)
+        {
+            NormalizePlayer(player);
+            var key = player.ProfileMonsterKey;
+            int areaId;
+            int number;
+            string grade;
+            if (!TryParseCollectionKey(key, out areaId, out grade, out number)) return null;
+            if (!player.CollectedMonsterKeys.Contains(key)) return null;
+
+            var monsterCatalog = GameContentRepository.MonsterMap();
+            MonsterCatalogEntry custom;
+            monsterCatalog.TryGetValue(key, out custom);
+            var area = _catalog.Areas.ElementAtOrDefault(areaId);
+            var areaName = area == null ? "도감" : area.Name;
+            return new
+            {
+                monsterKey = key,
+                key = key,
+                grade = grade,
+                name = custom == null ? CollectionMonsterName(areaName, grade, number) : custom.Name,
+                description = custom == null ? "" : custom.Description,
+                imagePath = CollectionImagePath(areaId, number)
+            };
+        }
         private object CollectionSnapshot(PlayerState player)
         {
             var monsterCatalog = GameContentRepository.MonsterMap();
@@ -548,6 +595,32 @@ namespace EnhanceAddiction.WebForms.Game
         }
 
         // 지역, 등급, 번호를 DB에 저장할 안정적인 도감 키로 만듭니다.
+        private string MonsterNameForProfile(string key)
+        {
+            int areaId;
+            int number;
+            string grade;
+            if (!TryParseCollectionKey(key, out areaId, out grade, out number)) return "도감 몬스터";
+            var monsterCatalog = GameContentRepository.MonsterMap();
+            MonsterCatalogEntry custom;
+            if (monsterCatalog.TryGetValue(key, out custom)) return custom.Name;
+            var area = _catalog.Areas.ElementAtOrDefault(areaId);
+            return CollectionMonsterName(area == null ? "도감" : area.Name, grade, number);
+        }
+
+        private static bool TryParseCollectionKey(string key, out int areaId, out string grade, out int number)
+        {
+            areaId = 0;
+            number = 0;
+            grade = "normal";
+            if (string.IsNullOrWhiteSpace(key)) return false;
+            var parts = key.Split('-');
+            if (parts.Length != 4 || !string.Equals(parts[0], "area", StringComparison.OrdinalIgnoreCase)) return false;
+            if (!int.TryParse(parts[1], out areaId)) return false;
+            if (!int.TryParse(parts[3], out number)) return false;
+            grade = parts[2];
+            return grade == "normal" || grade == "elite" || grade == "golden";
+        }
         private static string CollectionKey(int areaId, string grade, int number)
         {
             return string.Format("area-{0:D2}-{1}-{2:D2}", areaId, grade, number);

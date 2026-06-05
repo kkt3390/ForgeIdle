@@ -60,6 +60,9 @@ namespace EnhanceAddiction.WebForms.Api
                     case "stats-reset":
                         result = Execute(context, "StatReset", player => Game.ResetStats(player));
                         break;
+                    case "profile-monster":
+                        result = Execute(context, "ProfileMonster", player => Game.SetProfileMonster(player, StringBody(context, "monsterKey")));
+                        break;
                     default:
                         context.Response.StatusCode = 404;
                         result = new { message = "알 수 없는 요청입니다." };
