@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Web;
@@ -46,6 +46,18 @@ namespace EnhanceAddiction.WebForms.Api
                         break;
                     case "save-hottime":
                         result = SaveHotTime(repository, operatorKey, Body(context));
+                        break;
+                    case "save-rift":
+                        repository.SaveRiftSettings(operatorKey, Body(context));
+                        result = new { ok = true, message = "주간 균열 설정을 저장했습니다." };
+                        break;
+                    case "settle-rift":
+                        repository.SettleCurrentRiftSeason(operatorKey);
+                        result = new { ok = true, message = "현재 주간 균열 시즌을 정산했습니다." };
+                        break;
+                    case "reset-rift":
+                        repository.ResetCurrentRiftSeason(operatorKey);
+                        result = new { ok = true, message = "현재 주간 균열 유저 데이터를 초기화했습니다." };
                         break;
                     case "set-operator":
                         result = SetOperator(repository, operatorKey, Body(context));
@@ -104,6 +116,8 @@ namespace EnhanceAddiction.WebForms.Api
                 BoolBody(body, "enabled"),
                 DoubleBody(body, "goldMultiplier", 1),
                 DoubleBody(body, "experienceMultiplier", 1),
+                DoubleBody(body, "baseGoldMultiplier", 1),
+                DoubleBody(body, "baseExperienceMultiplier", 1),
                 StringBody(body, "startsAtKst", "startsAtUtc"),
                 StringBody(body, "endsAtKst", "endsAtUtc"));
             return new { ok = true, message = "핫타임 배율을 저장했습니다." };

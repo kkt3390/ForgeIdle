@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -15,6 +15,8 @@ namespace EnhanceAddiction.WebForms.Game
         private const int MonstersPerCollectionGrade = 10;
         private const double NormalCollectionRegistrationRate = 1.00;
         private const double SpecialCollectionRegistrationRate = .10;
+        private const int RiftManualHuntsPerTicket = 30;
+        private const int RiftDailyTicketLimit = 50;
         private readonly GameCatalog _catalog;
 
         // 게임 규칙 카탈로그를 받아 서비스에서 재사용합니다.
@@ -27,9 +29,17 @@ namespace EnhanceAddiction.WebForms.Game
         // 화면 항목을 추가할 때는 이 객체와 Scripts/game.js를 함께 수정하세요.
         public object Snapshot(PlayerState player)
         {
+            return Snapshot(player, true);
+        }
+
+        // ?? ?? ????? ?? ?? ?? ??? ???? ???? ???? ????.
+        public object Snapshot(PlayerState player, bool includeCollection)
+        {
             var now = DateTime.UtcNow;
             NormalizePlayer(player);
             NormalizeAutomaticHuntCycle(player, now);
+            NormalizeRiftSeason(player, now);
+            var rewardSettings = GameRewardSettings.Current();
             var availableAreas = _catalog.Areas
                 .Where(area => area.Id <= player.HighestBossDefeated + 1)
                 .Select(area => new
@@ -39,6 +49,10 @@ namespace EnhanceAddiction.WebForms.Game
                     requiredEnhancement = area.RequiredEnhancement,
                     goldPerHour = area.GoldPerHour,
                     experiencePerHour = area.ExperiencePerHour,
+                    autoGoldPerHour = AutoGoldPerHour(player, area),
+                    autoExperiencePerHour = AutoExperiencePerHour(player, area),
+                    manualGoldPerHour = ManualGoldPerHour(player, area, rewardSettings),
+                    manualExperiencePerHour = ManualExperiencePerHour(player, area, rewardSettings),
                     canEnter = CanEnter(player, area)
                 }).ToArray();
             var enhancements = GameContentRepository.EnhancementRules(_catalog.Enhancements);
@@ -54,6 +68,12 @@ namespace EnhanceAddiction.WebForms.Game
                 profileMonster = ProfileMonsterSnapshot(player),
                 serverNow = Iso(now),
                 hotTime = HotTimeSnapshot(now),
+                rewardMultipliers = new
+                {
+                    baseGold = rewardSettings.BaseGoldMultiplier,
+                    baseExperience = rewardSettings.BaseExperienceMultiplier
+                },
+                rift = RiftSnapshot(player, now),
                 gold = player.Gold,
                 weaponLevel = player.WeaponLevel,
                 weaponName = weapon.Name,
@@ -93,13 +113,17 @@ namespace EnhanceAddiction.WebForms.Game
                     areaName = manualHuntArea.Name,
                     automaticGoldPerHour = manualHuntArea.GoldPerHour,
                     automaticExperiencePerHour = manualHuntArea.ExperiencePerHour,
+                    adjustedAutomaticGoldPerHour = AutoGoldPerHour(player, manualHuntArea),
+                    adjustedAutomaticExperiencePerHour = AutoExperiencePerHour(player, manualHuntArea),
+                    adjustedManualGoldPerHour = ManualGoldPerHour(player, manualHuntArea, rewardSettings),
+                    adjustedManualExperiencePerHour = ManualExperiencePerHour(player, manualHuntArea, rewardSettings),
                     availableAreas = availableAreas,
                     availableAt = player.LastManualHuntAtUtc.HasValue
                         ? Iso(player.LastManualHuntAtUtc.Value.Add(ManualHuntCooldown))
                         : null
                 },
                 collectionEnabled = GameFeatureSettings.CollectionEnabled,
-                collection = GameFeatureSettings.CollectionEnabled ? CollectionSnapshot(player) : null,
+                collection = includeCollection && GameFeatureSettings.CollectionEnabled ? CollectionSnapshot(player) : null,
                 currentEnhancement = adjustedRule == null ? null : RuleSnapshot(adjustedRule),
                 nextBoss = nextBossArea == null || !nextBossArea.BossRequiredEnhancement.HasValue ? null : new
                 {
@@ -216,6 +240,7 @@ namespace EnhanceAddiction.WebForms.Game
             GrantExperience(player, totalExperience);
             player.LastManualHuntAtUtc = now;
             player.ManualHuntCount++;
+            var riftGrant = GrantRiftTicketProgress(player, now);
 
             var prefix = claimed.Gold > 0 || claimed.Experience > 0
                 ? string.Format("자동 사냥 {0:N0} 골드, 경험치 {1:N2}를 먼저 정산했습니다. ", claimed.Gold, claimed.Experience)
@@ -240,7 +265,8 @@ namespace EnhanceAddiction.WebForms.Game
                 first = first,
                 second = second,
                 dualWield = dualWield,
-                registrations = registrations
+                registrations = registrations,
+                rift = riftGrant
             });
         }
 
@@ -372,15 +398,242 @@ namespace EnhanceAddiction.WebForms.Game
         }
 
         // 성공 결과와 갱신된 사용자 상태를 공통 응답 형식으로 만듭니다.
+        public GameResult HitRiftBoss(PlayerState player)
+        {
+            var now = DateTime.UtcNow;
+            NormalizeRiftSeason(player, now);
+            var settings = RiftSettings.Current();
+            var season = settings.CurrentSeason(now);
+            if (!settings.Enabled) return Failure(player, "주간 균열이 아직 열려 있지 않습니다.");
+            if (!season.IsActive(now)) return Failure(player, season.IsSettlement(now) ? "주간 균열 정산 중입니다." : "균열 타격 가능 시간이 아닙니다.");
+            if (player.RiftTickets <= 0) return Failure(player, "보유한 균열 타격권이 없습니다.");
+
+            var power = RiftCombatPower(player);
+            var multiplier = .85 + RandomDouble() * .30;
+            var damage = Math.Max(1, (long)Math.Round(power * multiplier));
+            player.RiftTickets--;
+            player.RiftDamage += damage;
+            player.RiftLastDamageAtUtc = now;
+            AddMessage(player, string.Format("주간 균열 타격! {0:N0} 피해를 입혔습니다.", damage));
+            return Success(player, string.Format("균열 보스에게 {0:N0} 피해를 입혔습니다.", damage), new
+            {
+                seasonKey = season.SeasonKey,
+                damage = damage,
+                combatPower = power,
+                multiplier = multiplier,
+                remainingTickets = player.RiftTickets
+            });
+        }
+
+        public GameResult BuyRiftShopItem(PlayerState player, string itemKey)
+        {
+            var settings = RiftSettings.Current();
+            if (!settings.ShopEnabled) return Failure(player, "균열 상점이 아직 열려 있지 않습니다.");
+
+            var item = RiftShopItems().FirstOrDefault(candidate => candidate.Key == itemKey);
+            if (item == null) return Failure(player, "알 수 없는 균열 상점 상품입니다.");
+            if (player.RiftCoins < item.Cost) return Failure(player, "균열 파편이 부족합니다.");
+
+            player.RiftCoins -= item.Cost;
+            if (item.Type == "color")
+            {
+                player.ActiveNicknameColorKey = item.Key;
+                player.NicknameColorExpiresAtUtc = DateTime.UtcNow.AddDays(7);
+            }
+            else if (item.Type == "title")
+            {
+                player.ActiveTitleKey = item.Key;
+            }
+
+            AddMessage(player, item.Name + " 상품을 구매했습니다.");
+            return Success(player, item.Name + " 상품을 구매했습니다.", new { itemKey = item.Key, itemType = item.Type, cost = item.Cost });
+        }
+
+        private object GrantRiftTicketProgress(PlayerState player, DateTime now)
+        {
+            NormalizeRiftSeason(player, now);
+            var settings = RiftSettings.Current();
+            var season = settings.CurrentSeason(now);
+            if (!settings.Enabled || !season.IsActive(now))
+                return new { enabled = settings.Enabled, grantedTickets = 0 };
+
+            player.RiftWeeklyManualHuntCount++;
+            if (player.RiftDailyTicketsEarned >= RiftDailyTicketLimit)
+                return new { enabled = true, grantedTickets = 0, dailyCapReached = true };
+
+            player.RiftDailyManualHuntProgress++;
+            var granted = 0;
+            while (player.RiftDailyManualHuntProgress >= RiftManualHuntsPerTicket
+                && player.RiftDailyTicketsEarned < RiftDailyTicketLimit)
+            {
+                player.RiftDailyManualHuntProgress -= RiftManualHuntsPerTicket;
+                player.RiftDailyTicketsEarned++;
+                player.RiftTickets++;
+                granted++;
+            }
+
+            return new
+            {
+                enabled = true,
+                grantedTickets = granted,
+                dailyTicketsEarned = player.RiftDailyTicketsEarned,
+                dailyTicketLimit = RiftDailyTicketLimit,
+                nextTicketProgress = player.RiftDailyManualHuntProgress,
+                huntsPerTicket = RiftManualHuntsPerTicket
+            };
+        }
+
+        private object RiftSnapshot(PlayerState player, DateTime now)
+        {
+            var settings = RiftSettings.Current();
+            var season = settings.CurrentSeason(now);
+            var area = _catalog.Areas.ElementAtOrDefault(season.BossAreaId);
+            return new
+            {
+                enabled = settings.Enabled,
+                shopEnabled = settings.ShopEnabled,
+                mode = season.Mode,
+                active = settings.Enabled && season.IsActive(now),
+                settling = settings.Enabled && season.IsSettlement(now),
+                seasonKey = season.SeasonKey,
+                seasonName = season.SeasonName,
+                startsAt = Iso(season.StartsAtUtc),
+                endsAt = Iso(season.EndsAtUtc),
+                settlementEndsAt = Iso(season.SettlementEndsAtUtc),
+                startsAtKst = KstDateTime(season.StartsAtUtc),
+                endsAtKst = KstDateTime(season.EndsAtUtc),
+                settlementEndsAtKst = KstDateTime(season.SettlementEndsAtUtc),
+                bossAreaId = season.BossAreaId,
+                bossName = area == null ? "균열 보스" : area.Name + " 균열 보스",
+                bossImagePath = CollectionImagePath(season.BossAreaId, MonstersPerCollectionGrade),
+                combatPower = RiftCombatPower(player),
+                tickets = player.RiftTickets,
+                weeklyManualHuntCount = player.RiftWeeklyManualHuntCount,
+                dailyTicketsEarned = player.RiftDailyTicketsEarned,
+                dailyTicketLimit = RiftDailyTicketLimit,
+                nextTicketProgress = player.RiftDailyManualHuntProgress,
+                huntsPerTicket = RiftManualHuntsPerTicket,
+                damage = player.RiftDamage,
+                coins = player.RiftCoins,
+                title = CosmeticTitle(player.ActiveTitleKey),
+                nicknameColor = ActiveNicknameColor(player, now),
+                rankBadge = ActiveRankBadge(player, now),
+                rankGlow = ActiveRankGlow(player, now),
+                shopItems = settings.ShopEnabled ? RiftShopItems().Select(item => new
+                {
+                    key = item.Key,
+                    name = item.Name,
+                    type = item.Type,
+                    cost = item.Cost,
+                    durationDays = item.DurationDays
+                }).ToArray() : new object[0]
+            };
+        }
+
+        private void NormalizeRiftSeason(PlayerState player, DateTime now)
+        {
+            var settings = RiftSettings.Current();
+            var season = settings.CurrentSeason(now);
+            if (player.RiftSeasonKey != season.SeasonKey)
+            {
+                player.RiftSeasonKey = season.SeasonKey;
+                player.RiftWeeklyManualHuntCount = 0;
+                player.RiftDailyManualHuntProgress = 0;
+                player.RiftTickets = 0;
+                player.RiftDailyTicketsEarned = 0;
+                player.RiftDamage = 0;
+                player.RiftLastDamageAtUtc = null;
+            }
+
+            var dailyKey = KstDateKey(now);
+            if (player.RiftDailyTicketDate != dailyKey)
+            {
+                player.RiftDailyTicketDate = dailyKey;
+                player.RiftDailyManualHuntProgress = 0;
+                player.RiftDailyTicketsEarned = 0;
+            }
+
+            if (player.NicknameColorExpiresAtUtc.HasValue && player.NicknameColorExpiresAtUtc.Value <= now)
+            {
+                player.ActiveNicknameColorKey = "";
+                player.NicknameColorExpiresAtUtc = null;
+            }
+            if (player.RiftRankRewardExpiresAtUtc.HasValue && player.RiftRankRewardExpiresAtUtc.Value <= now)
+            {
+                player.RiftRankBadge = "";
+                player.RiftRankGlow = "";
+                player.RiftRankRewardExpiresAtUtc = null;
+            }
+        }
+
+        private static double RiftCombatPower(PlayerState player)
+        {
+            var collectionCount = player.CollectedMonsterKeys == null ? 0 : player.CollectedMonsterKeys.Count;
+            return Math.Round(
+                100
+                + Math.Pow(Math.Max(0, player.WeaponLevel), 1.15) * 4
+                + Math.Pow(Math.Max(1, player.Level), .55) * 3
+                + Math.Pow(Math.Max(0, collectionCount), .45) * 2,
+                2);
+        }
+
+        private static RiftShopItem[] RiftShopItems()
+        {
+            return new[]
+            {
+                new RiftShopItem("color-blue", "푸른빛 닉네임 7일", "color", 80, 7),
+                new RiftShopItem("color-purple", "보랏빛 닉네임 7일", "color", 100, 7),
+                new RiftShopItem("color-red", "붉은빛 닉네임 7일", "color", 100, 7),
+                new RiftShopItem("color-gold", "금빛 닉네임 7일", "color", 120, 7),
+                new RiftShopItem("color-rainbow", "무지개 닉네임 7일", "color", 180, 7),
+                new RiftShopItem("title-challenger", "차원의 도전자", "title", 200, 0),
+                new RiftShopItem("title-survivor", "뒤틀림을 견딘 자", "title", 250, 0),
+                new RiftShopItem("title-stalker", "심연의 추적자", "title", 300, 0),
+                new RiftShopItem("title-cleaver", "균열을 가른 자", "title", 400, 0)
+            };
+        }
+
+        private static string CosmeticTitle(string key)
+        {
+            var item = RiftShopItems().FirstOrDefault(candidate => candidate.Key == key && candidate.Type == "title");
+            return item == null ? "" : item.Name;
+        }
+
+        private static string ActiveNicknameColor(PlayerState player, DateTime now)
+        {
+            return player.NicknameColorExpiresAtUtc.HasValue && player.NicknameColorExpiresAtUtc.Value > now
+                ? player.ActiveNicknameColorKey
+                : "";
+        }
+
+        private static string ActiveRankBadge(PlayerState player, DateTime now)
+        {
+            return player.RiftRankRewardExpiresAtUtc.HasValue && player.RiftRankRewardExpiresAtUtc.Value > now
+                ? player.RiftRankBadge
+                : "";
+        }
+
+        private static string ActiveRankGlow(PlayerState player, DateTime now)
+        {
+            return player.RiftRankRewardExpiresAtUtc.HasValue && player.RiftRankRewardExpiresAtUtc.Value > now
+                ? player.RiftRankGlow
+                : "";
+        }
+
+        // TODO: 주간 균열 2차 개발 후보
+        // - 닉네임 효과 상품, 무기 카드 배경 스킨, 도감 카드 장식 프레임
+        // - 시즌별 보상표 관리자 편집, 보상 지급 실패 재처리, 정산 dry-run
+        // - 지난 시즌 랭킹 화면, 시즌별 보스 특수 효과, 시즌 결과 그래프
+
         private GameResult Success(PlayerState player, string message, object details)
         {
-            return new GameResult { Ok = true, Message = message, State = Snapshot(player), Details = details };
+            return new GameResult { Ok = true, Message = message, State = Snapshot(player, false), Details = details };
         }
 
         // 실패 결과와 현재 사용자 상태를 공통 응답 형식으로 만듭니다.
         private GameResult Failure(PlayerState player, string message)
         {
-            return new GameResult { Ok = false, Message = message, State = Snapshot(player) };
+            return new GameResult { Ok = false, Message = message, State = Snapshot(player, false) };
         }
 
         // 자동 사냥 경과 시간에 비례한 골드와 경험치를 실제 상태에 반영합니다.
@@ -390,8 +643,8 @@ namespace EnhanceAddiction.WebForms.Game
             var area = _catalog.Areas[hunt.AreaId];
             var duration = Min(now, hunt.RewardCapAtUtc) - hunt.StartedAtUtc;
             if (duration < TimeSpan.Zero) duration = TimeSpan.Zero;
-            var gold = (long)Math.Floor(area.GoldPerHour * duration.TotalHours * StatGoldMultiplier(player));
-            var experience = area.ExperiencePerHour * duration.TotalHours * StatExperienceMultiplier(player);
+            var gold = (long)Math.Floor(AutoGoldPerHour(player, area) * duration.TotalHours);
+            var experience = AutoExperiencePerHour(player, area) * duration.TotalHours;
             player.AutomaticHuntUsedSeconds += duration.TotalSeconds;
             player.Gold += gold;
             GrantExperience(player, experience);
@@ -669,12 +922,44 @@ namespace EnhanceAddiction.WebForms.Game
             return 1 + player.Stats.ExperienceGain * .01;
         }
 
+        private static double BaseGoldMultiplier()
+        {
+            return GameRewardSettings.Current().BaseGoldMultiplier;
+        }
+
+        private static double BaseExperienceMultiplier()
+        {
+            return GameRewardSettings.Current().BaseExperienceMultiplier;
+        }
+
+        private static long AutoGoldPerHour(PlayerState player, HuntingArea area)
+        {
+            return (long)Math.Floor(area.GoldPerHour * StatGoldMultiplier(player) * BaseGoldMultiplier());
+        }
+
+        private static double AutoExperiencePerHour(PlayerState player, HuntingArea area)
+        {
+            return area.ExperiencePerHour * StatExperienceMultiplier(player) * BaseExperienceMultiplier();
+        }
+
+        private static long ManualGoldPerHour(PlayerState player, HuntingArea area, RewardMultiplierSettings settings)
+        {
+            var eventMultiplier = settings.IsActive(DateTime.UtcNow) ? settings.GoldMultiplier : 1;
+            return (long)Math.Floor(area.GoldPerHour * 1.5 * StatGoldMultiplier(player) * settings.BaseGoldMultiplier * eventMultiplier);
+        }
+
+        private static double ManualExperiencePerHour(PlayerState player, HuntingArea area, RewardMultiplierSettings settings)
+        {
+            var eventMultiplier = settings.IsActive(DateTime.UtcNow) ? settings.ExperienceMultiplier : 1;
+            return area.ExperiencePerHour * 1.25 * StatExperienceMultiplier(player) * settings.BaseExperienceMultiplier * eventMultiplier;
+        }
+
         // 직접사냥용 골드 배율을 계산합니다. 핫타임 배율은 직접사냥에만 적용합니다.
         private static double GoldMultiplier(PlayerState player)
         {
             var eventSettings = GameRewardSettings.Current();
             var eventMultiplier = eventSettings.IsActive(DateTime.UtcNow) ? eventSettings.GoldMultiplier : 1;
-            return StatGoldMultiplier(player) * eventMultiplier;
+            return StatGoldMultiplier(player) * eventSettings.BaseGoldMultiplier * eventMultiplier;
         }
 
         // 직접사냥용 경험치 배율을 계산합니다. 핫타임 배율은 직접사냥에만 적용합니다.
@@ -682,7 +967,7 @@ namespace EnhanceAddiction.WebForms.Game
         {
             var eventSettings = GameRewardSettings.Current();
             var eventMultiplier = eventSettings.IsActive(DateTime.UtcNow) ? eventSettings.ExperienceMultiplier : 1;
-            return StatExperienceMultiplier(player) * eventMultiplier;
+            return StatExperienceMultiplier(player) * eventSettings.BaseExperienceMultiplier * eventMultiplier;
         }
 
         // 기본 시간과 보스 처치 보너스를 합쳐 오늘의 자동 사냥 한도를 계산합니다.
@@ -786,6 +1071,18 @@ namespace EnhanceAddiction.WebForms.Game
         }
 
         // 전달한 확률에 따라 참·거짓 판정을 수행합니다.
+        private static string KstDateTime(DateTime value)
+        {
+            var utc = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+            return TimeZoneInfo.ConvertTimeFromUtc(utc, KoreaTimeZone).ToString("yyyy-MM-dd HH:mm");
+        }
+
+        private static string KstDateKey(DateTime value)
+        {
+            var utc = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+            return TimeZoneInfo.ConvertTimeFromUtc(utc, KoreaTimeZone).ToString("yyyy-MM-dd");
+        }
+
         private static bool Roll(double chance)
         {
             return RandomInt(0, 1000000) < chance * 1000000;
@@ -844,5 +1141,23 @@ namespace EnhanceAddiction.WebForms.Game
         public string Grade { get; private set; }
         public string MonsterKey { get; private set; }
         public string ImagePath { get; private set; }
+    }
+
+    public sealed class RiftShopItem
+    {
+        public RiftShopItem(string key, string name, string type, int cost, int durationDays)
+        {
+            Key = key;
+            Name = name;
+            Type = type;
+            Cost = cost;
+            DurationDays = durationDays;
+        }
+
+        public string Key { get; private set; }
+        public string Name { get; private set; }
+        public string Type { get; private set; }
+        public int Cost { get; private set; }
+        public int DurationDays { get; private set; }
     }
 }

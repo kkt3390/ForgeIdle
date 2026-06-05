@@ -77,6 +77,7 @@
     <Compile Include="Data\GameContentRepository.cs" />
     <Compile Include="Data\GameRewardSettings.cs" />
     <Compile Include="Data\PlayerRepository.cs" />
+    <Compile Include="Data\RiftSettings.cs" />
     <Compile Include="Data\SchemaInitializer.cs" />
     <Compile Include="Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>

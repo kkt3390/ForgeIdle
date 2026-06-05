@@ -1,4 +1,4 @@
-namespace EnhanceAddiction.WebForms.Api
+﻿namespace EnhanceAddiction.WebForms.Api
 {
     public static class OperatorPageTemplate
     {
@@ -71,6 +71,7 @@ namespace EnhanceAddiction.WebForms.Api
         <button class=""tab active"" data-admin-tab=""abuse"">이상행동 감지</button>
         <button class=""tab"" data-admin-tab=""users"">유저/권한/밴</button>
         <button class=""tab"" data-admin-tab=""event"">핫타임 배율</button>
+        <button class=""tab"" data-admin-tab=""rift"">?? ??</button>
         <button class=""tab"" data-admin-tab=""enhancements"">강화 확률</button>
         <button class=""tab"" data-admin-tab=""enhancement-proof"">강화 입증</button>
         <button class=""tab"" data-admin-tab=""monsters"">도감 관리</button>
@@ -106,6 +107,28 @@ namespace EnhanceAddiction.WebForms.Api
             <p class=""collection-description full"" id=""hot-time-summary""></p>
             <button class=""primary full"" type=""submit"">핫타임 저장</button>
           </form>
+        </section>
+
+
+        <section class=""panel admin-panel"" id=""rift-panel"">
+          <div class=""section-title""><h2>?? ??</h2><span>???/?? ON?OFF? ??? ??</span></div>
+          <form class=""admin-form"" id=""rift-form"">
+            <label>?? ?? ??<select id=""rift-enabled""><option value=""true"">??</option><option value=""false"">??</option></select></label>
+            <label>?? ?? ??<select id=""rift-shop-enabled""><option value=""true"">??</option><option value=""false"">??</option></select></label>
+            <label>?? ??<select id=""rift-mode""><option value=""auto"">?? ?? ??</option><option value=""manual"">?? ??? ??</option></select></label>
+            <label>?? ??? ID<input id=""rift-boss-area"" type=""number"" min=""0"" max=""11"" /></label>
+            <label class=""full"">??? ?? ??<input id=""rift-season-name"" /></label>
+            <label>?? ??<input id=""rift-start"" type=""datetime-local"" /></label>
+            <label>?? ??<input id=""rift-end"" type=""datetime-local"" /></label>
+            <label>?? ?? ??<input id=""rift-settle-end"" type=""datetime-local"" /></label>
+            <div class=""hot-preset-row full""><button type=""button"" onclick=""setRiftTestDuration(10)"">10? ???</button><button type=""button"" onclick=""setRiftTestDuration(30)"">30? ???</button><button type=""button"" onclick=""setRiftTestDuration(60)"">1?? ???</button></div>
+            <p class=""collection-description full"" id=""rift-summary""></p>
+            <button class=""primary full"" type=""submit"">?? ?? ?? ??</button>
+          </form>
+          <div class=""admin-actions""><button onclick=""settleRift()"">?? ?? ?? ??</button><button onclick=""resetRift()"">?? ?? ?? ??? ???</button></div>
+          <section class=""admin-grid"" id=""rift-admin-summary""></section>
+          <div class=""admin-table-wrap""><table><thead><tr><th>??</th><th>??</th><th>???</th><th>???</th><th>?? ????</th><th>?? ??</th></tr></thead><tbody id=""rift-ranking-body""></tbody></table></div>
+          <p class=""collection-description"">TODO: ?? ?? ?? ??, ?? ???, ?? dry-run, ??? ??? ??? 2? ?? ?????.</p>
         </section>
 
         <section class=""panel admin-panel"" id=""enhancements-panel"">
@@ -185,7 +208,7 @@ namespace EnhanceAddiction.WebForms.Api
   </main>
 
   <div class=""toast"" id=""toast""></div>
-  <script src=""/Scripts/operator.js?v=20260605-3""></script>
+  <script src=""/Scripts/operator.js?v=20260605-5""></script>
 </body>
 </html>";
     }
