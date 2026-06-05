@@ -185,7 +185,7 @@ namespace EnhanceAddiction.WebForms.Api
   </main>
 
   <div class=""toast"" id=""toast""></div>
-  <script src=""/Scripts/operator.js?v=20260605-2""></script>
+  <script src=""/Scripts/operator.js?v=20260605-3""></script>
 </body>
 </html>";
     }

@@ -68,8 +68,8 @@ namespace EnhanceAddiction.WebForms.Data
                 hotTime = GetHotTime(),
                 suspiciousUsers = GetSuspiciousUsers(),
                 operators = GetOperators(),
-                recentAdminLogs = GetRecentAdminLogs(),
-                recentActionLogs = SearchGameActionLogs(""),
+                recentAdminLogs = GetAdminLogs("", 1, 100),
+                recentActionLogs = SearchGameActionLogs("", 1, 100),
                 enhancementProof = GetEnhancementProof(),
                 monsterCatalog = GetMonsterCatalog(),
                 weaponCatalog = GetWeaponCatalog(),
@@ -194,28 +194,43 @@ namespace EnhanceAddiction.WebForms.Data
         }
 
         // 게임 데이터에 영향을 준 유저 행동 로그를 운영자가 검색해 볼 수 있게 반환합니다.
-        public object SearchGameActionLogs(string keyword)
+        public object SearchGameActionLogs(string keyword, int page, int pageSize)
         {
             var rows = new List<object>();
+            var totalRows = 0;
+            page = Math.Max(1, page);
+            pageSize = Math.Min(200, Math.Max(10, pageSize));
+            var offset = (page - 1) * pageSize;
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                @"SELECT
-                    l.Id, l.PlayerKey, ISNULL(p.Nickname, N'') AS Nickname, l.ActionType,
-                    l.Succeeded, l.Message, l.BeforeStateJson, l.AfterStateJson, l.DetailsJson, l.CreatedAt
-                  FROM dbo.ea_game_action_logs l
-                  LEFT JOIN dbo.ea_players p ON p.PlayerKey = l.PlayerKey
-                  WHERE @Keyword = N''
-                     OR l.PlayerKey LIKE N'%' + @Keyword + N'%'
-                     OR ISNULL(p.Nickname, N'') LIKE N'%' + @Keyword + N'%'
-                     OR l.ActionType LIKE N'%' + @Keyword + N'%'
-                     OR l.Message LIKE N'%' + @Keyword + N'%'
-                  ORDER BY l.CreatedAt DESC", connection))
+                @"WITH FilteredLogs AS
+                  (
+                    SELECT
+                      l.Id, l.PlayerKey, ISNULL(p.Nickname, N'') AS Nickname, l.ActionType,
+                      l.Succeeded, l.Message, l.BeforeStateJson, l.AfterStateJson, l.DetailsJson, l.CreatedAt,
+                      COUNT(1) OVER() AS TotalRows
+                    FROM dbo.ea_game_action_logs l
+                    LEFT JOIN dbo.ea_players p ON p.PlayerKey = l.PlayerKey
+                    WHERE @Keyword = N''
+                       OR l.PlayerKey LIKE N'%' + @Keyword + N'%'
+                       OR ISNULL(p.Nickname, N'') LIKE N'%' + @Keyword + N'%'
+                       OR l.ActionType LIKE N'%' + @Keyword + N'%'
+                       OR l.Message LIKE N'%' + @Keyword + N'%'
+                  )
+                  SELECT Id, PlayerKey, Nickname, ActionType,
+                    l.Succeeded, l.Message, l.BeforeStateJson, l.AfterStateJson, l.DetailsJson, l.CreatedAt, l.TotalRows
+                  FROM FilteredLogs l
+                  ORDER BY l.CreatedAt DESC
+                  OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY", connection))
             {
                 command.Parameters.Add("@Keyword", SqlDbType.NVarChar, 100).Value = (keyword ?? "").Trim();
+                command.Parameters.Add("@Offset", SqlDbType.Int).Value = offset;
+                command.Parameters.Add("@PageSize", SqlDbType.Int).Value = pageSize;
                 using (var reader = command.ExecuteReader())
                 {
                     while (reader.Read())
                     {
+                        if (totalRows == 0) totalRows = reader.GetInt32(10);
                         rows.Add(new
                         {
                             id = reader.GetInt64(0),
@@ -232,7 +247,7 @@ namespace EnhanceAddiction.WebForms.Data
                     }
                 }
             }
-            return rows;
+            return new { rows = rows, totalRows = totalRows, page = page, pageSize = pageSize };
         }
 
         public void UpsertMonster(string operatorKey, Dictionary<string, object> body)
@@ -530,18 +545,38 @@ namespace EnhanceAddiction.WebForms.Data
             return SearchPlayers("");
         }
 
-        private object GetRecentAdminLogs()
+        public object GetAdminLogs(string keyword, int page, int pageSize)
         {
             var rows = new List<object>();
+            var totalRows = 0;
+            page = Math.Max(1, page);
+            pageSize = Math.Min(200, Math.Max(10, pageSize));
+            var offset = (page - 1) * pageSize;
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                @"SELECT OperatorPlayerKey, ActionType, TargetPlayerKey, DetailsJson, CreatedAt
-                  FROM dbo.ea_admin_action_logs
-                  ORDER BY CreatedAt DESC", connection))
+                @"WITH FilteredLogs AS
+                  (
+                    SELECT OperatorPlayerKey, ActionType, TargetPlayerKey, DetailsJson, CreatedAt,
+                           COUNT(1) OVER() AS TotalRows
+                    FROM dbo.ea_admin_action_logs
+                    WHERE @Keyword = N''
+                       OR OperatorPlayerKey LIKE N'%' + @Keyword + N'%'
+                       OR ActionType LIKE N'%' + @Keyword + N'%'
+                       OR ISNULL(TargetPlayerKey, N'') LIKE N'%' + @Keyword + N'%'
+                  )
+                  SELECT OperatorPlayerKey, ActionType, TargetPlayerKey, DetailsJson, CreatedAt, TotalRows
+                  FROM FilteredLogs
+                  ORDER BY CreatedAt DESC
+                  OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY", connection))
+            {
+                command.Parameters.Add("@Keyword", SqlDbType.NVarChar, 100).Value = (keyword ?? "").Trim();
+                command.Parameters.Add("@Offset", SqlDbType.Int).Value = offset;
+                command.Parameters.Add("@PageSize", SqlDbType.Int).Value = pageSize;
             using (var reader = command.ExecuteReader())
             {
                 while (reader.Read())
                 {
+                    if (totalRows == 0) totalRows = reader.GetInt32(5);
                     rows.Add(new
                     {
                         operatorPlayerKey = reader.GetString(0),
@@ -552,7 +587,8 @@ namespace EnhanceAddiction.WebForms.Data
                     });
                 }
             }
-            return rows;
+            }
+            return new { rows = rows, totalRows = totalRows, page = page, pageSize = pageSize };
         }
 
         private object GetMonsterCatalog()

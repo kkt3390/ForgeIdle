@@ -33,7 +33,16 @@ namespace EnhanceAddiction.WebForms.Api
                         result = repository.SearchPlayers(context.Request.QueryString["q"] ?? "");
                         break;
                     case "search-action-logs":
-                        result = repository.SearchGameActionLogs(context.Request.QueryString["q"] ?? "");
+                        result = repository.SearchGameActionLogs(
+                            context.Request.QueryString["q"] ?? "",
+                            IntQuery(context, "page", 1),
+                            IntQuery(context, "pageSize", 100));
+                        break;
+                    case "search-admin-logs":
+                        result = repository.GetAdminLogs(
+                            context.Request.QueryString["q"] ?? "",
+                            IntQuery(context, "page", 1),
+                            IntQuery(context, "pageSize", 100));
                         break;
                     case "save-hottime":
                         result = SaveHotTime(repository, operatorKey, Body(context));
@@ -147,6 +156,12 @@ namespace EnhanceAddiction.WebForms.Api
         {
             double value;
             return body.ContainsKey(key) && body[key] != null && double.TryParse(body[key].ToString(), out value) ? value : fallback;
+        }
+
+        private static int IntQuery(HttpContext context, string key, int fallback)
+        {
+            int value;
+            return int.TryParse(context.Request.QueryString[key], out value) ? value : fallback;
         }
     }
 }

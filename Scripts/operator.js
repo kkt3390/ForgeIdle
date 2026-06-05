@@ -1,6 +1,5 @@
 let adminState = null;
 const logPageSize = 100;
-let actionLogRows = [];
 let actionLogPage = 1;
 let adminLogPage = 1;
 
@@ -23,20 +22,11 @@ function matchesKeyword(row, keyword, fields) {
     return fields.some(field => String(row[field] ?? "").toLowerCase().includes(keyword));
 }
 
-function pagedRows(rows, page) {
-    const totalPages = Math.max(1, Math.ceil(rows.length / logPageSize));
-    const currentPage = Math.min(Math.max(1, page), totalPages);
-    const start = (currentPage - 1) * logPageSize;
-    return {
-        rows: rows.slice(start, start + logPageSize),
-        currentPage,
-        totalPages
-    };
-}
-
-function renderPagination(targetId, currentPage, totalPages, totalRows, callbackName) {
+function renderPagination(targetId, page, pageSize, totalRows, callbackName) {
     const target = $("#" + targetId);
     if (!target) return;
+    const currentPage = Math.max(1, Number(page || 1));
+    const totalPages = Math.max(1, Math.ceil(Number(totalRows || 0) / Number(pageSize || logPageSize)));
     if (totalRows <= logPageSize) {
         target.innerHTML = totalRows ? `전체 ${number(totalRows)}건` : "";
         return;
@@ -48,14 +38,12 @@ function renderPagination(targetId, currentPage, totalPages, totalRows, callback
         <button ${currentPage >= totalPages ? "disabled" : ""} onclick="${callbackName}(${currentPage + 1})">다음</button>`;
 }
 
-function setActionLogPage(page) {
-    actionLogPage = page;
-    renderActionLogs(null, false);
+async function setActionLogPage(page) {
+    await loadActionLogs(page);
 }
 
-function setAdminLogPage(page) {
-    adminLogPage = page;
-    renderAdminLogs(false);
+async function setAdminLogPage(page) {
+    await loadAdminLogs(page);
 }
 
 function adminAssetUrl(path) {
@@ -101,8 +89,8 @@ async function loadAdmin() {
     renderEnhancementProof();
     renderMonsters();
     renderWeapons();
-    renderActionLogs(adminState.recentActionLogs || []);
-    renderAdminLogs();
+    renderActionLogs(adminState.recentActionLogs || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize });
+    renderAdminLogs(adminState.recentAdminLogs || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize });
 }
 
 function renderDashboard() {
@@ -236,15 +224,12 @@ function renderEnhancementProof() {
         : `<tr><td colspan="6">아직 누적된 강화 시도 기록이 없습니다.</td></tr>`;
 }
 
-function renderAdminLogs(resetPage = true) {
-    if (resetPage) adminLogPage = 1;
-    const keyword = searchText("admin-log-search");
-    const rows = adminState.recentAdminLogs.filter(row =>
-        matchesKeyword(row, keyword, ["operatorPlayerKey", "actionType", "targetPlayerKey", "createdAt"]));
-    const page = pagedRows(rows, adminLogPage);
-    adminLogPage = page.currentPage;
-    $("#admin-log-body").innerHTML = page.rows.length
-        ? page.rows.map(row => `
+function renderAdminLogs(result) {
+    const payload = result || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize };
+    const rows = payload.rows || [];
+    adminLogPage = Number(payload.page || 1);
+    $("#admin-log-body").innerHTML = rows.length
+        ? rows.map(row => `
         <tr>
           <td>${escapeHtml(row.operatorPlayerKey)}</td>
           <td>${escapeHtml(row.actionType)}</td>
@@ -252,16 +237,15 @@ function renderAdminLogs(resetPage = true) {
           <td>${escapeHtml(row.createdAt)}</td>
         </tr>`).join("")
         : `<tr><td colspan="4">조건에 맞는 관리자 로그가 없습니다.</td></tr>`;
-    renderPagination("admin-log-pagination", page.currentPage, page.totalPages, rows.length, "setAdminLogPage");
+    renderPagination("admin-log-pagination", payload.page, payload.pageSize, payload.totalRows, "setAdminLogPage");
 }
 
-function renderActionLogs(rows, resetPage = true) {
-    if (rows) actionLogRows = rows;
-    if (resetPage) actionLogPage = 1;
-    const page = pagedRows(actionLogRows, actionLogPage);
-    actionLogPage = page.currentPage;
-    $("#action-log-body").innerHTML = page.rows.length
-        ? page.rows.map(row => `
+function renderActionLogs(result) {
+    const payload = result || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize };
+    const rows = payload.rows || [];
+    actionLogPage = Number(payload.page || 1);
+    $("#action-log-body").innerHTML = rows.length
+        ? rows.map(row => `
           <tr>
             <td>${escapeHtml(row.nickname || row.playerKey)}<br><small>${escapeHtml(row.playerKey)}</small></td>
             <td>${escapeHtml(row.actionType)}</td>
@@ -276,7 +260,7 @@ function renderActionLogs(rows, resetPage = true) {
             <td>${escapeHtml(row.createdAt)}</td>
           </tr>`).join("")
         : `<tr><td colspan="6">조건에 맞는 유저 행동 로그가 없습니다.</td></tr>`;
-    renderPagination("action-log-pagination", page.currentPage, page.totalPages, actionLogRows.length, "setActionLogPage");
+    renderPagination("action-log-pagination", payload.page, payload.pageSize, payload.totalRows, "setActionLogPage");
 }
 
 async function searchPlayers() {
@@ -285,8 +269,17 @@ async function searchPlayers() {
 }
 
 async function searchActionLogs() {
-    const rows = await adminApi(`search-action-logs&q=${encodeURIComponent($("#action-log-search").value)}`);
-    renderActionLogs(rows, true);
+    await loadActionLogs(1);
+}
+
+async function loadActionLogs(page = actionLogPage) {
+    const result = await adminApi(`search-action-logs&q=${encodeURIComponent($("#action-log-search").value)}&page=${page}&pageSize=${logPageSize}`);
+    renderActionLogs(result);
+}
+
+async function loadAdminLogs(page = adminLogPage) {
+    const result = await adminApi(`search-admin-logs&q=${encodeURIComponent($("#admin-log-search").value)}&page=${page}&pageSize=${logPageSize}`);
+    renderAdminLogs(result);
 }
 
 async function setOperator(playerKey, isOperator) {
@@ -474,7 +467,7 @@ $("#hot-time-form").addEventListener("submit", async event => {
     ["weapon-search", renderWeapons],
     ["enhancement-search", renderEnhancements],
     ["action-log-search", () => {}],
-    ["admin-log-search", renderAdminLogs]
+    ["admin-log-search", () => loadAdminLogs(1)]
 ].forEach(([id, render]) => {
     const element = $("#" + id);
     if (element) element.addEventListener("input", render);
