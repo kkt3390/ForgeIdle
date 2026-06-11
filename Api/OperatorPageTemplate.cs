@@ -71,7 +71,7 @@
         <button class=""tab active"" data-admin-tab=""abuse"">이상행동 감지</button>
         <button class=""tab"" data-admin-tab=""users"">유저/권한/밴</button>
         <button class=""tab"" data-admin-tab=""event"">핫타임 배율</button>
-        <button class=""tab"" data-admin-tab=""rift"">?? ??</button>
+        <button class=""tab"" data-admin-tab=""rift"">주간 균열</button>
         <button class=""tab"" data-admin-tab=""enhancements"">강화 확률</button>
         <button class=""tab"" data-admin-tab=""enhancement-proof"">강화 입증</button>
         <button class=""tab"" data-admin-tab=""monsters"">도감 관리</button>
@@ -100,6 +100,8 @@
             <label>사용 여부<select id=""hot-enabled""><option value=""true"">켜기</option><option value=""false"">끄기</option></select></label>
             <label>골드 배율<input id=""hot-gold"" type=""number"" step=""0.1"" min=""0.1"" max=""20"" /></label>
             <label>경험치 배율<input id=""hot-exp"" type=""number"" step=""0.1"" min=""0.1"" max=""20"" /></label>
+            <label>기본 골드 배율<input id=""base-gold"" type=""number"" step=""0.1"" min=""0.1"" max=""20"" /></label>
+            <label>기본 경험치 배율<input id=""base-exp"" type=""number"" step=""0.1"" min=""0.1"" max=""20"" /></label>
             <div class=""hot-preset-row full""><button type=""button"" onclick=""setHotMultiplier(1)"">1배</button><button type=""button"" onclick=""setHotMultiplier(2)"">2배</button><button type=""button"" onclick=""setHotMultiplier(3)"">3배</button><button type=""button"" onclick=""setHotMultiplier(5)"">5배</button></div>
             <label>시작 시간<input id=""hot-start"" type=""datetime-local"" /></label>
             <label>종료 시간<input id=""hot-end"" type=""datetime-local"" /></label>
@@ -111,24 +113,24 @@
 
 
         <section class=""panel admin-panel"" id=""rift-panel"">
-          <div class=""section-title""><h2>?? ??</h2><span>???/?? ON?OFF? ??? ??</span></div>
+          <div class=""section-title""><h2>주간 균열</h2><span>콘텐츠/상점 ON·OFF와 시즌 설정</span></div>
           <form class=""admin-form"" id=""rift-form"">
-            <label>?? ?? ??<select id=""rift-enabled""><option value=""true"">??</option><option value=""false"">??</option></select></label>
-            <label>?? ?? ??<select id=""rift-shop-enabled""><option value=""true"">??</option><option value=""false"">??</option></select></label>
-            <label>?? ??<select id=""rift-mode""><option value=""auto"">?? ?? ??</option><option value=""manual"">?? ??? ??</option></select></label>
-            <label>?? ??? ID<input id=""rift-boss-area"" type=""number"" min=""0"" max=""11"" /></label>
-            <label class=""full"">??? ?? ??<input id=""rift-season-name"" /></label>
-            <label>?? ??<input id=""rift-start"" type=""datetime-local"" /></label>
-            <label>?? ??<input id=""rift-end"" type=""datetime-local"" /></label>
-            <label>?? ?? ??<input id=""rift-settle-end"" type=""datetime-local"" /></label>
-            <div class=""hot-preset-row full""><button type=""button"" onclick=""setRiftTestDuration(10)"">10? ???</button><button type=""button"" onclick=""setRiftTestDuration(30)"">30? ???</button><button type=""button"" onclick=""setRiftTestDuration(60)"">1?? ???</button></div>
+            <label>콘텐츠 사용 여부<select id=""rift-enabled""><option value=""true"">켜기</option><option value=""false"">끄기</option></select></label>
+            <label>균열 상점 사용 여부<select id=""rift-shop-enabled""><option value=""true"">켜기</option><option value=""false"">끄기</option></select></label>
+            <label>시즌 모드<select id=""rift-mode""><option value=""auto"">자동 주간 시즌</option><option value=""manual"">수동 테스트 시즌</option></select></label>
+            <label>보스 사냥터 ID<input id=""rift-boss-area"" type=""number"" min=""0"" max=""11"" /></label>
+            <label class=""full"">수동 시즌 이름<input id=""rift-season-name"" /></label>
+            <label>시작 시간<input id=""rift-start"" type=""datetime-local"" /></label>
+            <label>종료 시간<input id=""rift-end"" type=""datetime-local"" /></label>
+            <label>정산 종료 시간<input id=""rift-settle-end"" type=""datetime-local"" /></label>
+            <div class=""hot-preset-row full""><button type=""button"" onclick=""setRiftTestDuration(10)"">10분 테스트</button><button type=""button"" onclick=""setRiftTestDuration(30)"">30분 테스트</button><button type=""button"" onclick=""setRiftTestDuration(60)"">1시간 테스트</button></div>
             <p class=""collection-description full"" id=""rift-summary""></p>
-            <button class=""primary full"" type=""submit"">?? ?? ?? ??</button>
+            <button class=""primary full"" type=""submit"">주간 균열 설정 저장</button>
           </form>
-          <div class=""admin-actions""><button onclick=""settleRift()"">?? ?? ?? ??</button><button onclick=""resetRift()"">?? ?? ?? ??? ???</button></div>
+          <div class=""admin-actions""><button onclick=""settleRift()"">현재 시즌 강제 정산</button><button onclick=""resetRift()"">현재 시즌 유저 데이터 초기화</button></div>
           <section class=""admin-grid"" id=""rift-admin-summary""></section>
-          <div class=""admin-table-wrap""><table><thead><tr><th>??</th><th>??</th><th>???</th><th>???</th><th>?? ????</th><th>?? ??</th></tr></thead><tbody id=""rift-ranking-body""></tbody></table></div>
-          <p class=""collection-description"">TODO: ?? ?? ?? ??, ?? ???, ?? dry-run, ??? ??? ??? 2? ?? ?????.</p>
+          <div class=""admin-table-wrap""><table><thead><tr><th>순위</th><th>유저</th><th>피해량</th><th>타격권</th><th>주간 직접사냥</th><th>마지막 타격</th></tr></thead><tbody id=""rift-ranking-body""></tbody></table></div>
+          <p class=""collection-description"">TODO: 보상 미리보기, 정산 dry-run, 시즌 결과 상세 조회는 2차 개발 후보입니다.</p>
         </section>
 
         <section class=""panel admin-panel"" id=""enhancements-panel"">
@@ -208,7 +210,7 @@
   </main>
 
   <div class=""toast"" id=""toast""></div>
-  <script src=""/Scripts/operator.js?v=20260605-5""></script>
+  <script src=""/Scripts/operator.js?v=20260611-1""></script>
 </body>
 </html>";
     }

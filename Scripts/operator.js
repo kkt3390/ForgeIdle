@@ -439,9 +439,9 @@ function updateHotTimeSummary() {
     const baseGold = $("#base-gold").value || "1";
     const baseExp = $("#base-exp").value || "1";
     const hotSummary = enabled
-        ? `??? ???? ${start || "(?? ???)"} ~ ${end || "(?? ???)"} / ?? ${gold}?, ??? ${exp}?`
-        : "???? ?? ????.";
-    $("#hot-time-summary").textContent = `?? ?? ${baseGold}? ? ?? ??? ${baseExp}? / ${hotSummary}`;
+        ? `핫타임 한국시간 ${start || "(시작 미정)"} ~ ${end || "(종료 미정)"} / 골드 ${gold}배, 경험치 ${exp}배`
+        : "핫타임이 꺼져 있습니다.";
+    $("#hot-time-summary").textContent = `기본 골드 ${baseGold}배 · 기본 경험치 ${baseExp}배 / ${hotSummary}`;
 }
 
 function setRiftTestDuration(minutes) {
