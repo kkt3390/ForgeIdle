@@ -1,11 +1,11 @@
-<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="EnhanceAddiction.WebForms.Default" %>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="EnhanceAddiction.WebForms.Default" %>
 <!doctype html>
 <html lang="ko">
 <head runat="server">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>강화중독</title>
-  <link rel="stylesheet" href="Content/site.css?v=20260605-7" />
+  <link rel="stylesheet" href="Content/site.css?v=20260605-9" />
 </head>
 <body>
   <main class="shell">
@@ -77,6 +77,7 @@
         <button class="tab active" data-tab="hunt">사냥</button>
         <button class="tab" data-tab="enhance">강화</button>
         <button class="tab" data-tab="boss">보스</button>
+        <button class="tab" data-tab="rift" id="rift-tab" hidden>?? ??</button>
         <button class="tab" data-tab="stats">스탯</button>
         <button class="tab" data-tab="rates">확률표</button>
         <button class="tab" data-tab="ranking">랭킹</button>
@@ -135,6 +136,24 @@
         <article class="boss-card" id="boss-card"></article>
       </section>
 
+
+      <section class="panel" id="rift-panel">
+        <div class="section-title">
+          <h2>?? ??</h2>
+          <span id="rift-period"></span>
+        </div>
+        <article class="rift-hero" id="rift-hero"></article>
+        <div class="rift-grid" id="rift-stats"></div>
+        <button class="primary wide" id="rift-hit-button">?? ??</button>
+        <section class="rift-shop" id="rift-shop" hidden>
+          <div class="section-title">
+            <h3>?? ?? ??</h3>
+            <span id="rift-coins"></span>
+          </div>
+          <div class="rift-shop-list" id="rift-shop-list"></div>
+        </section>
+      </section>
+
       <section class="panel" id="stats-panel">
         <div class="section-title">
           <h2>스탯</h2>
@@ -169,6 +188,7 @@
           <button class="ranking-tab" data-ranking="enhancement">최대 강화</button>
           <button class="ranking-tab" data-ranking="collection">도감 등록수</button>
           <button class="ranking-tab" data-ranking="manualhunt">직접 사냥</button>
+          <button class="ranking-tab" data-ranking="rift">?? ??</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -264,6 +284,6 @@
   <div class="collection-modal" id="collection-modal" hidden></div>
   <div class="collection-toast" id="collection-toast" hidden></div>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260605-7"></script>
+  <script src="Scripts/game.js?v=20260605-10"></script>
 </body>
 </html>
