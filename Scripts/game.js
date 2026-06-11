@@ -573,7 +573,7 @@ function updateAutoHuntDetails() {
     $("#auto-hunt-details").textContent =
         `${area.name} 기준 · 시간당 ${number(area.goldPerHour)} 골드 · `
         + `경험치 ${number(area.experiencePerHour)} · 입장 +${area.requiredEnhancement}`;
-    $("#auto-hunt-button").disabled = Boolean(state.hunt) || state.weaponLevel < area.requiredEnhancement;
+    $("#auto-hunt-button").disabled = Boolean(state.hunt) || !area.canEnter;
 }
 
 function updateManualHuntDetails() {
