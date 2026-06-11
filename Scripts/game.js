@@ -206,7 +206,9 @@ function showPlayerOrNickname() {
 // 사용자 상태를 공통 상단 정보와 각 게임 패널에 반영합니다.
 function render() {
     if (!state) return;
-    $("#player-name").innerHTML = state.nickname ? nicknameProfileHtml(`${state.nickname} 님의 대장간`, state.profileMonster?.monsterKey) : "";
+    $("#player-name").innerHTML = state.nickname
+        ? nicknameProfileHtml(`${state.nickname} 님의 대장간`, state.profileMonster?.monsterKey, state)
+        : "";
     renderHotTimeBanner();
     $("#gold").textContent = number(state.gold);
     $("#weapon").textContent = `+${state.weaponLevel} ${state.weaponName || "검"}`;
@@ -256,8 +258,49 @@ function profileBadgeHtml(monsterKey) {
         </button>`;
 }
 
-function nicknameProfileHtml(nickname, monsterKey) {
-    return `<span class="nickname-with-profile">${profileBadgeHtml(monsterKey)}<span>${escapeHtml(nickname)}</span></span>`;
+function nicknameProfileHtml(nickname, monsterKey, effects = {}) {
+    const colorClass = nicknameColorClass(effects.nicknameColor);
+    const glowClass = rankGlowClass(effects.riftRankGlow || effects.rankGlow);
+    const badge = effects.riftRankBadge || effects.rankBadge || "";
+    const title = titleDisplayName(effects.title || effects.titleKey);
+    return `
+        <span class="nickname-with-profile ${glowClass}">
+            ${profileBadgeHtml(monsterKey)}
+            <span class="nickname-text ${colorClass}">
+                ${title ? `<small class="nickname-title">${escapeHtml(title)}</small>` : ""}
+                <span>${escapeHtml(nickname)}</span>
+            </span>
+            ${badge ? `<span class="rift-rank-badge">${escapeHtml(badge)}</span>` : ""}
+        </span>`;
+}
+
+function titleDisplayName(keyOrName) {
+    const value = String(keyOrName || "");
+    const titles = {
+        "title-rift-ruler": "균열의 지배자",
+        "title-rift-conqueror": "균열 정복자",
+        "title-rift-chaser": "균열 추격자",
+        "title-rift-challenger": "균열 도전자",
+        "title-challenger": "차원의 도전자",
+        "title-survivor": "뒤틀림을 견딘 자",
+        "title-stalker": "심연의 추적자",
+        "title-cleaver": "균열을 가른 자"
+    };
+    return titles[value] || value;
+}
+
+function nicknameColorClass(key) {
+    const normalized = String(key || "").replace(/^color-/, "");
+    return ["blue", "purple", "red", "gold", "rainbow"].includes(normalized)
+        ? `nickname-color-${normalized}`
+        : "";
+}
+
+function rankGlowClass(key) {
+    const normalized = String(key || "").toLowerCase();
+    return ["gold", "silver", "bronze"].includes(normalized)
+        ? `rift-rank-glow-${normalized}`
+        : "";
 }
 function formatLogMessage(message) {
     return escapeHtml(message).replace(/\[(일반|정예|황금)\]/g, (match, gradeName) => {
@@ -688,7 +731,7 @@ async function loadRankings(category = selectedRankingCategory) {
         .map(row => `
             <tr>
                 <td>${row.rank}</td>
-                <td class="nickname-cell">${nicknameProfileHtml(row.nickname, row.profileMonsterKey)}</td>
+                <td class="nickname-cell">${nicknameProfileHtml(row.nickname, row.profileMonsterKey, row)}</td>
                 <td>${metric.value(row)}</td>
             </tr>`)
         .join("");

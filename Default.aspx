@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>강화중독</title>
-  <link rel="stylesheet" href="Content/site.css?v=20260611-1" />
+  <link rel="stylesheet" href="Content/site.css?v=20260611-2" />
 </head>
 <body>
   <main class="shell">
@@ -291,6 +291,6 @@
   <div class="collection-modal" id="collection-modal" hidden></div>
   <div class="collection-toast" id="collection-toast" hidden></div>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260611-3"></script>
+  <script src="Scripts/game.js?v=20260611-4"></script>
 </body>
 </html>
