@@ -130,7 +130,10 @@
           <div class=""admin-actions""><button onclick=""settleRift()"">현재 시즌 강제 정산</button><button onclick=""resetRift()"">현재 시즌 유저 데이터 초기화</button></div>
           <section class=""admin-grid"" id=""rift-admin-summary""></section>
           <div class=""admin-table-wrap""><table><thead><tr><th>순위</th><th>유저</th><th>피해량</th><th>타격권</th><th>주간 직접사냥</th><th>마지막 타격</th></tr></thead><tbody id=""rift-ranking-body""></tbody></table></div>
-          <p class=""collection-description"">TODO: 보상 미리보기, 정산 dry-run, 시즌 결과 상세 조회는 2차 개발 후보입니다.</p>
+          <div class=""section-title""><h3>정산 보상 미리보기</h3><span>현재 시즌 dry-run</span></div>
+          <div class=""admin-table-wrap""><table><thead><tr><th>순위</th><th>유저</th><th>피해량</th><th>예상 보상</th></tr></thead><tbody id=""rift-reward-preview-body""></tbody></table></div>
+          <div class=""section-title""><h3>최근 정산 결과</h3><span>최근 5개 시즌 / 상위 10명</span></div>
+          <div id=""rift-result-list""></div>
         </section>
 
         <section class=""panel admin-panel"" id=""enhancements-panel"">
@@ -210,7 +213,7 @@
   </main>
 
   <div class=""toast"" id=""toast""></div>
-  <script src=""/Scripts/operator.js?v=20260611-1""></script>
+  <script src=""/Scripts/operator.js?v=20260611-2""></script>
 </body>
 </html>";
     }

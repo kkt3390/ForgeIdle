@@ -127,6 +127,35 @@ function renderRift() {
             <td>${escapeHtml(row.lastDamageAt || "")}</td>
           </tr>`).join("")
         : `<tr><td colspan="6">현재 시즌 균열 타격 기록이 없습니다.</td></tr>`;
+
+    const previewRows = rift.rewardPreview || [];
+    $("#rift-reward-preview-body").innerHTML = previewRows.length
+        ? previewRows.map(row => `
+          <tr>
+            <td>${row.rank}</td>
+            <td>${escapeHtml(row.nickname || row.playerKey)}<br><small>${escapeHtml(row.playerKey)}</small></td>
+            <td>${number(row.damage)}</td>
+            <td>${escapeHtml(row.rewardLabel || `${number(row.rewardCoins)} 파편`)}</td>
+          </tr>`).join("")
+        : `<tr><td colspan="4">현재 시즌 정산 대상자가 없습니다.</td></tr>`;
+
+    const results = rift.recentResults || [];
+    $("#rift-result-list").innerHTML = results.length
+        ? results.map(result => `
+          <details class="admin-table-wrap">
+            <summary>${escapeHtml(result.seasonName)} · ${escapeHtml(result.settledAtKst)} · 참여 ${number(result.totalParticipants)}명 · 피해 ${number(result.totalDamage)}</summary>
+            <table>
+              <thead><tr><th>순위</th><th>유저</th><th>피해량</th><th>지급 보상</th></tr></thead>
+              <tbody>${(result.topRankings || []).map(row => `
+                <tr>
+                  <td>${row.rank}</td>
+                  <td>${escapeHtml(row.nickname || row.playerKey)}<br><small>${escapeHtml(row.playerKey)}</small></td>
+                  <td>${number(row.damage)}</td>
+                  <td>${escapeHtml(row.rewardLabel || `${number(row.rewardCoins)} 파편`)}</td>
+                </tr>`).join("") || `<tr><td colspan="4">저장된 순위 스냅샷이 없습니다.</td></tr>`}</tbody>
+            </table>
+          </details>`).join("")
+        : `<p class="collection-description">아직 정산된 주간 균열 시즌이 없습니다.</p>`;
 }
 
 function renderDashboard() {

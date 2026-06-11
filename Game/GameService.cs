@@ -519,6 +519,7 @@ namespace EnhanceAddiction.WebForms.Game
                 nicknameColor = ActiveNicknameColor(player, now),
                 rankBadge = ActiveRankBadge(player, now),
                 rankGlow = ActiveRankGlow(player, now),
+                rewardRules = RiftRewardRules(),
                 shopItems = settings.ShopEnabled ? RiftShopItems().Select(item => new
                 {
                     key = item.Key,
@@ -527,6 +528,19 @@ namespace EnhanceAddiction.WebForms.Game
                     cost = item.Cost,
                     durationDays = item.DurationDays
                 }).ToArray() : new object[0]
+            };
+        }
+
+        private static object[] RiftRewardRules()
+        {
+            return new object[]
+            {
+                new { rank = "1위", reward = "120 균열 파편 + 전용 칭호 + Ⅰ 표식 + 금빛 테두리" },
+                new { rank = "2위", reward = "100 균열 파편 + 전용 칭호 + Ⅱ 표식 + 은빛 테두리" },
+                new { rank = "3위", reward = "80 균열 파편 + 전용 칭호 + Ⅲ 표식 + 동빛 테두리" },
+                new { rank = "4~10위", reward = "60 균열 파편 + 도전자 칭호" },
+                new { rank = "상위 30% (11위 이하)", reward = "35 균열 파편" },
+                new { rank = "그 외 참여", reward = "15 균열 파편" }
             };
         }
 

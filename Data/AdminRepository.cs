@@ -155,7 +155,9 @@ namespace EnhanceAddiction.WebForms.Data
                     active = settings.Enabled && season.IsActive(now),
                     settling = settings.Enabled && season.IsSettlement(now)
                 },
-                rankings = GetRiftRankings(season.SeasonKey)
+                rankings = GetRiftRankings(season.SeasonKey),
+                rewardPreview = GetRiftRewardPreview(season.SeasonKey),
+                recentResults = GetRiftSeasonResults()
             };
         }
 
@@ -227,6 +229,7 @@ namespace EnhanceAddiction.WebForms.Data
                         throw new InvalidOperationException("이미 정산된 시즌입니다.");
                 }
 
+                var rewardRows = BuildRiftRewardRows(rankings);
                 var totalDamage = rankings.Sum(row => row.Damage);
                 using (var resultCommand = new SqlCommand(@"
 INSERT INTO dbo.ea_rift_season_results
@@ -245,15 +248,16 @@ VALUES
                     resultCommand.Parameters.Add("@SettlementEndsAtUtc", SqlDbType.DateTimeOffset).Value = season.SettlementEndsAtUtc;
                     resultCommand.Parameters.Add("@TotalParticipants", SqlDbType.Int).Value = rankings.Count;
                     resultCommand.Parameters.Add("@TotalDamage", SqlDbType.BigInt).Value = totalDamage;
-                    resultCommand.Parameters.Add("@DetailsJson", SqlDbType.NVarChar, -1).Value = Json.Serialize(new { rewards = "주간 균열 1차 보상표" });
+                    resultCommand.Parameters.Add("@DetailsJson", SqlDbType.NVarChar, -1).Value = Json.Serialize(new
+                    {
+                        rewards = "주간 균열 1차 보상표",
+                        topThirtyCut = rewardRows.Any() ? rewardRows.Max(row => row.TopThirtyCut) : 0
+                    });
                     resultCommand.ExecuteNonQuery();
                 }
 
-                var topThirtyCut = Math.Max(1, (int)Math.Ceiling(rankings.Count * .30));
-                for (var index = 0; index < rankings.Count; index++)
+                foreach (var rewardRow in rewardRows)
                 {
-                    var rank = index + 1;
-                    var reward = RiftRewardForRank(rank, topThirtyCut);
                     using (var update = new SqlCommand(@"
 UPDATE dbo.ea_players
 SET RiftCoins = RiftCoins + @RewardCoins,
@@ -264,11 +268,11 @@ SET RiftCoins = RiftCoins + @RewardCoins,
     UpdatedAt = SYSDATETIMEOFFSET()
 WHERE PlayerKey = @PlayerKey", connection, transaction))
                     {
-                        update.Parameters.Add("@RewardCoins", SqlDbType.Int).Value = reward.Coins;
-                        update.Parameters.Add("@TitleKey", SqlDbType.NVarChar, 80).Value = reward.TitleKey;
-                        update.Parameters.Add("@Badge", SqlDbType.NVarChar, 20).Value = reward.Badge;
-                        update.Parameters.Add("@Glow", SqlDbType.NVarChar, 20).Value = reward.Glow;
-                        update.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = rankings[index].PlayerKey;
+                        update.Parameters.Add("@RewardCoins", SqlDbType.Int).Value = rewardRow.Coins;
+                        update.Parameters.Add("@TitleKey", SqlDbType.NVarChar, 80).Value = rewardRow.TitleKey;
+                        update.Parameters.Add("@Badge", SqlDbType.NVarChar, 20).Value = rewardRow.Badge;
+                        update.Parameters.Add("@Glow", SqlDbType.NVarChar, 20).Value = rewardRow.Glow;
+                        update.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = rewardRow.PlayerKey;
                         update.ExecuteNonQuery();
                     }
 
@@ -280,13 +284,13 @@ VALUES
                         connection, transaction))
                     {
                         snapshot.Parameters.Add("@SeasonKey", SqlDbType.NVarChar, 40).Value = season.SeasonKey;
-                        snapshot.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = rankings[index].PlayerKey;
-                        snapshot.Parameters.Add("@RankNo", SqlDbType.Int).Value = rank;
-                        snapshot.Parameters.Add("@Damage", SqlDbType.BigInt).Value = rankings[index].Damage;
-                        snapshot.Parameters.Add("@RewardCoins", SqlDbType.Int).Value = reward.Coins;
-                        snapshot.Parameters.Add("@RewardTitleKey", SqlDbType.NVarChar, 80).Value = reward.TitleKey;
-                        snapshot.Parameters.Add("@RewardBadge", SqlDbType.NVarChar, 20).Value = reward.Badge;
-                        snapshot.Parameters.Add("@RewardGlow", SqlDbType.NVarChar, 20).Value = reward.Glow;
+                        snapshot.Parameters.Add("@PlayerKey", SqlDbType.NVarChar, 100).Value = rewardRow.PlayerKey;
+                        snapshot.Parameters.Add("@RankNo", SqlDbType.Int).Value = rewardRow.Rank;
+                        snapshot.Parameters.Add("@Damage", SqlDbType.BigInt).Value = rewardRow.Damage;
+                        snapshot.Parameters.Add("@RewardCoins", SqlDbType.Int).Value = rewardRow.Coins;
+                        snapshot.Parameters.Add("@RewardTitleKey", SqlDbType.NVarChar, 80).Value = rewardRow.TitleKey;
+                        snapshot.Parameters.Add("@RewardBadge", SqlDbType.NVarChar, 20).Value = rewardRow.Badge;
+                        snapshot.Parameters.Add("@RewardGlow", SqlDbType.NVarChar, 20).Value = rewardRow.Glow;
                         snapshot.ExecuteNonQuery();
                     }
                 }
@@ -870,6 +874,144 @@ VALUES
                 .ToArray();
         }
 
+        private object GetRiftRewardPreview(string seasonKey)
+        {
+            var rankings = LoadRiftRankingRows(seasonKey);
+            return BuildRiftRewardRows(rankings)
+                .Take(100)
+                .Select(row => new
+                {
+                    rank = row.Rank,
+                    playerKey = row.PlayerKey,
+                    nickname = row.Nickname,
+                    damage = row.Damage,
+                    rewardCoins = row.Coins,
+                    rewardTitleKey = row.TitleKey,
+                    rewardBadge = row.Badge,
+                    rewardGlow = row.Glow,
+                    rewardLabel = row.RewardLabel
+                })
+                .ToArray();
+        }
+
+        private object GetRiftSeasonResults()
+        {
+            var results = new List<RiftSeasonResultRow>();
+            using (var connection = OpenConnection())
+            {
+                using (var command = new SqlCommand(
+                    @"SELECT TOP (5) SeasonKey, SeasonName, Mode, BossAreaId, StartsAtUtc, EndsAtUtc,
+                             SettledAtUtc, TotalParticipants, TotalDamage
+                      FROM dbo.ea_rift_season_results
+                      ORDER BY SettledAtUtc DESC", connection))
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        results.Add(new RiftSeasonResultRow
+                        {
+                            SeasonKey = reader.GetString(0),
+                            SeasonName = reader.GetString(1),
+                            Mode = reader.GetString(2),
+                            BossAreaId = reader.GetInt32(3),
+                            StartsAtUtc = reader.GetDateTimeOffset(4),
+                            EndsAtUtc = reader.GetDateTimeOffset(5),
+                            SettledAtUtc = reader.GetDateTimeOffset(6),
+                            TotalParticipants = reader.GetInt32(7),
+                            TotalDamage = reader.GetInt64(8)
+                        });
+                    }
+                }
+
+                return results.Select(result => new
+                {
+                    seasonKey = result.SeasonKey,
+                    seasonName = result.SeasonName,
+                    mode = result.Mode,
+                    bossAreaId = result.BossAreaId,
+                    startsAtKst = KstDateTime(result.StartsAtUtc),
+                    endsAtKst = KstDateTime(result.EndsAtUtc),
+                    settledAtKst = KstDateTime(result.SettledAtUtc),
+                    totalParticipants = result.TotalParticipants,
+                    totalDamage = result.TotalDamage,
+                    topRankings = LoadRiftSnapshotRows(connection, result.SeasonKey)
+                        .Select(row => new
+                        {
+                            rank = row.Rank,
+                            playerKey = row.PlayerKey,
+                            nickname = row.Nickname,
+                            damage = row.Damage,
+                            rewardCoins = row.Coins,
+                            rewardTitleKey = row.TitleKey,
+                            rewardBadge = row.Badge,
+                            rewardGlow = row.Glow,
+                            rewardLabel = RiftRewardLabel(row.Coins, row.TitleKey, row.Badge, row.Glow)
+                        })
+                        .ToArray()
+                }).ToArray();
+            }
+        }
+
+        private static List<RiftRewardPreviewRow> BuildRiftRewardRows(List<RiftRankingRow> rankings)
+        {
+            var rows = new List<RiftRewardPreviewRow>();
+            if (!rankings.Any()) return rows;
+
+            var topThirtyCut = Math.Max(1, (int)Math.Ceiling(rankings.Count * .30));
+            for (var index = 0; index < rankings.Count; index++)
+            {
+                var rank = index + 1;
+                var reward = RiftRewardForRank(rank, topThirtyCut);
+                rows.Add(new RiftRewardPreviewRow
+                {
+                    Rank = rank,
+                    PlayerKey = rankings[index].PlayerKey,
+                    Nickname = rankings[index].Nickname,
+                    Damage = rankings[index].Damage,
+                    Coins = reward.Coins,
+                    TitleKey = reward.TitleKey,
+                    Badge = reward.Badge,
+                    Glow = reward.Glow,
+                    RewardLabel = RiftRewardLabel(reward.Coins, reward.TitleKey, reward.Badge, reward.Glow),
+                    TopThirtyCut = topThirtyCut
+                });
+            }
+            return rows;
+        }
+
+        private static List<RiftSnapshotRow> LoadRiftSnapshotRows(SqlConnection connection, string seasonKey)
+        {
+            var rows = new List<RiftSnapshotRow>();
+            using (var command = new SqlCommand(
+                @"SELECT TOP (10) s.RankNo, s.PlayerKey, ISNULL(p.Nickname, N''), s.Damage,
+                         s.RewardCoins, ISNULL(s.RewardTitleKey, N''), ISNULL(s.RewardBadge, N''), ISNULL(s.RewardGlow, N'')
+                  FROM dbo.ea_rift_ranking_snapshots s
+                  LEFT JOIN dbo.ea_players p ON p.PlayerKey = s.PlayerKey
+                  WHERE s.SeasonKey = @SeasonKey
+                  ORDER BY s.RankNo", connection))
+            {
+                command.Parameters.Add("@SeasonKey", SqlDbType.NVarChar, 40).Value = seasonKey;
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        rows.Add(new RiftSnapshotRow
+                        {
+                            Rank = reader.GetInt32(0),
+                            PlayerKey = reader.GetString(1),
+                            Nickname = reader.GetString(2),
+                            Damage = reader.GetInt64(3),
+                            Coins = reader.GetInt32(4),
+                            TitleKey = reader.GetString(5),
+                            Badge = reader.GetString(6),
+                            Glow = reader.GetString(7)
+                        });
+                    }
+                }
+            }
+            return rows;
+        }
+
         private List<RiftRankingRow> LoadRiftRankingRows(string seasonKey)
         {
             var rows = new List<RiftRankingRow>();
@@ -904,6 +1046,15 @@ VALUES
                 }
             }
             return rows;
+        }
+
+        private static string RiftRewardLabel(int coins, string titleKey, string badge, string glow)
+        {
+            var parts = new List<string> { coins.ToString(CultureInfo.InvariantCulture) + " 파편" };
+            if (!string.IsNullOrWhiteSpace(titleKey)) parts.Add("칭호 " + titleKey);
+            if (!string.IsNullOrWhiteSpace(badge)) parts.Add("순위 표식 " + badge);
+            if (!string.IsNullOrWhiteSpace(glow)) parts.Add("테두리 " + glow);
+            return string.Join(" / ", parts.ToArray());
         }
 
         private static RiftReward RiftRewardForRank(int rank, int topThirtyCut)
@@ -1079,6 +1230,45 @@ VALUES
             public int Tickets { get; set; }
             public long Damage { get; set; }
             public DateTime? LastDamageAtUtc { get; set; }
+        }
+
+        private sealed class RiftRewardPreviewRow
+        {
+            public int Rank { get; set; }
+            public string PlayerKey { get; set; }
+            public string Nickname { get; set; }
+            public long Damage { get; set; }
+            public int Coins { get; set; }
+            public string TitleKey { get; set; }
+            public string Badge { get; set; }
+            public string Glow { get; set; }
+            public string RewardLabel { get; set; }
+            public int TopThirtyCut { get; set; }
+        }
+
+        private sealed class RiftSeasonResultRow
+        {
+            public string SeasonKey { get; set; }
+            public string SeasonName { get; set; }
+            public string Mode { get; set; }
+            public int BossAreaId { get; set; }
+            public DateTimeOffset StartsAtUtc { get; set; }
+            public DateTimeOffset EndsAtUtc { get; set; }
+            public DateTimeOffset SettledAtUtc { get; set; }
+            public int TotalParticipants { get; set; }
+            public long TotalDamage { get; set; }
+        }
+
+        private sealed class RiftSnapshotRow
+        {
+            public int Rank { get; set; }
+            public string PlayerKey { get; set; }
+            public string Nickname { get; set; }
+            public long Damage { get; set; }
+            public int Coins { get; set; }
+            public string TitleKey { get; set; }
+            public string Badge { get; set; }
+            public string Glow { get; set; }
         }
 
         private sealed class RiftReward

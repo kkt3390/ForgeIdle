@@ -637,6 +637,11 @@ function renderRift() {
         ["주간 직접사냥", number(rift.weeklyManualHuntCount)],
         ["균열 파편", number(rift.coins)]
     ].map(item => `<article><span>${item[0]}</span><strong>${item[1]}</strong></article>`).join("");
+    $("#rift-reward-list").innerHTML = (rift.rewardRules || []).map(rule => `
+        <article>
+            <strong>${escapeHtml(rule.rank)}</strong>
+            <span>${escapeHtml(rule.reward)}</span>
+        </article>`).join("");
     $("#rift-hit-button").disabled = !rift.active || rift.tickets <= 0;
     $("#rift-hit-button").textContent = rift.active ? "균열 타격" : rift.settling ? "정산 중" : "타격 대기";
     renderRiftShop();
@@ -677,18 +682,32 @@ async function loadRankings(category = selectedRankingCategory) {
 
     const ranking = await api(`rankings&category=${encodeURIComponent(selectedRankingCategory)}`);
     const rows = ranking.rows || ranking;
+    const metric = rankingMetric(selectedRankingCategory);
+    $("#ranking-head").innerHTML = `<th>순위</th><th>닉네임</th><th>${metric.label}</th>`;
     $("#ranking-body").innerHTML = rows
         .map(row => `
             <tr>
                 <td>${row.rank}</td>
                 <td class="nickname-cell">${nicknameProfileHtml(row.nickname, row.profileMonsterKey)}</td>
-                <td>Lv. ${row.level}</td>
-                <td>+${row.weaponLevel}</td>
-                <td>+${row.highestWeaponLevel}</td>
-                <td>${number(row.collectionCount || 0)}</td>
-                <td>${selectedRankingCategory === "rift" ? number(row.riftDamage || 0) : number(row.manualHuntCount || 0)}</td>
+                <td>${metric.value(row)}</td>
             </tr>`)
         .join("");
+}
+
+function rankingMetric(category) {
+    if (category === "enhancement") {
+        return { label: "최대강화", value: row => `+${number(row.highestWeaponLevel || 0)}` };
+    }
+    if (category === "collection") {
+        return { label: "도감등록", value: row => `${number(row.collectionCount || 0)}종` };
+    }
+    if (category === "manualhunt") {
+        return { label: "직접사냥", value: row => `${number(row.manualHuntCount || 0)}회` };
+    }
+    if (category === "rift") {
+        return { label: "주간균열", value: row => number(row.riftDamage || 0) };
+    }
+    return { label: "레벨", value: row => `Lv. ${number(row.level || 0)}` };
 }
 
 // 전체 강화 단계의 기본 확률표를 표시합니다.
