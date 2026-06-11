@@ -83,7 +83,8 @@ async function adminApi(action, body) {
 async function loadAdmin() {
     adminState = await adminApi("state");
     renderDashboard();
-    await loadAdminTab("abuse");
+    $("#abuse-body").innerHTML = `<tr><td colspan="5">이상행동 후보를 불러오는 중입니다.</td></tr>`;
+    setTimeout(() => loadAdminTab("abuse").catch(error => toast(error.message)), 0);
 }
 
 async function refreshDashboard() {
@@ -95,10 +96,16 @@ async function refreshDashboard() {
 
 async function loadAdminTab(tab, force = false) {
     if (!force && loadedAdminTabs.has(tab)) return;
-    const payload = await adminApi(`tab-state&tab=${encodeURIComponent(tab)}`);
-    adminState = { ...(adminState || {}), ...payload };
-    loadedAdminTabs.add(tab);
-    renderAdminTab(tab);
+    renderAdminTabLoading(tab);
+    try {
+        const payload = await adminApi(`tab-state&tab=${encodeURIComponent(tab)}`);
+        adminState = { ...(adminState || {}), ...payload };
+        loadedAdminTabs.add(tab);
+        renderAdminTab(tab);
+    } catch (error) {
+        renderAdminTabError(tab, error.message);
+        throw error;
+    }
 }
 
 function renderAdminTab(tab) {
@@ -112,6 +119,47 @@ function renderAdminTab(tab) {
     if (tab === "weapons") renderWeapons();
     if (tab === "action-logs") renderActionLogs(adminState.recentActionLogs || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize });
     if (tab === "logs") renderAdminLogs(adminState.recentAdminLogs || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize });
+}
+
+function renderAdminTabLoading(tab) {
+    renderAdminTabMessage(tab, "불러오는 중입니다.");
+}
+
+function renderAdminTabError(tab, message) {
+    renderAdminTabMessage(tab, message || "불러오지 못했습니다.");
+}
+
+function renderAdminTabMessage(tab, message) {
+    const escaped = escapeHtml(message);
+    const tableTargets = {
+        abuse: ["abuse-body", 5],
+        users: ["users-body", 6],
+        enhancements: ["enhancement-body", 6],
+        monsters: ["monster-body", 6],
+        weapons: ["weapon-body", 5],
+        "action-logs": ["action-log-body", 6],
+        logs: ["admin-log-body", 4]
+    };
+    if (tableTargets[tab]) {
+        const [id, colspan] = tableTargets[tab];
+        $("#" + id).innerHTML = `<tr><td colspan="${colspan}">${escaped}</td></tr>`;
+        return;
+    }
+    if (tab === "event") {
+        $("#hot-time-summary").textContent = message;
+        return;
+    }
+    if (tab === "rift") {
+        $("#rift-admin-summary").innerHTML = `<article class="admin-card"><span>주간 균열</span><strong>${escaped}</strong></article>`;
+        $("#rift-ranking-body").innerHTML = `<tr><td colspan="6">${escaped}</td></tr>`;
+        $("#rift-reward-preview-body").innerHTML = `<tr><td colspan="4">${escaped}</td></tr>`;
+        $("#rift-result-list").innerHTML = `<p class="collection-description">${escaped}</p>`;
+        return;
+    }
+    if (tab === "enhancement-proof") {
+        $("#enhancement-proof-summary").innerHTML = `<article class="admin-card"><span>강화 입증</span><strong>${escaped}</strong></article>`;
+        $("#enhancement-proof-body").innerHTML = `<tr><td colspan="6">${escaped}</td></tr>`;
+    }
 }
 
 function renderRift() {

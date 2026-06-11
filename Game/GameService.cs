@@ -539,7 +539,7 @@ namespace EnhanceAddiction.WebForms.Game
                 new { rank = "2위", reward = "100 균열 파편 + 전용 칭호 + Ⅱ 표식 + 은빛 테두리" },
                 new { rank = "3위", reward = "80 균열 파편 + 전용 칭호 + Ⅲ 표식 + 동빛 테두리" },
                 new { rank = "4~10위", reward = "60 균열 파편 + 도전자 칭호" },
-                new { rank = "상위 30% (11위 이하)", reward = "35 균열 파편" },
+                new { rank = "참여자 중 상위 30% (11위 이하)", reward = "35 균열 파편" },
                 new { rank = "그 외 참여", reward = "15 균열 파편" }
             };
         }

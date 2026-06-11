@@ -206,6 +206,8 @@ namespace EnhanceAddiction.WebForms.Data
             UpsertSetting("RiftManualEndsAtUtc", endsAtUtc, operatorKey);
             UpsertSetting("RiftManualSettlementEndsAtUtc", settlementEndsAtUtc, operatorKey);
             UpsertSetting("RiftManualBossAreaId", bossAreaId.ToString(CultureInfo.InvariantCulture), operatorKey);
+            UpsertSetting("RiftForcedSettledSeasonKey", "", operatorKey);
+            UpsertSetting("RiftForcedSettledAtUtc", "", operatorKey);
             RiftSettings.ClearCache();
             AddAdminLog(operatorKey, "주간 균열 설정 저장", null, body);
         }
@@ -234,7 +236,8 @@ namespace EnhanceAddiction.WebForms.Data
         public void SettleCurrentRiftSeason(string operatorKey)
         {
             var settings = RiftSettings.Current();
-            var season = settings.CurrentSeason(DateTime.UtcNow);
+            var settledAtUtc = DateTime.UtcNow;
+            var season = settings.CurrentSeason(settledAtUtc);
             var rankings = LoadRiftRankingRows(season.SeasonKey);
             if (!rankings.Any()) throw new InvalidOperationException("정산할 균열 참여 기록이 없습니다.");
 
@@ -316,9 +319,13 @@ VALUES
                     }
                 }
 
+                UpsertSetting(connection, transaction, "RiftForcedSettledSeasonKey", season.SeasonKey, operatorKey);
+                UpsertSetting(connection, transaction, "RiftForcedSettledAtUtc", settledAtUtc.ToString("o", CultureInfo.InvariantCulture), operatorKey);
+
                 transaction.Commit();
             }
 
+            RiftSettings.ClearCache();
             AddAdminLog(operatorKey, "주간 균열 강제 정산", null, new { seasonKey = season.SeasonKey, participants = rankings.Count });
         }
 
@@ -675,7 +682,7 @@ VALUES
             var rows = new List<object>();
             using (var connection = OpenConnection())
             using (var command = new SqlCommand(
-                @"SELECT
+                @"SELECT TOP (100)
                     l.PlayerKey,
                     ISNULL(p.Nickname, N'') AS Nickname,
                     l.ActionType,
@@ -1114,6 +1121,26 @@ VALUES
                   WHEN NOT MATCHED THEN
                     INSERT (SettingKey, SettingValue, UpdatedByPlayerKey, UpdatedAt)
                     VALUES (@SettingKey, @SettingValue, @OperatorKey, SYSDATETIMEOFFSET());", connection))
+            {
+                command.Parameters.Add("@SettingKey", SqlDbType.NVarChar, 80).Value = key;
+                command.Parameters.Add("@SettingValue", SqlDbType.NVarChar, -1).Value = value ?? "";
+                command.Parameters.Add("@OperatorKey", SqlDbType.NVarChar, 100).Value = operatorKey;
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private static void UpsertSetting(SqlConnection connection, SqlTransaction transaction, string key, string value, string operatorKey)
+        {
+            using (var command = new SqlCommand(
+                @"MERGE dbo.ea_game_settings AS target
+                  USING (SELECT @SettingKey AS SettingKey) AS source
+                  ON target.SettingKey = source.SettingKey
+                  WHEN MATCHED THEN
+                    UPDATE SET SettingValue = @SettingValue, UpdatedByPlayerKey = @OperatorKey, UpdatedAt = SYSDATETIMEOFFSET()
+                  WHEN NOT MATCHED THEN
+                    INSERT (SettingKey, SettingValue, UpdatedByPlayerKey, UpdatedAt)
+                    VALUES (@SettingKey, @SettingValue, @OperatorKey, SYSDATETIMEOFFSET());",
+                connection, transaction))
             {
                 command.Parameters.Add("@SettingKey", SqlDbType.NVarChar, 80).Value = key;
                 command.Parameters.Add("@SettingValue", SqlDbType.NVarChar, -1).Value = value ?? "";

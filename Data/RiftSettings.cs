@@ -33,15 +33,18 @@ namespace EnhanceAddiction.WebForms.Data
         public DateTime? ManualEndsAtUtc { get; set; }
         public DateTime? ManualSettlementEndsAtUtc { get; set; }
         public int ManualBossAreaId { get; set; }
+        public string ForcedSettledSeasonKey { get; set; }
+        public DateTime? ForcedSettledAtUtc { get; set; }
 
         public RiftSeasonInfo CurrentSeason(DateTime nowUtc)
         {
+            RiftSeasonInfo season;
             if (Mode == "manual"
                 && ManualStartsAtUtc.HasValue
                 && ManualEndsAtUtc.HasValue
                 && ManualSettlementEndsAtUtc.HasValue)
             {
-                return new RiftSeasonInfo
+                season = new RiftSeasonInfo
                 {
                     SeasonKey = "manual-" + ManualStartsAtUtc.Value.ToString("yyyyMMddHHmm", CultureInfo.InvariantCulture),
                     SeasonName = string.IsNullOrWhiteSpace(ManualSeasonName) ? "테스트 균열" : ManualSeasonName,
@@ -51,9 +54,24 @@ namespace EnhanceAddiction.WebForms.Data
                     EndsAtUtc = ManualEndsAtUtc.Value,
                     SettlementEndsAtUtc = ManualSettlementEndsAtUtc.Value
                 };
+                return ApplyForcedSettlement(season);
             }
 
-            return AutoSeason(nowUtc);
+            season = AutoSeason(nowUtc);
+            return ApplyForcedSettlement(season);
+        }
+
+        private RiftSeasonInfo ApplyForcedSettlement(RiftSeasonInfo season)
+        {
+            if (string.IsNullOrWhiteSpace(ForcedSettledSeasonKey)
+                || ForcedSettledSeasonKey != season.SeasonKey
+                || !ForcedSettledAtUtc.HasValue
+                || ForcedSettledAtUtc.Value >= season.EndsAtUtc)
+                return season;
+
+            season.EndsAtUtc = ForcedSettledAtUtc.Value;
+            season.SettlementEndsAtUtc = ForcedSettledAtUtc.Value.AddMinutes(10);
+            return season;
         }
 
         private static RiftSeasonInfo AutoSeason(DateTime nowUtc)
@@ -121,7 +139,8 @@ namespace EnhanceAddiction.WebForms.Data
                 ShopEnabled = false,
                 Mode = "auto",
                 ManualSeasonName = "테스트 균열",
-                ManualBossAreaId = 0
+                ManualBossAreaId = 0,
+                ForcedSettledSeasonKey = ""
             };
 
             using (var connection = new SqlConnection(ConnectionSettings.Value))
@@ -145,6 +164,8 @@ namespace EnhanceAddiction.WebForms.Data
                         if (key == "RiftManualEndsAtUtc") settings.ManualEndsAtUtc = ParseDate(value);
                         if (key == "RiftManualSettlementEndsAtUtc") settings.ManualSettlementEndsAtUtc = ParseDate(value);
                         if (key == "RiftManualBossAreaId") settings.ManualBossAreaId = ParseInt(value, 0);
+                        if (key == "RiftForcedSettledSeasonKey") settings.ForcedSettledSeasonKey = value;
+                        if (key == "RiftForcedSettledAtUtc") settings.ForcedSettledAtUtc = ParseDate(value);
                     }
                 }
             }
