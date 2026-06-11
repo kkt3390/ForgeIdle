@@ -130,7 +130,7 @@ namespace EnhanceAddiction.WebForms.Game
                     name = nextBossArea.Name + "의 보스",
                     requiredEnhancement = nextBossArea.BossRequiredEnhancement.Value,
                     health = nextBossArea.BossHealth.Value,
-                    canChallenge = player.WeaponLevel >= nextBossArea.BossRequiredEnhancement.Value
+                    canChallenge = player.HighestWeaponLevel >= nextBossArea.BossRequiredEnhancement.Value
                 },
                 availableAreas = availableAreas,
                 recentMessages = player.RecentMessages.Take(10)
@@ -353,7 +353,7 @@ namespace EnhanceAddiction.WebForms.Game
             var areaId = player.HighestBossDefeated + 1;
             var area = _catalog.Areas.ElementAtOrDefault(areaId);
             if (area == null || !area.BossRequiredEnhancement.HasValue) return Failure(player, "도전 가능한 다음 보스가 없습니다.");
-            if (player.WeaponLevel < area.BossRequiredEnhancement.Value)
+            if (player.HighestWeaponLevel < area.BossRequiredEnhancement.Value)
                 return Failure(player, string.Format("보스 도전에는 +{0} 무기가 필요합니다.", area.BossRequiredEnhancement.Value));
             player.HighestBossDefeated = areaId;
             var nextArea = _catalog.Areas[areaId + 1];
@@ -730,10 +730,10 @@ namespace EnhanceAddiction.WebForms.Game
             while (player.RecentMessages.Count > 10) player.RecentMessages.RemoveAt(player.RecentMessages.Count - 1);
         }
 
-        // 해금된 지역이고 강화 조건도 충족했는지 확인합니다.
+        // 해금된 지역이고 최고 강화 기록이 입장 조건을 충족했는지 확인합니다.
         private bool CanEnter(PlayerState player, HuntingArea area)
         {
-            return area.Id <= player.HighestBossDefeated + 1 && player.WeaponLevel >= area.RequiredEnhancement;
+            return area.Id <= player.HighestBossDefeated + 1 && player.HighestWeaponLevel >= area.RequiredEnhancement;
         }
 
         // 사용자가 선택한 직접 사냥터가 유효하지 않으면 입장 가능한 가장 높은 사냥터를 선택합니다.
