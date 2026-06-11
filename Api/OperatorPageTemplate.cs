@@ -127,7 +127,7 @@
             <p class=""collection-description full"" id=""rift-summary""></p>
             <button class=""primary full"" type=""submit"">주간 균열 설정 저장</button>
           </form>
-          <div class=""admin-actions""><button onclick=""settleRift()"">현재 시즌 강제 정산</button><button onclick=""resetRift()"">현재 시즌 유저 데이터 초기화</button></div>
+          <div class=""admin-actions""><button onclick=""settleRift()"">현재 시즌 강제 정산</button><button onclick=""resetRift()"">현재 시즌 유저 데이터 초기화</button><button onclick=""clearRiftRewards()"">랭킹 보상 효과 제거</button></div>
           <section class=""admin-grid"" id=""rift-admin-summary""></section>
           <div class=""admin-table-wrap""><table><thead><tr><th>순위</th><th>유저</th><th>피해량</th><th>타격권</th><th>주간 직접사냥</th><th>마지막 타격</th></tr></thead><tbody id=""rift-ranking-body""></tbody></table></div>
           <div class=""section-title""><h3>정산 보상 미리보기</h3><span>현재 시즌 dry-run</span></div>
@@ -213,7 +213,7 @@
   </main>
 
   <div class=""toast"" id=""toast""></div>
-  <script src=""/Scripts/operator.js?v=20260611-4""></script>
+  <script src=""/Scripts/operator.js?v=20260611-5""></script>
 </body>
 </html>";
     }

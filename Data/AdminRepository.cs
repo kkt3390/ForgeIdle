@@ -233,6 +233,26 @@ namespace EnhanceAddiction.WebForms.Data
             AddAdminLog(operatorKey, "주간 균열 시즌 데이터 초기화", null, new { seasonKey = season.SeasonKey });
         }
 
+        public void ClearRiftRankRewards(string operatorKey)
+        {
+            using (var connection = OpenConnection())
+            using (var command = new SqlCommand(
+                @"UPDATE dbo.ea_players
+                  SET RiftRankBadge = N'',
+                      RiftRankGlow = N'',
+                      RiftRankRewardExpiresAtUtc = NULL,
+                      ActiveTitleKey = CASE WHEN ActiveTitleKey LIKE N'title-rift-%' THEN N'' ELSE ActiveTitleKey END,
+                      UpdatedAt = SYSDATETIMEOFFSET()
+                  WHERE RiftRankBadge <> N''
+                     OR RiftRankGlow <> N''
+                     OR RiftRankRewardExpiresAtUtc IS NOT NULL
+                     OR ActiveTitleKey LIKE N'title-rift-%'", connection))
+            {
+                var affectedRows = command.ExecuteNonQuery();
+                AddAdminLog(operatorKey, "주간 균열 랭킹 보상 효과 제거", null, new { affectedRows = affectedRows });
+            }
+        }
+
         public void SettleCurrentRiftSeason(string operatorKey)
         {
             var settings = RiftSettings.Current();

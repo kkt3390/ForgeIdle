@@ -62,6 +62,10 @@ namespace EnhanceAddiction.WebForms.Api
                         repository.ResetCurrentRiftSeason(operatorKey);
                         result = new { ok = true, message = "현재 주간 균열 유저 데이터를 초기화했습니다." };
                         break;
+                    case "clear-rift-rewards":
+                        repository.ClearRiftRankRewards(operatorKey);
+                        result = new { ok = true, message = "주간 균열 랭킹 보상 효과를 제거했습니다." };
+                        break;
                     case "set-operator":
                         result = SetOperator(repository, operatorKey, Body(context));
                         break;

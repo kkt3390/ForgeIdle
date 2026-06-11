@@ -585,6 +585,13 @@ async function resetRift() {
     await loadAdminTab("rift", true);
 }
 
+async function clearRiftRewards() {
+    if (!confirm("모든 유저의 주간 균열 랭킹 표식/테두리와 랭킹 보상 칭호를 제거할까요? 상점에서 구매한 칭호와 닉네임 색상은 유지됩니다.")) return;
+    await adminApi("clear-rift-rewards", {});
+    toast("주간 균열 랭킹 보상 효과를 제거했습니다.");
+    await loadAdminTab("rift", true);
+}
+
 function koreaNow() {
     const formatter = new Intl.DateTimeFormat("sv-SE", {
         timeZone: "Asia/Seoul",
