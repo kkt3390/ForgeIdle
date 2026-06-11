@@ -167,9 +167,9 @@ namespace EnhanceAddiction.WebForms.Api
             string playerKey;
             var repository = new PlayerRepository();
             var player = GetPlayer(context, repository, out playerKey);
-            var beforeStateJson = Json.Serialize(player);
+            var beforeStateJson = Json.Serialize(AuditState(player));
             var result = execute(player);
-            var afterStateJson = Json.Serialize(player);
+            var afterStateJson = Json.Serialize(AuditState(player));
 
             // 성공과 실패를 모두 남겨야 밸런스 검증과 문제 역추적이 가능합니다.
             repository.AddGameActionLog(
@@ -181,6 +181,24 @@ namespace EnhanceAddiction.WebForms.Api
             if (result.Ok) repository.Save(playerKey, player);
             if (result.EnhancementAttempt != null) repository.AddEnhancementAttempt(playerKey, result.EnhancementAttempt);
             return result;
+        }
+
+        // 반복 행동 로그가 DB를 키우지 않도록 운영 감시에 필요한 핵심 상태만 보관합니다.
+        private static object AuditState(PlayerState player)
+        {
+            return new
+            {
+                player.Nickname,
+                player.Gold,
+                player.WeaponLevel,
+                player.HighestWeaponLevel,
+                player.ProtectionTickets,
+                player.Level,
+                player.Experience,
+                player.ManualHuntCount,
+                player.RiftTickets,
+                player.RiftDamage
+            };
         }
 
         // 로그인 세션의 플레이어 키로 DB 상태를 조회하거나 새 상태를 만듭니다.

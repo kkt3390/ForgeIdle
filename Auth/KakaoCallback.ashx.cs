@@ -39,13 +39,11 @@ namespace EnhanceAddiction.WebForms.Auth
         {
             using (var client = new WebClient())
             {
-                var values = new NameValueCollection
-                {
-                    ["grant_type"] = "authorization_code",
-                    ["client_id"] = KakaoSettings.ClientId,
-                    ["redirect_uri"] = KakaoLogin.CallbackUrl(context),
-                    ["code"] = code
-                };
+                var values = new NameValueCollection();
+                values["grant_type"] = "authorization_code";
+                values["client_id"] = KakaoSettings.ClientId;
+                values["redirect_uri"] = KakaoLogin.CallbackUrl(context);
+                values["code"] = code;
                 if (!string.IsNullOrWhiteSpace(KakaoSettings.ClientSecret))
                     values["client_secret"] = KakaoSettings.ClientSecret;
                 var body = client.UploadValues("https://kauth.kakao.com/oauth/token", values);

@@ -51,6 +51,7 @@
     <Content Include="Content\weapons\*.webp" />
     <Content Include="database\cleanup_legacy_tables.sql" />
     <Content Include="database\setup.sql" />
+    <Content Include="database\trim_transient_logs.sql" />
     <Content Include="database\update_monster_catalog_texts.sql" />
     <Content Include="database\update_shared_monster_images.sql" />
     <Content Include="database\verify_legacy_migration.sql" />

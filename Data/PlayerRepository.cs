@@ -16,6 +16,8 @@ namespace EnhanceAddiction.WebForms.Data
         private static readonly string ConnectionString = ConnectionSettings.Value;
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer();
         private static readonly Regex NicknamePattern = new Regex("^[가-힣A-Za-z0-9_]{2,12}$", RegexOptions.Compiled);
+        private static readonly object RetentionLock = new object();
+        private static DateTime nextRetentionCleanupAtUtc = DateTime.MinValue;
 
         // 플레이어 상태를 일반 컬럼에서 조회하고, 처음 접속한 계정이면 기본 상태를 생성합니다.
         public PlayerState GetOrCreate(string playerKey)
@@ -355,6 +357,67 @@ namespace EnhanceAddiction.WebForms.Data
                 command.Parameters.Add("@AfterStateJson", SqlDbType.NVarChar, -1).Value = afterStateJson;
                 command.Parameters.Add("@DetailsJson", SqlDbType.NVarChar, -1).Value =
                     string.IsNullOrWhiteSpace(detailsJson) ? (object)DBNull.Value : detailsJson;
+                command.ExecuteNonQuery();
+            }
+            TrimTransientLogsIfDue();
+        }
+
+        public static void TrimTransientLogs()
+        {
+            TrimTransientLogsCore();
+        }
+
+        // 게임 진행에 필요 없는 누적 로그가 DB 용량을 밀어 올리지 않도록 주기적으로 비웁니다.
+        private static void TrimTransientLogsIfDue()
+        {
+            var now = DateTime.UtcNow;
+            if (now < nextRetentionCleanupAtUtc) return;
+
+            lock (RetentionLock)
+            {
+                if (now < nextRetentionCleanupAtUtc) return;
+                nextRetentionCleanupAtUtc = now.AddHours(1);
+            }
+
+            TrimTransientLogsCore();
+        }
+
+        private static void TrimTransientLogsCore()
+        {
+            try
+            {
+                using (var connection = OpenConnection())
+                {
+                    DeleteOldRows(connection, "dbo.ea_game_action_logs", "CreatedAt", 3);
+                    DeleteOldRows(connection, "dbo.ea_enhancement_attempts", "AttemptedAt", 3);
+                    DeleteOldRows(connection, "dbo.ea_admin_action_logs", "CreatedAt", 1);
+                }
+            }
+            catch (SqlException)
+            {
+                // 로그 정리 실패가 사냥/강화 같은 게임 플레이를 막지 않게 다음 주기에 다시 시도합니다.
+                lock (RetentionLock)
+                {
+                    nextRetentionCleanupAtUtc = DateTime.UtcNow.AddMinutes(5);
+                }
+            }
+        }
+
+        private static void DeleteOldRows(SqlConnection connection, string tableName, string dateColumn, int retentionDays)
+        {
+            using (var command = new SqlCommand(
+                string.Format(
+                    @"WHILE 1 = 1
+                      BEGIN
+                          DELETE TOP (5000)
+                          FROM {0}
+                          WHERE {1} < DATEADD(day, -@RetentionDays, SYSDATETIMEOFFSET());
+                          IF @@ROWCOUNT < 5000 BREAK;
+                      END", tableName, dateColumn),
+                connection))
+            {
+                command.CommandTimeout = 30;
+                command.Parameters.Add("@RetentionDays", SqlDbType.Int).Value = retentionDays;
                 command.ExecuteNonQuery();
             }
         }
