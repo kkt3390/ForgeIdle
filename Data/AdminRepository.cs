@@ -65,17 +65,38 @@ namespace EnhanceAddiction.WebForms.Data
             return new
             {
                 dashboard = GetDashboard(),
-                hotTime = GetHotTime(),
-                suspiciousUsers = GetSuspiciousUsers(),
-                operators = GetOperators(),
-                recentAdminLogs = GetAdminLogs("", 1, 100),
-                recentActionLogs = SearchGameActionLogs("", 1, 100),
-                enhancementProof = GetEnhancementProof(),
-                rift = GetRiftState(),
-                monsterCatalog = GetMonsterCatalog(),
-                weaponCatalog = GetWeaponCatalog(),
-                enhancementRules = GetEnhancementRules()
+                hotTime = GetHotTime()
             };
+        }
+
+        public object GetTabState(string tab)
+        {
+            tab = (tab ?? "").Trim().ToLowerInvariant();
+            switch (tab)
+            {
+                case "abuse":
+                    return new { suspiciousUsers = GetSuspiciousUsers() };
+                case "users":
+                    return new { operators = GetOperators() };
+                case "event":
+                    return new { hotTime = GetHotTime() };
+                case "rift":
+                    return new { rift = GetRiftState() };
+                case "enhancements":
+                    return new { enhancementRules = GetEnhancementRules() };
+                case "enhancement-proof":
+                    return new { enhancementProof = GetEnhancementProof() };
+                case "monsters":
+                    return new { monsterCatalog = GetMonsterCatalog() };
+                case "weapons":
+                    return new { weaponCatalog = GetWeaponCatalog() };
+                case "action-logs":
+                    return new { recentActionLogs = SearchGameActionLogs("", 1, 100) };
+                case "logs":
+                    return new { recentAdminLogs = GetAdminLogs("", 1, 100) };
+                default:
+                    throw new InvalidOperationException("없는 관리자 탭입니다.");
+            }
         }
 
         public object GetHotTime()

@@ -29,6 +29,9 @@ namespace EnhanceAddiction.WebForms.Api
                     case "state":
                         result = repository.GetState();
                         break;
+                    case "tab-state":
+                        result = repository.GetTabState(context.Request.QueryString["tab"] ?? "");
+                        break;
                     case "search-players":
                         result = repository.SearchPlayers(context.Request.QueryString["q"] ?? "");
                         break;

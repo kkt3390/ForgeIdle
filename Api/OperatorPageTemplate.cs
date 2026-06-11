@@ -213,7 +213,7 @@
   </main>
 
   <div class=""toast"" id=""toast""></div>
-  <script src=""/Scripts/operator.js?v=20260611-2""></script>
+  <script src=""/Scripts/operator.js?v=20260611-3""></script>
 </body>
 </html>";
     }

@@ -2,6 +2,7 @@
 const logPageSize = 100;
 let actionLogPage = 1;
 let adminLogPage = 1;
+const loadedAdminTabs = new Set();
 
 const $ = selector => document.querySelector(selector);
 const number = value => Number(value || 0).toLocaleString("ko-KR");
@@ -82,16 +83,35 @@ async function adminApi(action, body) {
 async function loadAdmin() {
     adminState = await adminApi("state");
     renderDashboard();
-    renderHotTime();
-    renderRift();
-    renderSuspicious();
-    renderUsers(adminState.operators);
-    renderEnhancements();
-    renderEnhancementProof();
-    renderMonsters();
-    renderWeapons();
-    renderActionLogs(adminState.recentActionLogs || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize });
-    renderAdminLogs(adminState.recentAdminLogs || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize });
+    await loadAdminTab("abuse");
+}
+
+async function refreshDashboard() {
+    const payload = await adminApi("state");
+    adminState = { ...(adminState || {}), ...payload };
+    renderDashboard();
+    if (loadedAdminTabs.has("event")) renderHotTime();
+}
+
+async function loadAdminTab(tab, force = false) {
+    if (!force && loadedAdminTabs.has(tab)) return;
+    const payload = await adminApi(`tab-state&tab=${encodeURIComponent(tab)}`);
+    adminState = { ...(adminState || {}), ...payload };
+    loadedAdminTabs.add(tab);
+    renderAdminTab(tab);
+}
+
+function renderAdminTab(tab) {
+    if (tab === "abuse") renderSuspicious();
+    if (tab === "users") renderUsers(adminState.operators || []);
+    if (tab === "event") renderHotTime();
+    if (tab === "rift") renderRift();
+    if (tab === "enhancements") renderEnhancements();
+    if (tab === "enhancement-proof") renderEnhancementProof();
+    if (tab === "monsters") renderMonsters();
+    if (tab === "weapons") renderWeapons();
+    if (tab === "action-logs") renderActionLogs(adminState.recentActionLogs || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize });
+    if (tab === "logs") renderAdminLogs(adminState.recentAdminLogs || { rows: [], totalRows: 0, page: 1, pageSize: logPageSize });
 }
 
 function renderRift() {
@@ -160,7 +180,7 @@ function renderRift() {
 
 function renderDashboard() {
     const dashboard = adminState.dashboard;
-    const hot = adminState.hotTime;
+    const hot = adminState.hotTime || {};
     $("#dashboard").innerHTML = [
         ["전체 유저", number(dashboard.playerCount)],
         ["차단 유저", number(dashboard.bannedCount)],
@@ -185,7 +205,7 @@ function renderHotTime() {
 
 function renderSuspicious() {
     const keyword = searchText("abuse-search");
-    const rows = adminState.suspiciousUsers.filter(row =>
+    const rows = (adminState.suspiciousUsers || []).filter(row =>
         matchesKeyword(row, keyword, ["nickname", "playerKey", "actionType", "reason", "message"]));
     $("#abuse-body").innerHTML = rows.length
         ? rows.map(row => `
@@ -219,7 +239,7 @@ function renderUsers(rows) {
 
 function renderMonsters() {
     const keyword = searchText("monster-search");
-    const rows = adminState.monsterCatalog.filter(row =>
+    const rows = (adminState.monsterCatalog || []).filter(row =>
         matchesKeyword(row, keyword, ["monsterKey", "grade", "name", "imagePath", "description", "sortOrder"]));
     $("#monster-body").innerHTML = rows.map(row => `
         <tr>
@@ -236,7 +256,7 @@ function renderMonsters() {
 }
 function renderWeapons() {
     const keyword = searchText("weapon-search");
-    const rows = adminState.weaponCatalog.filter(row =>
+    const rows = (adminState.weaponCatalog || []).filter(row =>
         matchesKeyword(row, keyword, ["weaponKey", "name", "imagePath", "description", "sortOrder"]));
     $("#weapon-body").innerHTML = rows.map(row => `
         <tr>
@@ -252,7 +272,7 @@ function renderWeapons() {
 }
 function renderEnhancements() {
     const keyword = searchText("enhancement-search");
-    const rows = adminState.enhancementRules.filter(row => {
+    const rows = (adminState.enhancementRules || []).filter(row => {
         if (!keyword) return true;
         return [`+${row.currentLevel}`, row.cost, row.successRate, row.keepRate, row.destroyRate]
             .some(value => String(value).toLowerCase().includes(keyword));
@@ -352,7 +372,8 @@ async function loadAdminLogs(page = adminLogPage) {
 async function setOperator(playerKey, isOperator) {
     await adminApi("set-operator", { targetPlayerKey: playerKey, isOperator });
     toast("운영자 권한을 변경했습니다.");
-    await loadAdmin();
+    await refreshDashboard();
+    await loadAdminTab("users", true);
 }
 
 async function banUser(playerKey, isBanned) {
@@ -360,7 +381,9 @@ async function banUser(playerKey, isBanned) {
     if (isBanned && reason === null) return;
     await adminApi("set-ban", { targetPlayerKey: playerKey, isBanned, reason });
     toast("유저 접속 제한 상태를 변경했습니다.");
-    await loadAdmin();
+    await refreshDashboard();
+    await loadAdminTab("users", true);
+    if (loadedAdminTabs.has("abuse")) await loadAdminTab("abuse", true);
 }
 
 async function deleteMonster(row) {
@@ -368,7 +391,7 @@ async function deleteMonster(row) {
     await adminApi("delete-monster", { id: row.id, monsterKey: row.monsterKey });
     resetMonsterForm();
     toast("도감 데이터를 삭제했습니다.");
-    await loadAdmin();
+    await loadAdminTab("monsters", true);
 }
 
 async function deleteWeapon(row) {
@@ -376,7 +399,7 @@ async function deleteWeapon(row) {
     await adminApi("delete-weapon", { id: row.id, weaponKey: row.weaponKey });
     resetWeaponForm();
     toast("무기 데이터를 삭제했습니다.");
-    await loadAdmin();
+    await loadAdminTab("weapons", true);
 }
 function editMonster(row) {
     $("#monster-id").value = row.id;
@@ -504,14 +527,14 @@ async function settleRift() {
     if (!confirm("현재 주간 균열 시즌을 강제 정산할까요? 이미 정산된 시즌은 다시 정산할 수 없습니다.")) return;
     await adminApi("settle-rift", {});
     toast("현재 주간 균열 시즌을 정산했습니다.");
-    await loadAdmin();
+    await loadAdminTab("rift", true);
 }
 
 async function resetRift() {
     if (!confirm("현재 시즌의 유저 균열 데이터(피해량, 타격권, 주간 직접사냥)를 초기화할까요?")) return;
     await adminApi("reset-rift", {});
     toast("현재 주간 균열 유저 데이터를 초기화했습니다.");
-    await loadAdmin();
+    await loadAdminTab("rift", true);
 }
 
 function koreaNow() {
@@ -546,10 +569,11 @@ function toast(message) {
 }
 
 document.querySelectorAll("[data-admin-tab]").forEach(button => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
         document.querySelectorAll("[data-admin-tab], .admin-panel").forEach(item => item.classList.remove("active"));
         button.classList.add("active");
         $(`#${button.dataset.adminTab}-panel`).classList.add("active");
+        await loadAdminTab(button.dataset.adminTab).catch(error => toast(error.message));
     });
 });
 
@@ -565,7 +589,8 @@ $("#hot-time-form").addEventListener("submit", async event => {
         endsAtKst: $("#hot-end").value
     });
     toast("핫타임 배율을 저장했습니다.");
-    await loadAdmin();
+    await refreshDashboard();
+    await loadAdminTab("event", true);
 });
 
 $("#rift-form").addEventListener("submit", async event => {
@@ -581,7 +606,7 @@ $("#rift-form").addEventListener("submit", async event => {
         manualBossAreaId: Number($("#rift-boss-area").value || 0)
     });
     toast("주간 균열 설정을 저장했습니다.");
-    await loadAdmin();
+    await loadAdminTab("rift", true);
 });
 
 ["hot-enabled", "hot-gold", "hot-exp", "base-gold", "base-exp", "hot-start", "hot-end"].forEach(id => {
@@ -633,7 +658,7 @@ $("#monster-form").addEventListener("submit", async event => {
     });
     toast("도감 데이터를 저장했습니다.");
     resetMonsterForm();
-    await loadAdmin();
+    await loadAdminTab("monsters", true);
 });
 
 $("#enhancement-form").addEventListener("submit", async event => {
@@ -648,7 +673,7 @@ $("#enhancement-form").addEventListener("submit", async event => {
     });
     toast("강화 확률을 저장했습니다.");
     resetEnhancementForm();
-    await loadAdmin();
+    await loadAdminTab("enhancements", true);
 });
 
 $("#weapon-form").addEventListener("submit", async event => {
@@ -664,7 +689,7 @@ $("#weapon-form").addEventListener("submit", async event => {
     });
     toast("무기 데이터를 저장했습니다.");
     resetWeaponForm();
-    await loadAdmin();
+    await loadAdminTab("weapons", true);
 });
 
 loadAdmin().catch(error => toast(error.message));
