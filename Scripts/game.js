@@ -79,7 +79,7 @@ function redirectToLogin(message) {
     toast(message || "로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
 }
 
-// ?? ??? ?? ??? ??? ? ???? ?? ?? ??? ?????.
+// 액션 응답은 도감 전체를 생략할 수 있으므로 기존 도감 상태를 보존합니다.
 function mergeState(nextState) {
     if (!nextState) return state;
     if (state?.collection && !nextState.collection) nextState.collection = state.collection;
@@ -89,7 +89,7 @@ function mergeState(nextState) {
     return nextState;
 }
 
-// ?? ?? ??? ??? ?? ?? ??? ?? ??? ?????.
+// 직접 사냥 응답에 포함된 신규 도감 등록만 로컬 도감에 반영합니다.
 function applyCollectionRegistrations(nextState, details) {
     const collection = nextState?.collection;
     const registrations = details?.registrations || [];

@@ -77,7 +77,7 @@
         <button class="tab active" data-tab="hunt">사냥</button>
         <button class="tab" data-tab="enhance">강화</button>
         <button class="tab" data-tab="boss">보스</button>
-        <button class="tab" data-tab="rift" id="rift-tab" hidden>?? ??</button>
+        <button class="tab" data-tab="rift" id="rift-tab" hidden>주간 균열</button>
         <button class="tab" data-tab="stats">스탯</button>
         <button class="tab" data-tab="rates">확률표</button>
         <button class="tab" data-tab="ranking">랭킹</button>
@@ -139,15 +139,15 @@
 
       <section class="panel" id="rift-panel">
         <div class="section-title">
-          <h2>?? ??</h2>
+          <h2>주간 균열</h2>
           <span id="rift-period"></span>
         </div>
         <article class="rift-hero" id="rift-hero"></article>
         <div class="rift-grid" id="rift-stats"></div>
-        <button class="primary wide" id="rift-hit-button">?? ??</button>
+        <button class="primary wide" id="rift-hit-button">균열 타격</button>
         <section class="rift-shop" id="rift-shop" hidden>
           <div class="section-title">
-            <h3>?? ?? ??</h3>
+            <h3>균열 파편 상점</h3>
             <span id="rift-coins"></span>
           </div>
           <div class="rift-shop-list" id="rift-shop-list"></div>
@@ -188,7 +188,7 @@
           <button class="ranking-tab" data-ranking="enhancement">최대 강화</button>
           <button class="ranking-tab" data-ranking="collection">도감 등록수</button>
           <button class="ranking-tab" data-ranking="manualhunt">직접 사냥</button>
-          <button class="ranking-tab" data-ranking="rift">?? ??</button>
+          <button class="ranking-tab" data-ranking="rift">주간 균열</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -284,6 +284,6 @@
   <div class="collection-modal" id="collection-modal" hidden></div>
   <div class="collection-toast" id="collection-toast" hidden></div>
   <div class="toast" id="toast"></div>
-  <script src="Scripts/game.js?v=20260605-10"></script>
+  <script src="Scripts/game.js?v=20260611-1"></script>
 </body>
 </html>
