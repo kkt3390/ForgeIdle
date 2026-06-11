@@ -535,6 +535,7 @@ namespace EnhanceAddiction.WebForms.Game
         {
             return new object[]
             {
+                new { rank = "지급 대상", reward = "피해량 1 이상 참여자만 보상 지급" },
                 new { rank = "1위", reward = "120 균열 파편 + 전용 칭호 + Ⅰ 표식 + 금빛 테두리" },
                 new { rank = "2위", reward = "100 균열 파편 + 전용 칭호 + Ⅱ 표식 + 은빛 테두리" },
                 new { rank = "3위", reward = "80 균열 파편 + 전용 칭호 + Ⅲ 표식 + 동빛 테두리" },

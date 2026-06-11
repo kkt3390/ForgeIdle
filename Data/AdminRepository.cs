@@ -1003,19 +1003,20 @@ VALUES
         private static List<RiftRewardPreviewRow> BuildRiftRewardRows(List<RiftRankingRow> rankings)
         {
             var rows = new List<RiftRewardPreviewRow>();
-            if (!rankings.Any()) return rows;
+            var eligibleRankings = rankings.Where(row => row.Damage > 0).ToList();
+            if (!eligibleRankings.Any()) return rows;
 
-            var topThirtyCut = Math.Max(1, (int)Math.Ceiling(rankings.Count * .30));
-            for (var index = 0; index < rankings.Count; index++)
+            var topThirtyCut = Math.Max(1, (int)Math.Ceiling(eligibleRankings.Count * .30));
+            for (var index = 0; index < eligibleRankings.Count; index++)
             {
                 var rank = index + 1;
                 var reward = RiftRewardForRank(rank, topThirtyCut);
                 rows.Add(new RiftRewardPreviewRow
                 {
                     Rank = rank,
-                    PlayerKey = rankings[index].PlayerKey,
-                    Nickname = rankings[index].Nickname,
-                    Damage = rankings[index].Damage,
+                    PlayerKey = eligibleRankings[index].PlayerKey,
+                    Nickname = eligibleRankings[index].Nickname,
+                    Damage = eligibleRankings[index].Damage,
                     Coins = reward.Coins,
                     TitleKey = reward.TitleKey,
                     Badge = reward.Badge,

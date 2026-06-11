@@ -147,7 +147,7 @@
         <section class="rift-rewards">
           <div class="section-title">
             <h3>시즌 보상</h3>
-            <span>정산 시 지급</span>
+            <span>피해량 1 이상 참여자 기준</span>
           </div>
           <div class="rift-reward-list" id="rift-reward-list"></div>
         </section>
