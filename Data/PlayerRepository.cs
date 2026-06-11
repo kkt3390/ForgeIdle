@@ -35,7 +35,7 @@ namespace EnhanceAddiction.WebForms.Data
                          RiftDailyTicketDate, RiftDailyTicketsEarned, RiftDamage, RiftLastDamageAtUtc, RiftCoins,
                          ActiveTitleKey, ActiveNicknameColorKey, NicknameColorExpiresAtUtc,
                          RiftRankBadge, RiftRankGlow, RiftRankRewardExpiresAtUtc,
-                         StateSchemaVersion, StateJson
+                         StateSchemaVersion, StateJson, DestructionResistance, RecoveryMastery
                   FROM dbo.ea_players
                   WHERE PlayerKey = @PlayerKey", connection))
             {
@@ -57,7 +57,7 @@ namespace EnhanceAddiction.WebForms.Data
                 @"INSERT INTO dbo.ea_players
                   (PlayerKey, Nickname, Gold, WeaponLevel, HighestWeaponLevel, HighestBossDefeated,
                    ProtectionTickets, Level, Experience, DualWield, GoldGain, ExperienceGain,
-                   ArtisanTouch, AutomaticHuntCycleStartedAtUtc, AutomaticHuntUsedSeconds,
+                   ArtisanTouch, DestructionResistance, RecoveryMastery, AutomaticHuntCycleStartedAtUtc, AutomaticHuntUsedSeconds,
                    HuntAreaId, HuntStartedAtUtc, HuntRewardCapAtUtc, LastManualHuntAtUtc,
                    ManualHuntAreaId, ManualHuntCount, CollectedMonsterKeysJson, CollectedMonsterCount,
                    ProfileMonsterKey, RiftSeasonKey, RiftWeeklyManualHuntCount, RiftDailyManualHuntProgress, RiftTickets,
@@ -69,7 +69,7 @@ namespace EnhanceAddiction.WebForms.Data
                   VALUES
                   (@PlayerKey, @Nickname, @Gold, @WeaponLevel, @HighestWeaponLevel, @HighestBossDefeated,
                    @ProtectionTickets, @Level, @Experience, @DualWield, @GoldGain, @ExperienceGain,
-                   @ArtisanTouch, @AutomaticHuntCycleStartedAtUtc, @AutomaticHuntUsedSeconds,
+                   @ArtisanTouch, @DestructionResistance, @RecoveryMastery, @AutomaticHuntCycleStartedAtUtc, @AutomaticHuntUsedSeconds,
                    @HuntAreaId, @HuntStartedAtUtc, @HuntRewardCapAtUtc, @LastManualHuntAtUtc,
                    @ManualHuntAreaId, @ManualHuntCount, @CollectedMonsterKeysJson, @CollectedMonsterCount,
                    @ProfileMonsterKey, @RiftSeasonKey, @RiftWeeklyManualHuntCount, @RiftDailyManualHuntProgress, @RiftTickets,
@@ -105,6 +105,8 @@ namespace EnhanceAddiction.WebForms.Data
                       GoldGain = @GoldGain,
                       ExperienceGain = @ExperienceGain,
                       ArtisanTouch = @ArtisanTouch,
+                      DestructionResistance = @DestructionResistance,
+                      RecoveryMastery = @RecoveryMastery,
                       AutomaticHuntCycleStartedAtUtc = @AutomaticHuntCycleStartedAtUtc,
                       AutomaticHuntUsedSeconds = @AutomaticHuntUsedSeconds,
                       HuntAreaId = @HuntAreaId,
@@ -477,7 +479,9 @@ namespace EnhanceAddiction.WebForms.Data
                 DualWield = reader.GetInt32(8),
                 GoldGain = reader.GetInt32(9),
                 ExperienceGain = reader.GetInt32(10),
-                ArtisanTouch = reader.GetInt32(11)
+                ArtisanTouch = reader.GetInt32(11),
+                DestructionResistance = reader.GetInt32(39),
+                RecoveryMastery = reader.GetInt32(40)
             };
             player.AutomaticHuntCycleStartedAtUtc = ReadNullableDateTime(reader, 12);
             player.AutomaticHuntUsedSeconds = reader.GetDouble(13);
@@ -524,6 +528,8 @@ namespace EnhanceAddiction.WebForms.Data
             command.Parameters.Add("@GoldGain", SqlDbType.Int).Value = stats.GoldGain;
             command.Parameters.Add("@ExperienceGain", SqlDbType.Int).Value = stats.ExperienceGain;
             command.Parameters.Add("@ArtisanTouch", SqlDbType.Int).Value = stats.ArtisanTouch;
+            command.Parameters.Add("@DestructionResistance", SqlDbType.Int).Value = stats.DestructionResistance;
+            command.Parameters.Add("@RecoveryMastery", SqlDbType.Int).Value = stats.RecoveryMastery;
             command.Parameters.Add("@AutomaticHuntCycleStartedAtUtc", SqlDbType.DateTimeOffset).Value =
                 player.AutomaticHuntCycleStartedAtUtc.HasValue
                     ? (object)player.AutomaticHuntCycleStartedAtUtc.Value

@@ -58,7 +58,7 @@ namespace EnhanceAddiction.WebForms.Game
             var enhancements = GameContentRepository.EnhancementRules(_catalog.Enhancements);
             var weapon = GameContentRepository.ActiveWeapon(player.WeaponLevel);
             var adjustedRule = player.WeaponLevel < enhancements.Count
-                ? AdjustEnhancement(enhancements[player.WeaponLevel], player.Stats.ArtisanTouch)
+                ? AdjustEnhancement(enhancements[player.WeaponLevel], player.Stats)
                 : null;
             var nextBossArea = _catalog.Areas.ElementAtOrDefault(player.HighestBossDefeated + 1);
             var manualHuntArea = ManualHuntArea(player);
@@ -91,7 +91,9 @@ namespace EnhanceAddiction.WebForms.Game
                     dualWield = player.Stats.DualWield,
                     goldGain = player.Stats.GoldGain,
                     experienceGain = player.Stats.ExperienceGain,
-                    artisanTouch = player.Stats.ArtisanTouch
+                    artisanTouch = player.Stats.ArtisanTouch,
+                    destructionResistance = player.Stats.DestructionResistance,
+                    recoveryMastery = player.Stats.RecoveryMastery
                 },
                 statResetCost = StatResetCost(player),
                 automaticHuntBudget = new
@@ -295,7 +297,7 @@ namespace EnhanceAddiction.WebForms.Game
             if (player.Hunt != null) return Failure(player, "자동 사냥을 종료하고 정산한 뒤 강화할 수 있습니다.");
             var enhancements = GameContentRepository.EnhancementRules(_catalog.Enhancements);
             if (player.WeaponLevel >= enhancements.Count) return Failure(player, "이미 최고 강화 단계입니다.");
-            var rule = AdjustEnhancement(enhancements[player.WeaponLevel], player.Stats.ArtisanTouch);
+            var rule = AdjustEnhancement(enhancements[player.WeaponLevel], player.Stats);
             if (player.Gold < rule.Cost) return Failure(player, "골드가 부족합니다.");
             if (useProtection && rule.DestroyRate > 0 && player.ProtectionTickets <= 0)
                 return Failure(player, "보호권이 없습니다.");
@@ -325,8 +327,11 @@ namespace EnhanceAddiction.WebForms.Game
             }
             else
             {
-                player.WeaponLevel = 12;
-                message = "무기가 파괴되어 +12로 복구되었습니다.";
+                var recoveryLevel = DestructionRecoveryLevel(player, before);
+                player.WeaponLevel = recoveryLevel;
+                message = recoveryLevel > 12
+                    ? string.Format("무기가 파괴되었지만 복구 숙련이 발동해 +{0}로 복구되었습니다.", recoveryLevel)
+                    : "무기가 파괴되어 +12로 복구되었습니다.";
                 result = "Destroyed";
             }
             AddMessage(player, message);
@@ -373,6 +378,8 @@ namespace EnhanceAddiction.WebForms.Game
                 case "goldGain": current = player.Stats.GoldGain; break;
                 case "experienceGain": current = player.Stats.ExperienceGain; break;
                 case "artisanTouch": current = player.Stats.ArtisanTouch; break;
+                case "destructionResistance": current = player.Stats.DestructionResistance; break;
+                case "recoveryMastery": current = player.Stats.RecoveryMastery; break;
                 default: return Failure(player, "알 수 없는 스탯입니다.");
             }
             if (current >= GameCatalog.MaxStatLevel) return Failure(player, "이미 최대 레벨인 스탯입니다.");
@@ -382,6 +389,8 @@ namespace EnhanceAddiction.WebForms.Game
                 case "goldGain": player.Stats.GoldGain++; break;
                 case "experienceGain": player.Stats.ExperienceGain++; break;
                 case "artisanTouch": player.Stats.ArtisanTouch++; break;
+                case "destructionResistance": player.Stats.DestructionResistance++; break;
+                case "recoveryMastery": player.Stats.RecoveryMastery++; break;
             }
             return Success(player, "스탯 포인트를 투자했습니다.", new { stat = stat });
         }
@@ -706,10 +715,25 @@ namespace EnhanceAddiction.WebForms.Game
         }
 
         // 장인의 손길 스탯을 적용한 강화 성공률을 계산합니다.
-        private static EnhancementRule AdjustEnhancement(EnhancementRule rule, int artisanTouch)
+        private static EnhancementRule AdjustEnhancement(EnhancementRule rule, PlayerStats stats)
         {
-            var success = Math.Min(1 - rule.DestroyRate, rule.SuccessRate * (1 + artisanTouch * .005));
-            return new EnhancementRule(rule.CurrentLevel, rule.Cost, success, 1 - success - rule.DestroyRate, rule.DestroyRate);
+            stats = stats ?? new PlayerStats();
+            var destroy = rule.DestroyRate * (1 - ClampStat(stats.DestructionResistance) * .03);
+            var success = Math.Min(1 - destroy, rule.SuccessRate * (1 + ClampStat(stats.ArtisanTouch) * .005));
+            return new EnhancementRule(rule.CurrentLevel, rule.Cost, success, 1 - success - destroy, destroy);
+        }
+
+        private static int DestructionRecoveryLevel(PlayerState player, int before)
+        {
+            var mastery = ClampStat(player.Stats == null ? 0 : player.Stats.RecoveryMastery);
+            if (mastery <= 0 || before < 15) return 12;
+            if (!Roll(mastery * .03)) return 12;
+            return before >= 20 ? 18 : 15;
+        }
+
+        private static int ClampStat(int value)
+        {
+            return Math.Max(0, Math.Min(GameCatalog.MaxStatLevel, value));
         }
 
         // 강화 규칙을 브라우저에 전달할 간단한 객체로 바꿉니다.

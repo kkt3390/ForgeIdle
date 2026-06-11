@@ -78,9 +78,11 @@ namespace EnhanceAddiction.WebForms.Game
         public int GoldGain { get; set; }
         public int ExperienceGain { get; set; }
         public int ArtisanTouch { get; set; }
+        public int DestructionResistance { get; set; }
+        public int RecoveryMastery { get; set; }
         public int SpentPoints
         {
-            get { return DualWield + GoldGain + ExperienceGain + ArtisanTouch; }
+            get { return DualWield + GoldGain + ExperienceGain + ArtisanTouch + DestructionResistance + RecoveryMastery; }
         }
     }
 

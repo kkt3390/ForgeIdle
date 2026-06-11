@@ -6,7 +6,7 @@ const loadedAdminTabs = new Set();
 
 const $ = selector => document.querySelector(selector);
 const number = value => Number(value || 0).toLocaleString("ko-KR");
-const percent = value => `${(Number(value || 0) * 100).toLocaleString("ko-KR", { maximumFractionDigits: 4 })}%`;
+const percent = value => `${(Number(value || 0) * 100).toLocaleString("ko-KR", { maximumFractionDigits: 2 })}%`;
 const escapeHtml = value => {
     const div = document.createElement("div");
     div.textContent = value ?? "";

@@ -635,7 +635,9 @@ function renderStats() {
         ["dualWield", "이도류", state.stats.dualWield, "직접 사냥 추가 토벌 확률", .5],
         ["goldGain", "노련한 사냥꾼", state.stats.goldGain, "모든 사냥 골드 획득량", 1],
         ["experienceGain", "성장의 축복", state.stats.experienceGain, "모든 사냥 경험치 획득량", 1],
-        ["artisanTouch", "장인의 손길", state.stats.artisanTouch, "강화 성공률 상대 보정", .5]
+        ["artisanTouch", "장인의 손길", state.stats.artisanTouch, "강화 성공률 상대 보정", .5],
+        ["destructionResistance", "파괴 저항", state.stats.destructionResistance, "강화 파괴 확률 상대 감소", 3],
+        ["recoveryMastery", "복구 숙련", state.stats.recoveryMastery, "파괴 시 +15/+18 복구 확률", 3]
     ];
     $("#stats-list").innerHTML = rows
         .map(([key, name, value, description, perPoint]) => `

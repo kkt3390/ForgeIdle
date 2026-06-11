@@ -28,6 +28,8 @@ BEGIN
         GoldGain int NOT NULL CONSTRAINT DF_ea_players_GoldGain DEFAULT (0),
         ExperienceGain int NOT NULL CONSTRAINT DF_ea_players_ExperienceGain DEFAULT (0),
         ArtisanTouch int NOT NULL CONSTRAINT DF_ea_players_ArtisanTouch DEFAULT (0),
+        DestructionResistance int NOT NULL CONSTRAINT DF_ea_players_DestructionResistance DEFAULT (0),
+        RecoveryMastery int NOT NULL CONSTRAINT DF_ea_players_RecoveryMastery DEFAULT (0),
         AutomaticHuntCycleStartedAtUtc datetimeoffset NULL,
         AutomaticHuntUsedSeconds float NOT NULL CONSTRAINT DF_ea_players_AutomaticHuntUsedSeconds DEFAULT (0),
         HuntAreaId int NULL,
@@ -112,6 +114,10 @@ IF COL_LENGTH(N'dbo.ea_players', N'ExperienceGain') IS NULL
     ALTER TABLE dbo.ea_players ADD ExperienceGain int NOT NULL CONSTRAINT DF_ea_players_ExperienceGain DEFAULT (0) WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'ArtisanTouch') IS NULL
     ALTER TABLE dbo.ea_players ADD ArtisanTouch int NOT NULL CONSTRAINT DF_ea_players_ArtisanTouch DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'DestructionResistance') IS NULL
+    ALTER TABLE dbo.ea_players ADD DestructionResistance int NOT NULL CONSTRAINT DF_ea_players_DestructionResistance DEFAULT (0) WITH VALUES;
+IF COL_LENGTH(N'dbo.ea_players', N'RecoveryMastery') IS NULL
+    ALTER TABLE dbo.ea_players ADD RecoveryMastery int NOT NULL CONSTRAINT DF_ea_players_RecoveryMastery DEFAULT (0) WITH VALUES;
 IF COL_LENGTH(N'dbo.ea_players', N'AutomaticHuntCycleStartedAtUtc') IS NULL
     ALTER TABLE dbo.ea_players ADD AutomaticHuntCycleStartedAtUtc datetimeoffset NULL;
 IF COL_LENGTH(N'dbo.ea_players', N'AutomaticHuntUsedSeconds') IS NULL

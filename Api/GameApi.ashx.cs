@@ -197,7 +197,13 @@ namespace EnhanceAddiction.WebForms.Api
                 player.Experience,
                 player.ManualHuntCount,
                 player.RiftTickets,
-                player.RiftDamage
+                player.RiftDamage,
+                stats = player.Stats == null ? null : new
+                {
+                    player.Stats.ArtisanTouch,
+                    player.Stats.DestructionResistance,
+                    player.Stats.RecoveryMastery
+                }
             };
         }
 

@@ -147,7 +147,7 @@
             <label>사용 여부<select id=""enhancement-enabled""><option value=""true"">사용</option><option value=""false"">비활성</option></select></label>
             <button class=""primary full"" type=""submit"">강화 확률 저장</button>
           </form>
-          <p class=""collection-description"">확률은 0.3 = 30% 형식으로 입력합니다. 세 확률의 합은 1이어야 합니다.</p>
+          <p class=""collection-description"">확률은 0.3 = 30%, 0.1275 = 12.75% 형식으로 입력합니다. 세 확률의 합은 1이어야 합니다.</p>
           <div class=""admin-actions""><input id=""enhancement-search"" placeholder=""강화 단계, 비용, 확률 검색"" /></div>
           <div class=""admin-table-wrap""><table><thead><tr><th>단계</th><th>비용</th><th>성공</th><th>유지</th><th>파괴</th><th>편집</th></tr></thead><tbody id=""enhancement-body""></tbody></table></div>
         </section>
@@ -213,7 +213,7 @@
   </main>
 
   <div class=""toast"" id=""toast""></div>
-  <script src=""/Scripts/operator.js?v=20260611-5""></script>
+  <script src=""/Scripts/operator.js?v=20260611-6""></script>
 </body>
 </html>";
     }
